@@ -1,0 +1,7 @@
+formatter.name: pretty
+suites:
+    lenken_suite:
+        namespace: App
+        src_path: app
+        spec_prefix: tests
+        psr4_prefix: App
