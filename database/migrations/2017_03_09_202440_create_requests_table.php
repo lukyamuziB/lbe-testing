@@ -15,14 +15,12 @@ class CreateRequestsTable extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->increments('id');
-            $table->timestamps();
             $table->integer('mentee_id');
             $table->integer('mentor_id');
             $table->string('title');
             $table->text('description');
             $table->integer('status_id');
-            $table->dateTime('created_at');
-            $table->dateTime('updated_at');
+            $table->timestamps();
         });
     }
 
