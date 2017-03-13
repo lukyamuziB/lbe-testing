@@ -18,7 +18,7 @@ class CreateRatingsTable extends Migration
             $table->timestamps();
             $table->text('description');
             $table->integer('star');
-            $table->string('user_id');
+            $table->integer('user_id');
             $table->integer('request_id');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');

@@ -16,7 +16,7 @@ class CreateRequestInterestsTable extends Migration
         Schema::create('request_interests', function (Blueprint $table) {
             $table->increments('id');
             $table->timestamps();
-            $table->string('user_id');
+            $table->integer('user_id');
             $table->integer('request_id');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');

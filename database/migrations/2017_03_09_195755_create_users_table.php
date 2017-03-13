@@ -21,7 +21,6 @@ class CreateUsersTable extends Migration
             $table->string('firstname');
             $table->string('lastname');
             $table->string('profile_pic');
-            $table->string('skills');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');
         });

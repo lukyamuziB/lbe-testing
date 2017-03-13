@@ -17,9 +17,10 @@ class CreateRequestLogsTable extends Migration
             $table->increments('id');
             $table->timestamps();
             $table->integer('request_id');
-            $table->string('user_id');
+            $table->integer('user_id');
             $table->string('type');
             $table->text('description');
+            $table->foreign('request_id');
         });
     }
 
