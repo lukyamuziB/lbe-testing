@@ -1,6 +1,6 @@
 <?php
 
-namespace tests\Lenken;
+namespace tests\App;
 
 use PhpSpec\ObjectBehavior;
 

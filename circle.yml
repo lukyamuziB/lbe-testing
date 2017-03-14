@@ -1,0 +1,42 @@
+machine:
+  php:
+    version: 7.0.7
+  services:
+    - docker 
+  environment:
+    POSTGRES_USER: ubuntu
+    POSTGRES_HOST: "127.0.0.1"
+    POSTGRES_DB: circle_test
+    COVERALLS_SERVICE_NAME: circle-ci
+    PROJECT_NAME: microservices-kube
+    CLUSTER_NAME: staging
+    CLOUDSDK_COMPUTE_ZONE: us-east1-c
+    CONTAINER_NAME: lenken-server
+    DEPLOYMENT: lenken-server
+    IMAGE: lenken-server
+    PROJECT_NAME_PROD: andela-kube
+    CLUSTER_NAME_PROD: andela-prod
+    CLOUDSDK_COMPUTE_ZONE_PROD: us-east1-b
+    CONTAINER_NAME_PROD: lenken-server
+    DEPLOYMENT_PROD: lenken-server
+    IMAGE_PROD: lenken-server
+    IMG_TAG: $(echo $CIRCLE_SHA1 | cut -c -7)
+
+checkout:
+  post:
+    - git submodule sync
+    - git submodule init
+test:
+  pre:
+    - curl -sS https://getcomposer.org/installer | php --filename=composer
+    - composer install --prefer-source --no-interaction
+
+deployment:
+  production:
+    branch: master
+    commands: 
+      - ./micro-shared/deploy-production.sh
+  staging:
+    branch: develop
+    commands:
+      - ./micro-shared/deploy-staging.sh

@@ -10,9 +10,9 @@ RUN apt-get install -y mysql-client
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
 
 # Set the WORKDIR to /usr/src so all following commands run in /app
-RUN mkdir -p /usr/src
-COPY . /usr/src
-WORKDIR /usr/src
+RUN mkdir -p /usr/php/src
+COPY . /usr/php/src
+WORKDIR /usr/php/src
 
 # Install dependencies with Composer.
 # --prefer-source fixes issues with download limits on Github.
