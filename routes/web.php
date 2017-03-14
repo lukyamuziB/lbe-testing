@@ -14,3 +14,12 @@
 $app->get('/', function () use ($app) {
     return $app->version();
 });
+
+/**
+ * Routes for resource requests
+ */
+$app->get('requests', 'RequestsController@all');
+$app->get('requests/{id}', 'RequestsController@get');
+$app->post('requests', 'RequestsController@add');
+$app->put('requests/{id}', 'RequestsController@put');
+$app->delete('requests/{id}', 'RequestsController@remove');

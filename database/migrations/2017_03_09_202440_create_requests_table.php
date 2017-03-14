@@ -15,11 +15,14 @@ class CreateRequestsTable extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('mentee_id');
-            $table->integer('mentor_id');
+            $table->integer('mentee_id')->unsigned();
+            $table->foreign('mentee_id')
+                ->references('id')
+                ->on('users');
+            $table->integer('mentor_id')->unsigned()->nullable();
             $table->string('title');
             $table->text('description');
-            $table->integer('status_id');
+            $table->integer('status_id')->unsigned();
             $table->timestamps();
         });
     }
