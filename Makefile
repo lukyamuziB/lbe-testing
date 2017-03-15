@@ -15,13 +15,13 @@ image:
 	docker build -t $(IMAGE):$(TAG) -t $(IMAGE):latest .
 
 push: image
-	glcoud docker push $(IMAGE):$(TAG)
-	glcoud docker push $(IMAGE):latest
+	gcloud docker push $(IMAGE):$(TAG)
+	gcloud docker push $(IMAGE):latest
 
 deploy: push
-	kubectl set deployment/lenken-sever lenken-server=$(IMAGE):$(TAG)
+	kubectl set deployment/lenken-server lenken-server=$(IMAGE):$(TAG)
 
-deploy_stage:
+deploy_stag:
 	make deploy project=microservices-kube
 
 deploy_prod:
