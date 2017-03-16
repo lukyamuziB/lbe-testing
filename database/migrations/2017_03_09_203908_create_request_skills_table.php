@@ -15,9 +15,12 @@ class CreateRequestSkillsTable extends Migration
     {
         Schema::create('request_skills', function (Blueprint $table) {
             $table->increments('id');
+            $table->integer('request_id')->unsigned()->index();
+            $table->integer('skill_id')->unsigned()->index();
             $table->timestamps();
-            $table->integer('request_id');
-            $table->integer('skill_id');
+
+            $table->foreign('request_id')->references('id')->on('requests');
+            $table->foreign('skill_id')->references('id')->on('skills');
         });
     }
 
