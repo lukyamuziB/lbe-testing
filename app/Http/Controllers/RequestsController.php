@@ -14,8 +14,8 @@ class RequestsController extends Controller {
         $m = self::MODEL;
         $this->validate($request, $m::$rules);
         $user = $request->user();
-        $user_id = array('mentee_id' => $user->id);
-        $record = array_merge($request->all(), $user_id);
+        $user_array = array('mentee_id' => $user->id, "status_id" => 2);
+        $record = array_merge($request->all(), $user_array);
         return $this->respond(Response::HTTP_CREATED, $m::create($record));
     }
 
