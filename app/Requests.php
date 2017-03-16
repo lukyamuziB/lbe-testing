@@ -9,7 +9,7 @@ class Requests extends Model {
     protected $dates = [];
 
     public static $rules = [
-        "mentee_id" => "required|numeric",
+        "mentee_id" => "numeric",
         "mentor_id" => "numeric",
         "title" => "required",
         "description" => "required",
