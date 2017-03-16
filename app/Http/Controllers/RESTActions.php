@@ -5,7 +5,15 @@ use Illuminate\Http\Response;
 
 trait RESTActions {
 
-
+    public function __construct()
+    {
+        $this->middleware('auth', ['only' => [
+            'create',
+            'read',
+            'update',
+            'delete'
+        ]]);
+    }
     public function all()
     {
         $m = self::MODEL;
