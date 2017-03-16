@@ -30,10 +30,7 @@ trait RESTActions {
     {
         $m = self::MODEL;
         $this->validate($request, $m::$rules);
-        $user = $request->user();
-        $user_id = array('mentee_id' => $user->id);
-        $record = array_merge($request->all(), $user_id);
-        return $this->respond(Response::HTTP_CREATED, $m::create($record));
+        return $this->respond(Response::HTTP_CREATED, $m::create($request->all()));
     }
 
     public function put(Request $request, $id)
