@@ -7,13 +7,9 @@ trait RESTActions {
 
     public function __construct()
     {
-        $this->middleware('auth', ['only' => [
-            'create',
-            'read',
-            'update',
-            'delete'
-        ]]);
+        $this->middleware('auth');
     }
+
     public function all()
     {
         $m = self::MODEL;
