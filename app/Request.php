@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Eloquent\Model;
 
-class Requests extends Model {
+class Request extends Model {
 
     protected $fillable = ["mentee_id", "mentor_id", "title", "description", "status_id"];
 
@@ -23,8 +23,6 @@ class Requests extends Model {
 
     public function skills()
     {
-        return $this->hasMany("App\RequestSkills");
+        return $this->hasMany("App\RequestSkill");
     }
-
-
 }

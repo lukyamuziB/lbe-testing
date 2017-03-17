@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Eloquent\Model;
 
-class RequestSkills extends Model {
+class RequestSkill extends Model {
 
     protected $fillable = ["request_id", "skill_id"];
 
@@ -15,7 +15,7 @@ class RequestSkills extends Model {
 
     public function request()
     {
-        return $this->belongsTo("App\Requests");
+        return $this->belongsTo("App\Request");
     }
 
 

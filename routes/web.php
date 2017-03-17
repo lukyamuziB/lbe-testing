@@ -18,8 +18,11 @@ $app->get('/', function () use ($app) {
 /**
  * Routes for resource requests
  */
-$app->get('requests', 'RequestsController@all');
-$app->get('requests/{id}', 'RequestsController@get');
-$app->post('requests', 'RequestsController@add');
-$app->put('requests/{id}', 'RequestsController@put');
-$app->delete('requests/{id}', 'RequestsController@remove');
+$app->group(['prefix' => 'api/v1'], function($app)
+{
+    $app->get('requests', 'RequestController@all');
+    $app->get('requests/{id}', 'RequestController@get');
+    $app->post('requests', 'RequestController@add');
+    $app->put('requests/{id}', 'RequestController@put');
+    $app->delete('requests/{id}', 'RequestController@remove');
+});
