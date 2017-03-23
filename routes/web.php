@@ -14,3 +14,15 @@
 $app->get('/', function () use ($app) {
     return $app->version();
 });
+
+/**
+ * Routes for resource requests
+ */
+$app->group(['prefix' => 'api/v1'], function($app)
+{
+    $app->get('requests', 'RequestController@all');
+    $app->get('requests/{id}', 'RequestController@get');
+    $app->post('requests', 'RequestController@add');
+    $app->put('requests/{id}', 'RequestController@put');
+    $app->delete('requests/{id}', 'RequestController@remove');
+});

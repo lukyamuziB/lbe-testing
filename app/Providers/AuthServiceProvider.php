@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\User;
+use Lcobucci\JWT\Parser;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,8 +32,11 @@ class AuthServiceProvider extends ServiceProvider
         // the User instance via an API token or any other method necessary.
 
         $this->app['auth']->viaRequest('api', function ($request) {
-            if ($request->input('api_token')) {
-                return User::where('api_token', $request->input('api_token'))->first();
+            $token = substr($request->header('Authorization'), 7);
+
+            if ($request->input('api_token') || $token) {
+                $parsed_token = (new Parser())->parse((string) $token); // Parses from a string
+                return User::where('user_id', $parsed_token->getClaim('UserInfo')->id)->first();
             }
         });
     }
