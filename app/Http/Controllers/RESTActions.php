@@ -2,8 +2,11 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Skill;
 
 trait RESTActions {
+
+    protected $client;
 
     public function __construct()
     {

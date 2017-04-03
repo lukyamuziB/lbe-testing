@@ -26,3 +26,15 @@ $app->group(['prefix' => 'api/v1'], function($app)
     $app->put('requests/{id}', 'RequestController@put');
     $app->delete('requests/{id}', 'RequestController@remove');
 });
+
+/**
+ * Routes for resource skills
+ */
+$app->group(['prefix' => 'api/v1'], function($app)
+{
+    $app->get('skills', 'SkillController@all');
+    $app->get('skills/{id}', 'SkillController@get');
+    $app->post('skills', 'SkillController@add');
+    $app->put('skills/{id}', 'SkillController@put');
+    $app->delete('skills/{id}', 'SkillController@remove');
+});

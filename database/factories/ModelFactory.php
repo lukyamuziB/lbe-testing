@@ -26,3 +26,48 @@ $factory->define(App\Requests::class, function ($faker) {
         'user_id' => $faker->key,
     ];
 });
+
+/**
+ * Factory definition for model App\Skill.
+ */
+$factory->define(App\Skill::class, function ($faker) {
+    return [
+        // Fields here
+    ];
+});
+
+/**
+ * Factory definition for model App\Skill.
+ */
+$factory->define(App\Skill::class, function ($faker) {
+    return [
+        // Fields here
+    ];
+});
+
+/**
+ * Factory definition for model App\Skill.
+ */
+$factory->define(App\Skill::class, function ($faker) {
+    return [
+        // Fields here
+    ];
+});
+
+/**
+ * Factory definition for model App\Skill.
+ */
+$factory->define(App\Skill::class, function ($faker) {
+    return [
+        // Fields here
+    ];
+});
+
+/**
+ * Factory definition for model App\Skill.
+ */
+$factory->define(App\Skill::class, function ($faker) {
+    return [
+        // Fields here
+    ];
+});
