@@ -1,61 +1,121 @@
 <?php
-
 namespace tests\App\Http\Controllers;
 
+require __DIR__.'/../../../bootstrap/app.php';
+
 use App\Http\Controllers\SkillController;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use PhpSpec\ObjectBehavior;
+use Illuminate\Support\Facades\Artisan;
+use Lcobucci\JWT\Parser;
 use GuzzleHttp\Client;
-use Prophecy\Argument;
+use GuzzleHttp\Psr7;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Response;
 use App\Skill;
+use DB;
 
+describe('Skills Controller Test', function() {
+    beforeEach(function() {
+        Artisan::call('migrate:refresh');
+        Artisan::call('db:seed');
 
-class SkillControllerSpec extends ObjectBehavior
-{
-
-    const BASE_URL    = 'http://127.0.0.1:3000/api/v1';
-    const AUTH_HEADER = 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySW5mbyI6eyJpZCI6Ii1LWXNTWC1laW1LeWtYVFp0aUhFIiwiZW1haWwiOiJqb3NlcGguYWtoZW5kYUBhbmRlbGEuY29tIiwiZmlyc3RfbmFtZSI6Ikpvc2VwaCIsImxhc3RfbmFtZSI6IkFraGVuZGEiLCJuYW1lIjoiSm9zZXBoIEFraGVuZGEiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDQuZ29vZ2xldXNlcmNvbnRlbnQuY29tLy1tanJ1OUxzRjY4WS9BQUFBQUFBQUFBSS9BQUFBQUFBQUFBby8telhXelVIVmp1WS9waG90by5qcGc_c3o9NTAiLCJyb2xlcyI6eyJGZWxsb3ciOiItS1hHeTFFQjFvaW1qUWdGaW02QyJ9LCJwZXJtaXNzaW9ucyI6eyJFRElUX01ZX1BST0ZJTEUiOiItS1hGNUJ1UElWa29KenRZY2N3ZiIsIlRSQUNLX1ZPRiI6Ii1LZE40S1ROakZ3SmdCMWx3akxOIiwiVklFV19FTkdBR0VNRU5UIjoiLUtmRTU3QzFpalhKMmhmc2lZQkciLCJWSUVXX1BST1NQRUNUUyI6Ii1LZkNES3EwWDdNVF9Ua2s0U3Z5IiwiVklFV19SQVRJTkdTIjoiLUtYQnp0ZnRjZU12YnY5ZUpBQzAiLCJWX0ZFTExPV19MT0NBVElPTiI6Ii1LWEhkbEpJU3NYU0V5b2U2V2pSIiwiVl9PUFBfRU5HX1RZUEUiOiItS1hIZHA4Ymg2c2JLOWJ1eE9qaCJ9fSwiZXhwIjoxNDg5ODU5NjY2fQ.I1I6frCC-FCbJbapFBtdJMWDllMOb1sXxOjO1fUU00Vsspg_yDiD1Wa3OUrI8btibYw5NPLRpOj9yaHXlXVEhZMot4XDZ38d7FAmuFFMoE67WfJLLbq7Ee3HVdlkBFzHGKK0iHKbdwqR_0LBfL3ehl7FNApJ7Ho4NMLujloljBU';
-
-    function let()
-    {
-        $client = new Client([
-            'base_uri' => 'http://localhost:2000',
-            'headers'  => ['Authorization'  => self::AUTH_HEADER]
+        $token = env('AUTH_HEADER');
+        $parsed_token = (new Parser())->parse((string) $token);
+        $test_auth_user = factory(\App\User::class)->create([
+            'user_id' => $parsed_token->getClaim('UserInfo')->id,
+            'role' => array_keys((array)$parsed_token->getClaim('UserInfo')->roles)[0],
+            'firstname' => $parsed_token->getClaim('UserInfo')->first_name,
+            'lastname' => $parsed_token->getClaim('UserInfo')->last_name,
+            'profile_pic' => $parsed_token->getClaim('UserInfo')->picture,
         ]);
-        $this->beConstructedWith($client);
-    }
 
-    function it_is_initializable()
-    {
-      $this->shouldHaveType(SkillController::class);
-    }
+        $this->client = new Client([
+            'base_uri' => env('BASE_URL'),
+            'headers'  => ['Authorization'  => 'Bearer '.$token]
+        ]);
+    });
 
-    /**
-     * Test for a successful call to GET all skills
-     */
-    function it_should_return_all_skills()
-    {
-        $result = $this->shadowModel();
-        dd($result);
+    describe('Search Skills Endpoint', function() {
+        it('should return one skill', function() {
+            $skill_query = 'php';
+            $response = $this->client->get('/api/v1/skills?q='.$skill_query);
+            $response_body = json_decode($response->getBody()->__toString());
 
-        $res = $this->client('GET', '/api/v1/requests');
-	    $res->getStatusCode()->shouldBe(200);
-	    $this->parseJSONToArray($res->getBody())->shouldHaveCount(count($m));
-    }
+            expect($response)->to->be->an->instanceof(new Response());
+            expect($response->getStatusCode())->to->equal(200);
+            expect(count($response_body->data))->to->equal(count(1));
+            expect(strtolower($response_body->data[0]->name))->to->equal($skill_query);
+        });
 
-    /**
-     * Test successful call to GET a particluar skill
-     */
-    // function it_should_retun_one_skill(Request $request)
-    // {
-    //     $client = new Client([
-    //         'base_uri' => 'http://localhost:2000',
-    //         'exceptions' => false
-    //     ]);
-    //
-    //     $client->post('/skills', ['name' => 'php']);
-    //     $response = $client->get('api/v1/skills?name=php');
-    //     $this->all($request)->content()->shouldContain('php');
-    // }
-}
+        it('should return all skills that match the query string', function() {
+            $skill_query = 'ang';
+            $matching_skills = Skill::findMatching($skill_query);
+            $response = $this->client->get('/api/v1/skills?q='.$skill_query);
+            $response_body = json_decode($response->getBody()->__toString());
+
+            expect($response)->to->be->an->instanceof(new Response());
+            expect($response->getStatusCode())->to->equal(200);
+            expect(count($response_body->data))->to->equal(count($matching_skills));
+            foreach($response_body->data as $data) {
+                expect(preg_match('/ang/i', $data->name))->to->be->ok;
+            }
+        });
+
+        it('should return an error message if no skill matches the query string', function() {
+            try {
+                $this->client->request('GET', '/api/v1/skills?q=fireservice');
+            } catch (RequestException $exception) {
+                $response_body = json_decode($exception->getResponse()->getBody()->__toString());
+
+                expect($exception->getResponse()->getStatusCode())->to->equal(404);
+                expect($response_body)->to->be->an('object');
+                expect($response_body->message)->to->equal('skill not found');
+            }
+        });
+
+        it('should return an error message if an invalid search criteria is entered', function() {
+            try {
+                $this->client->request('GET', '/api/v1/skills?m=fireservice');
+            } catch (RequestException $exception) {
+                $response_body = json_decode($exception->getResponse()->getBody()->__toString());
+
+                expect($exception->getResponse()->getStatusCode())->to->equal(400);
+                expect($response_body)->to->be->an('object');
+                expect($response_body->message)->to->equal('invalid search criteria');
+            }
+        });
+
+        it('should return an error message if (a) special character(s) are entered in the search term', function() {
+            try {
+                $this->client->request('GET', '/api/v1/skills?q=fireB*s$');
+            } catch (RequestException $exception) {
+                $response_body = json_decode($exception->getResponse()->getBody()->__toString());
+
+                expect($exception->getResponse()->getStatusCode())->to->equal(400);
+                expect($response_body)->to->be->an('object');
+                expect($response_body->message)->to->equal('only alphanumeric characters allowed');
+            }
+        });
+    });
+
+    describe('Get Skill Endpoint', function() {
+        it('should return all skills', function() {
+            $all_skills = Skill::all();
+            $response = $this->client->get('/api/v1/skills?');
+            $response_body = json_decode($response->getBody()->__toString());
+
+            expect($response)->to->be->an->instanceof(new Response());
+            expect($response->getStatusCode())->to->equal(200);
+            expect(count($all_skills))->to->equal(count($response_body->data));
+        });
+
+        it ('should return the skill with an id', function() {
+            $matching_skill = Skill::all()->last();
+            $response = $this->client->get('/api/v1/skills/'. $matching_skill->id);
+            $response_body = json_decode($response->getBody()->__toString());
+
+            expect($response)->to->be->an->instanceof(new Response());
+            expect($response->getStatusCode())->to->equal(200);
+            expect(count($response_body))->to->equal(count($matching_skill));
+        });
+    });
+});

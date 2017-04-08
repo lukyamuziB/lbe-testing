@@ -16,6 +16,8 @@ class UsersTableSeeder extends Seeder
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('users')->insert([
+                'name' => $faker->name,
+                'email' => $faker->unique()->email,
                 'user_id' => $faker->unique()->regexify('-[a-zA-Z]{5}-[a-zA-Z]{13}'),
                 'role' => $faker->randomElement($array = array('Fellow', 'Learning', 'Staff')),
                 'firstname' => $faker->firstName,

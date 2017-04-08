@@ -23,6 +23,8 @@ $app = new Laravel\Lumen\Application(
     realpath(__DIR__.'/../')
 );
 
+$app->instance('path.storage', app()->basePath() . DIRECTORY_SEPARATOR . 'storage');
+
 $app->withFacades();
 
 $app->withEloquent();
@@ -80,6 +82,7 @@ $app->routeMiddleware([
 
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
+$app->register(\Illuminate\Redis\RedisServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 
 /*
