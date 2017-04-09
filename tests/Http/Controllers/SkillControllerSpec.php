@@ -1,4 +1,5 @@
 <?php
+
 namespace tests\App\Http\Controllers;
 
 require __DIR__.'/../../../bootstrap/app.php';
