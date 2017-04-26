@@ -13,7 +13,7 @@ trait RESTActions {
         $this->middleware('auth');
     }
 
-    public function all()
+    public function all(Request $request)
     {
         $m = self::MODEL;
         return $this->respond(Response::HTTP_OK, $m::all());

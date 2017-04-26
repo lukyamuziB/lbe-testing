@@ -33,10 +33,21 @@ class AuthServiceProvider extends ServiceProvider
 
         $this->app['auth']->viaRequest('api', function ($request) {
             $token = substr($request->header('Authorization'), 7);
+            $parsed_token = (new Parser())->parse((string) $token);
 
+            // use the factory to generate the user instance from token payload
             if ($request->input('api_token') || $token) {
-                $parsed_token = (new Parser())->parse((string) $token); // Parses from a string
-                return User::where('user_id', $parsed_token->getClaim('UserInfo')->id)->first();
+                $user = factory(\App\User::class)->make([
+                    'id' => $parsed_token->getClaim('UserInfo')->id,
+                    'name' => $parsed_token->getClaim('UserInfo')->first_name." ".$parsed_token->getClaim('UserInfo')->last_name,
+                    'email' => $parsed_token->getClaim('UserInfo')->email,
+                    'role' => array_keys((array)$parsed_token->getClaim('UserInfo')->roles)[0],
+                    'firstname' => $parsed_token->getClaim('UserInfo')->first_name,
+                    'lastname' => $parsed_token->getClaim('UserInfo')->last_name,
+                    'profile_pic' => $parsed_token->getClaim('UserInfo')->picture,
+                ]);
+
+                return $user;
             }
         });
     }
