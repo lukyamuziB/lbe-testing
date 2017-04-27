@@ -38,3 +38,11 @@ $app->group(['prefix' => 'api/v1'], function($app)
     $app->put('skills/{id}', 'SkillController@put');
     $app->delete('skills/{id}', 'SkillController@remove');
 });
+
+/**
+ * Routes for status
+ */
+$app->group(['prefix' => 'api/v1'], function($app)
+{
+    $app->get('status', 'StatusController@all');
+});

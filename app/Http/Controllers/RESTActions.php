@@ -16,7 +16,7 @@ trait RESTActions {
     public function all(Request $request)
     {
         $m = self::MODEL;
-        return $this->respond(Response::HTTP_OK, $m::all());
+        return $this->respond(Response::HTTP_OK, ["data" => $m::all()]);
     }
 
     public function get($id)
