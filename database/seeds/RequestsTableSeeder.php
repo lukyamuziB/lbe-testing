@@ -22,7 +22,14 @@ class RequestsTableSeeder extends Seeder
                 'description' => $faker->text($maxNbChars = 300),
                 'status_id' => $faker->randomElement($array = array(1, 2)),
                 'created_at' => $faker->date($format = 'Y-m-d H:i:s', $max = 'now'),
-                'updated_at' => null
+                'updated_at' => null,
+                'match_date' => null,
+                'pairing' => json_encode([
+                    'start_time' => '2017-04-27T18:17:10+00:00',
+                    'end_time' => '2017-05-27T18:17:10+00:00',
+                    'days' => ['monday'],
+                    'timezone' => 'EAT'
+                ])
             ]);
         }
     }

@@ -13,7 +13,7 @@ class StatusTableSeeder extends Seeder
     {
         $faker = Faker\Factory::create();
         $limit = 2;
-        $status = array('open', 'closed');
+        $status = array('open', 'closed', 'matched');
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('status')->insert([

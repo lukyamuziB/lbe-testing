@@ -15,14 +15,14 @@ class CreateRequestsTable extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('mentee_id')->unsigned();
-            $table->foreign('mentee_id')
-                ->references('id')
-                ->on('users');
-            $table->integer('mentor_id')->unsigned()->nullable();
+            $table->string('mentee_id');
+            $table->string('mentor_id')->nullable();
             $table->string('title');
             $table->text('description');
+            $table->json('interested')->nullable();
             $table->integer('status_id')->unsigned();
+            $table->timestamp('match_date')->nullable();
+            $table->json('pairing');
             $table->timestamps();
         });
     }

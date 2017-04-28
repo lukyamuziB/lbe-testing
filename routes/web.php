@@ -23,7 +23,8 @@ $app->group(['prefix' => 'api/v1'], function($app)
     $app->get('requests', 'RequestController@all');
     $app->get('requests/{id}', 'RequestController@get');
     $app->post('requests', 'RequestController@add');
-    $app->put('requests/{id}', 'RequestController@put');
+    $app->put('requests/{id}', 'RequestController@update');
+    $app->patch('requests/{id}', 'RequestController@updateInterested');
     $app->delete('requests/{id}', 'RequestController@remove');
 });
 

@@ -7,6 +7,8 @@ use Lcobucci\JWT\Parser;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\AccessDeniedException;
 use App\User;
+use App\Request as MentorshipRequest;
+use App\RequestSkill;
 
 class RequestController extends Controller {
 
@@ -17,23 +19,23 @@ class RequestController extends Controller {
 
     public function add(Request $request)
     {
-        $m = self::MODEL;
-        $n = self::MODEL2;
-
-        $this->validate($request, $m::$rules);
+        $mentorship_request = self::MODEL;
+        $request_skill = self::MODEL2;
+        $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
-        $user_array = ['mentee_id' => $user->id, "status_id" => 2];
-        $record = array_merge($request->all(), $user_array);
+        $user_array = ['mentee_id' => $user->uid, "status_id" => 2];
 
-        $mentorship_request = $m::create($record);
-        foreach ($record['skills'] as &$skill) {
-            $n::create([
-                'request_id' => $mentorship_request->id,
-                'skill_id' => $skill
-            ]);
-        }
+        $new_record = $this->filter_request($request->all());
+        $new_record = array_merge($new_record, $user_array);
 
-        return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+        $created_request = $mentorship_request::create($new_record);
+
+        $primary = $request->all()['primary'];
+        $secondary = $request->all()['secondary'];
+        
+        $this->map_request_to_skills($created_request->id, $primary, $secondary);
+
+        return $this->respond(Response::HTTP_CREATED, $created_request);
     }
 
     /**
@@ -41,24 +43,67 @@ class RequestController extends Controller {
      *
      * @param  integer $id Unique ID of the mentorship request
      */
-    public function put(Request $request, $id)
+    public function update(Request $request, $id)
     {
-        $m = self::MODEL;
-
-        $this->validate($request, array());
-
+        $this->validate($request, MentorshipRequest::$rules);
+        
         try {
-            $mentorship_request = $m::find(intval($id));
+            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
 
             if (is_null($mentorship_request)) {
                 throw new NotFoundException("the specified request was not found", 1);
             }
 
-            $parsed_token = (new Parser())->parse((string) $request->bearerToken());
-            $current_user = $parsed_token->getClaim('UserInfo');
+            $current_user = $request->user();
 
-            if ($current_user->id !== $mentorship_request->mentee_id) {
+            if ($current_user->uid !== $mentorship_request->mentee_id) {
                 throw new AccessDeniedException("you don't have permission to edit the mentorship request", 1);
+            }
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (AccessDeniedException $exception) {
+            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
+
+        $new_record = $this->filter_request($request->all());
+        $mentorship_request->fill($new_record)->save();
+        
+        if ($request->primary || $request->secondary) {
+            $this->map_request_to_skills($id, 
+                $request->primary, 
+                $request->secondary
+            );
+        }
+        
+        return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+    }
+
+    /**
+     * Edit a mentorship request interested field
+     *
+     * @param  integer $id Unique ID of the mentorship request
+     */
+    public function updateInterested(Request $request, $id)
+    {
+        $this->validate($request, MentorshipRequest::$mentee_rules);
+        
+        try {
+            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
+
+            if (is_null($mentorship_request)) {
+                throw new NotFoundException("the specified request was not found", 1);
+            }
+
+            $current_user = $request->user();
+
+            if (!$current_user) {
+                throw new AccessDeniedException("you don't have permission to edit the mentorship request", 1);
+            }
+
+            if (array_keys($request->all()) !== ["interested"]) {
+                throw new AccessDeniedException("this request can only accept an array of interested mentors", 1);
             }
 
         } catch (NotFoundException $exception) {
@@ -68,8 +113,45 @@ class RequestController extends Controller {
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
+        
+        $interested = $mentorship_request->interested;
+        if ($interested === NULL) {
+            $interested = array();
+        }
+        // dd($interested);
+        $request->interested = array_unique(array_merge($interested, $request->interested));
+        $mentorship_request->interested = $request->interested;
 
-        $mentorship_request->update($request->all());
+        $mentorship_request->save();
+
         return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+    }
+
+    private function map_request_to_skills($request_id, $primary, $secondary) {
+        if ($primary) {
+            foreach ($primary as $skill) {
+                RequestSkill::create([
+                    "request_id" => $request_id,
+                    "skill_id" => $skill,
+                    "type" => "primary"
+                ]);
+            }
+        }
+
+        if ($secondary) {
+            foreach ($secondary as $skill) {
+                RequestSkill::create([
+                    "request_id" => $request_id,
+                    "skill_id" => $skill,
+                    "type" => "secondary"
+                ]);
+            }
+        }
+    }
+
+     private function filter_request($request) {
+        return array_filter($request, function($value, $key) {
+            return $key !== 'primary' && $key !== 'secondary';
+        }, ARRAY_FILTER_USE_BOTH);
     }
 }

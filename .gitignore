@@ -49,5 +49,8 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
+.vagrant
+.vscodegit
+Vagrantfile
+.vscode
 # End of https://www.gitignore.io/api/laravel,macos

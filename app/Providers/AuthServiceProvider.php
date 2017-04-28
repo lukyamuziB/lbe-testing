@@ -38,7 +38,7 @@ class AuthServiceProvider extends ServiceProvider
             // use the factory to generate the user instance from token payload
             if ($request->input('api_token') || $token) {
                 $user = factory(\App\User::class)->make([
-                    'id' => $parsed_token->getClaim('UserInfo')->id,
+                    'uid' => $parsed_token->getClaim('UserInfo')->id,
                     'name' => $parsed_token->getClaim('UserInfo')->first_name." ".$parsed_token->getClaim('UserInfo')->last_name,
                     'email' => $parsed_token->getClaim('UserInfo')->email,
                     'role' => array_keys((array)$parsed_token->getClaim('UserInfo')->roles)[0],

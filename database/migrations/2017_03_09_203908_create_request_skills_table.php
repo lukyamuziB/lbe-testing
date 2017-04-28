@@ -17,10 +17,12 @@ class CreateRequestSkillsTable extends Migration
             $table->increments('id');
             $table->integer('request_id')->unsigned()->index();
             $table->integer('skill_id')->unsigned()->index();
+            $table->string('type');
             $table->timestamps();
 
             $table->foreign('request_id')->references('id')->on('requests');
             $table->foreign('skill_id')->references('id')->on('skills');
+
         });
     }
 
