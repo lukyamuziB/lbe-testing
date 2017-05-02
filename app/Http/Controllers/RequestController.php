@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Exceptions\Exception;
+use Illuminate\Support\Facades\DB;
 use Lcobucci\JWT\Parser;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\AccessDeniedException;
@@ -16,6 +17,51 @@ class RequestController extends Controller {
     const MODEL2 = "App\RequestSkill";
 
     use RESTActions;
+
+    public function all()
+    {
+        $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
+        $results = array();
+        foreach ($mentorship_requests as $mentorship_request) {
+            $mentorship_request->request_skills = $mentorship_request->requestSkills;
+            $mentorship_request->status = $mentorship_request->status;
+
+            foreach ($mentorship_request->request_skills as $skill) {
+                $skill = $skill->skill;
+            }
+
+            $result = $this->extract_request_data($mentorship_request);
+
+            array_push($results, $result);
+        }
+
+        $response = [
+            'data' => $results
+        ];
+    
+        return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    public function get($id)
+    {
+        $result = MentorshipRequest::find($id);
+            
+        $result->request_skills = $result->requestSkills;
+
+        foreach ($result->request_skills as $skill) {
+            $skill = $skill->skill;
+        }
+        
+        $result->status = $result->status;
+
+        $result = $this->extract_request_data($result);
+
+        $response = [
+            'data' => $result
+        ];
+    
+        return $this->respond(Response::HTTP_OK, $response);
+    }
 
     public function add(Request $request)
     {
@@ -149,9 +195,61 @@ class RequestController extends Controller {
         }
     }
 
-     private function filter_request($request) {
+    private function filter_request($request) {
         return array_filter($request, function($value, $key) {
             return $key !== 'primary' && $key !== 'secondary';
         }, ARRAY_FILTER_USE_BOTH);
+    }
+
+    private function extract_request_data($result)
+    {
+        $formatted_result = (object) array(
+            'id' => $result->id,
+            'mentee_id' => $result->mentee_id,
+            'mentor_id' => $result->mentor_id,
+            'title' => $result->title,
+            'description' => $result->description,
+            'interested' => $result->interested,
+            'status_id' => $result->status_id,
+            'match_date' => $result->match_date,
+            'duration' => $result->duration,
+            'end_date' => $result->end_date,
+            'pairing' => $result->pairing,
+            'request_skills' => $this->filter_request_skills($result->request_skills),
+            'status' => $result->status->name,
+            'created_at' =>$this->format_time($result->created_at),
+            'updated_at' => $this->format_time($result->updated_at)
+
+        );
+
+        return $formatted_result;
+    }
+
+    private function filter_request_skills($request_skills)
+    {
+        $skills = array();
+
+        foreach ($request_skills as $request) {
+            $result = (object) array(
+                'id' => $request->id,
+                'request_id' => $request->request_id,
+                'skill_id' => $request->skill_id,
+                'type' => $request->type,
+                'created_at' =>$this->format_time($request->created_at),
+                'updated_at' => $this->format_time($request->updated_at),
+                'skill_name' => $request->skill->name
+            );
+            array_push($skills, $result);
+        }
+
+        return $skills;
+    }
+
+    private function format_time($time)
+    {
+        if ($time == null) {
+            return null;
+        }
+        return date('Y-m-d H:i:s', $time->getTimestamp());
     }
 }

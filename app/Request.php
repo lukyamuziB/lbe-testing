@@ -14,8 +14,7 @@ class Request extends Model {
         "status_id",
         "match_date",
         "pairing",
-        "primary",
-        "secondary"
+        "duration"
     ];
 
     protected $dates = [];
@@ -32,8 +31,10 @@ class Request extends Model {
         "description" => "required",
         "status_id" => "numeric",
         "match_date" => "date",
-        "pairing.start_time" => "required|date",
-        "pairing.end_time" => "required|date",
+        "duration" => "numeric|required",
+        "end_date" => "date",
+        "pairing.start_time" => "required|date_format:H:i",
+        "pairing.end_time" => "required|date_format:H:i",
         "pairing.days" => "required|array|",
         "pairing.days.*" => "in:monday,tuesday,wednesday,thursday,friday,saturday,sunday",
         "pairing.timezone" => "required|timezone",
@@ -53,8 +54,13 @@ class Request extends Model {
         return $this->belongsTo("App\User");
     }
 
-    public function skills()
+    public function requestSkills()
     {
         return $this->hasMany("App\RequestSkill");
+    }
+
+    public function status()
+    {
+        return $this->belongsTo("App\Status");
     }
 }

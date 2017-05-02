@@ -12,7 +12,7 @@ class StatusTableSeeder extends Seeder
     public function run()
     {
         $faker = Faker\Factory::create();
-        $limit = 2;
+        $limit = 3;
         $status = array('open', 'closed', 'matched');
 
         for ($i = 0; $i < $limit; $i++) {
