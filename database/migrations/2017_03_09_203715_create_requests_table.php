@@ -19,6 +19,7 @@ class CreateRequestsTable extends Migration
             $table->string('mentor_id')->nullable();
             $table->string('title');
             $table->text('description');
+            $table->integer('duration');
             $table->json('interested')->nullable();
             $table->integer('status_id')->unsigned();
             $table->timestamp('match_date')->nullable();

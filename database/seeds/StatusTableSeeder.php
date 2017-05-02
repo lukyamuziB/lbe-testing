@@ -11,7 +11,6 @@ class StatusTableSeeder extends Seeder
      */
     public function run()
     {
-        $faker = Faker\Factory::create();
         $limit = 4;
         $status = array('open', 'matched', 'closed', 'cancelled');
 
