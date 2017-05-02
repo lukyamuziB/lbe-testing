@@ -12,12 +12,12 @@ class StatusTableSeeder extends Seeder
     public function run()
     {
         $faker = Faker\Factory::create();
-        $limit = 3;
-        $status = array('open', 'closed', 'matched');
+        $limit = 4;
+        $status = array('open', 'matched', 'closed', 'cancelled');
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('status')->insert([
-                'name' => $faker->unique()->randomElement($array = $status),
+                'name' => $status[$i]
             ]);
         }
     }

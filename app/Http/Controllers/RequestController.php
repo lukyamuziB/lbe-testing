@@ -87,7 +87,7 @@ class RequestController extends Controller {
         $request_skill = self::MODEL2;
         $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
-        $user_array = ['mentee_id' => $user->uid, "status_id" => 2];
+        $user_array = ['mentee_id' => $user->uid, "status_id" => 1];
 
         $new_record = $this->filter_request($request->all());
         $new_record = array_merge($new_record, $user_array);
