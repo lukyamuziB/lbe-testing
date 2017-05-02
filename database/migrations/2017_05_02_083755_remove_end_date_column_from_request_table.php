@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddDurationAndEndDateColumnsToRequestTable extends Migration
+class RemoveEndDateColumnFromRequestTable extends Migration
 {
     /**
      * Run the migrations.
@@ -14,8 +14,7 @@ class AddDurationAndEndDateColumnsToRequestTable extends Migration
     public function up()
     {
         Schema::table('requests', function (Blueprint $table) {
-            $table->integer('duration')->nullable();
-            $table->timestamp('end_date')->nullable();
+            $table->dropColumn('end_date');
         });
     }
 
@@ -27,8 +26,7 @@ class AddDurationAndEndDateColumnsToRequestTable extends Migration
     public function down()
     {
         Schema::table('requests', function (Blueprint $table) {
-            $table->dropColumn('duration');
-            $table->dropColumn('end_date');
+            $table->timestamp('end_date')->nullable();
         });
     }
 }

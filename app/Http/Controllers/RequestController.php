@@ -18,6 +18,11 @@ class RequestController extends Controller {
 
     use RESTActions;
 
+    /**
+     * Gets all Mentorship Request
+     * 
+     * @return Response Object
+     */
     public function all()
     {
         $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
@@ -42,6 +47,12 @@ class RequestController extends Controller {
         return $this->respond(Response::HTTP_OK, $response);
     }
 
+    /** 
+     * Gets a mentorship request by the request id
+     * 
+     * @param integer $id
+     * @return Response object
+     */
     public function get($id)
     {
         $result = MentorshipRequest::find($id);
@@ -63,6 +74,13 @@ class RequestController extends Controller {
         return $this->respond(Response::HTTP_OK, $response);
     }
 
+    /**
+     * Creates a new Mentorship request and saves in the request table
+     * Also saves the request skills in the request skills table
+     * 
+     * @param object $request Request
+     * @return object Response object of created request 
+     */
     public function add(Request $request)
     {
         $mentorship_request = self::MODEL;
@@ -164,7 +182,6 @@ class RequestController extends Controller {
         if ($interested === NULL) {
             $interested = array();
         }
-        // dd($interested);
         $request->interested = array_unique(array_merge($interested, $request->interested));
         $mentorship_request->interested = $request->interested;
 
@@ -173,6 +190,14 @@ class RequestController extends Controller {
         return $this->respond(Response::HTTP_CREATED, $mentorship_request);
     }
 
+    /**
+     * Maps the skills in the request body by type and saves them in the request_skills table
+     * 
+     * @param integer $request_id the id of the request
+     * @param string $primary type of skill to map
+     * @param string $secondary type of skill to map
+     * @return void
+     */
     private function map_request_to_skills($request_id, $primary, $secondary) {
         if ($primary) {
             foreach ($primary as $skill) {
@@ -195,12 +220,26 @@ class RequestController extends Controller {
         }
     }
 
+    /**
+     * Filter Request
+     * Filter incoming request body to remove object property containing primary and secondary
+     * 
+     * @param object $request
+     * @return object
+     */
     private function filter_request($request) {
         return array_filter($request, function($value, $key) {
             return $key !== 'primary' && $key !== 'secondary';
         }, ARRAY_FILTER_USE_BOTH);
     }
 
+    /**
+     * Extract request data
+     * extracts returned request queries to match data on client side
+     * 
+     * @param object $result
+     * @return object
+     */
     private function extract_request_data($result)
     {
         $formatted_result = (object) array(
@@ -213,7 +252,6 @@ class RequestController extends Controller {
             'status_id' => $result->status_id,
             'match_date' => $result->match_date,
             'duration' => $result->duration,
-            'end_date' => $result->end_date,
             'pairing' => $result->pairing,
             'request_skills' => $this->filter_request_skills($result->request_skills),
             'status' => $result->status->name,
@@ -225,6 +263,13 @@ class RequestController extends Controller {
         return $formatted_result;
     }
 
+    /**
+     * Filter Request Skills
+     * Filter the result from skills table and add to the skills array
+     *
+     * @param array $request_skills
+     * @return array $skills
+     */
     private function filter_request_skills($request_skills)
     {
         $skills = array();
@@ -245,6 +290,13 @@ class RequestController extends Controller {
         return $skills;
     }
 
+    /**
+     * format time
+     * checks if the given time is null and returns null else it returns the time in the date format
+     *
+     * @param string $time
+     * @return void
+     */
     private function format_time($time)
     {
         if ($time == null) {

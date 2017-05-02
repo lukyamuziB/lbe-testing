@@ -32,7 +32,6 @@ class Request extends Model {
         "status_id" => "numeric",
         "match_date" => "date",
         "duration" => "numeric|required",
-        "end_date" => "date",
         "pairing.start_time" => "required|date_format:H:i",
         "pairing.end_time" => "required|date_format:H:i",
         "pairing.days" => "required|array|",
