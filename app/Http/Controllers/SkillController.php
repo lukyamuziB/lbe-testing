@@ -46,7 +46,7 @@ class SkillController extends Controller
                 return $this->respond(Response::HTTP_OK, ["data" => $matched_skill->all()]);
             }
         } else {
-            return $this->respond(Response::HTTP_OK, ["data" => $m::all()]);
+            return $this->respond(Response::HTTP_OK, ["data" => $m::orderBy('name')->get()]);
         }
     }
 }

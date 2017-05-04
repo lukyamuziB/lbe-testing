@@ -20,13 +20,13 @@ class RequestController extends Controller {
 
     /**
      * Gets all Mentorship Request
-     * 
+     *
      * @return Response Object
      */
     public function all()
     {
         $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
-        $results = array();
+        $results = [];
         foreach ($mentorship_requests as $mentorship_request) {
             $mentorship_request->request_skills = $mentorship_request->requestSkills;
             $mentorship_request->status = $mentorship_request->status;
@@ -35,7 +35,7 @@ class RequestController extends Controller {
                 $skill = $skill->skill;
             }
 
-            $result = $this->extract_request_data($mentorship_request);
+            $result = $this->format_request_data($mentorship_request);
 
             array_push($results, $result);
         }
@@ -43,43 +43,43 @@ class RequestController extends Controller {
         $response = [
             'data' => $results
         ];
-    
+
         return $this->respond(Response::HTTP_OK, $response);
     }
 
-    /** 
+    /**
      * Gets a mentorship request by the request id
-     * 
+     *
      * @param integer $id
      * @return Response object
      */
     public function get($id)
     {
         $result = MentorshipRequest::find($id);
-            
+
         $result->request_skills = $result->requestSkills;
 
         foreach ($result->request_skills as $skill) {
             $skill = $skill->skill;
         }
-        
+
         $result->status = $result->status;
 
-        $result = $this->extract_request_data($result);
+        $result = $this->format_request_data($result);
 
         $response = [
             'data' => $result
         ];
-    
+
         return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
      * Creates a new Mentorship request and saves in the request table
      * Also saves the request skills in the request skills table
-     * 
+     *
      * @param object $request Request
-     * @return object Response object of created request 
+     * @return object Response object of created request
      */
     public function add(Request $request)
     {
@@ -96,7 +96,7 @@ class RequestController extends Controller {
 
         $primary = $request->all()['primary'];
         $secondary = $request->all()['secondary'];
-        
+
         $this->map_request_to_skills($created_request->id, $primary, $secondary);
 
         return $this->respond(Response::HTTP_CREATED, $created_request);
@@ -110,7 +110,7 @@ class RequestController extends Controller {
     public function update(Request $request, $id)
     {
         $this->validate($request, MentorshipRequest::$rules);
-        
+
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
 
@@ -133,14 +133,14 @@ class RequestController extends Controller {
 
         $new_record = $this->filter_request($request->all());
         $mentorship_request->fill($new_record)->save();
-        
+
         if ($request->primary || $request->secondary) {
-            $this->map_request_to_skills($id, 
-                $request->primary, 
+            $this->map_request_to_skills($id,
+                $request->primary,
                 $request->secondary
             );
         }
-        
+
         return $this->respond(Response::HTTP_CREATED, $mentorship_request);
     }
 
@@ -152,7 +152,7 @@ class RequestController extends Controller {
     public function updateInterested(Request $request, $id)
     {
         $this->validate($request, MentorshipRequest::$mentee_rules);
-        
+
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
 
@@ -177,10 +177,10 @@ class RequestController extends Controller {
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-        
+
         $interested = $mentorship_request->interested;
         if ($interested === NULL) {
-            $interested = array();
+            $interested = [];
         }
         $request->interested = array_unique(array_merge($interested, $request->interested));
         $mentorship_request->interested = $request->interested;
@@ -192,7 +192,7 @@ class RequestController extends Controller {
 
     /**
      * Maps the skills in the request body by type and saves them in the request_skills table
-     * 
+     *
      * @param integer $request_id the id of the request
      * @param string $primary type of skill to map
      * @param string $secondary type of skill to map
@@ -223,7 +223,7 @@ class RequestController extends Controller {
     /**
      * Filter Request
      * Filter incoming request body to remove object property containing primary and secondary
-     * 
+     *
      * @param object $request
      * @return object
      */
@@ -234,13 +234,13 @@ class RequestController extends Controller {
     }
 
     /**
-     * Extract request data
+     * Format request data
      * extracts returned request queries to match data on client side
-     * 
+     *
      * @param object $result
      * @return object
      */
-    private function extract_request_data($result)
+    private function format_request_data($result)
     {
         $formatted_result = (object) array(
             'id' => $result->id,
@@ -253,7 +253,7 @@ class RequestController extends Controller {
             'match_date' => $result->match_date,
             'duration' => $result->duration,
             'pairing' => $result->pairing,
-            'request_skills' => $this->filter_request_skills($result->request_skills),
+            'request_skills' => $this->format_request_skills($result->request_skills),
             'status' => $result->status->name,
             'created_at' =>$this->format_time($result->created_at),
             'updated_at' => $this->format_time($result->updated_at)
@@ -264,25 +264,21 @@ class RequestController extends Controller {
     }
 
     /**
-     * Filter Request Skills
+     * Format Request Skills
      * Filter the result from skills table and add to the skills array
      *
      * @param array $request_skills
      * @return array $skills
      */
-    private function filter_request_skills($request_skills)
+    private function format_request_skills($request_skills)
     {
-        $skills = array();
+        $skills = [];
 
         foreach ($request_skills as $request) {
             $result = (object) array(
-                'id' => $request->id,
-                'request_id' => $request->request_id,
-                'skill_id' => $request->skill_id,
+                'id' => $request->skill_id,
                 'type' => $request->type,
-                'created_at' =>$this->format_time($request->created_at),
-                'updated_at' => $this->format_time($request->updated_at),
-                'skill_name' => $request->skill->name
+                'name' => $request->skill->name
             );
             array_push($skills, $result);
         }
@@ -302,6 +298,7 @@ class RequestController extends Controller {
         if ($time == null) {
             return null;
         }
+
         return date('Y-m-d H:i:s', $time->getTimestamp());
     }
 }
