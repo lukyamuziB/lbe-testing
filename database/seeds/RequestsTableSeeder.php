@@ -24,6 +24,7 @@ class RequestsTableSeeder extends Seeder
                 'created_at' => $faker->date($format = 'Y-m-d H:i:s', $max = 'now'),
                 'updated_at' => null,
                 'match_date' => null,
+                'duration' => $faker->numberBetween($min = 1, $max = 12),
                 'pairing' => json_encode([
                     'start_time' => '2017-04-27T18:17:10+00:00',
                     'end_time' => '2017-05-27T18:17:10+00:00',
