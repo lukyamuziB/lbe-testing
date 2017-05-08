@@ -25,12 +25,12 @@ class Request extends Model {
     ];
 
     public static $rules = [
-        "mentee_id" => "numeric",
-        "mentor_id" => "numeric",
+        "mentee_id" => "required|string",
+        "mentor_id" => "string",
         "title" => "required",
         "description" => "required",
         "status_id" => "numeric",
-        "match_date" => "date",
+        "match_date" => "date_format: Y-m-d H:i:s",
         "duration" => "numeric|required",
         "pairing.start_time" => "required|date_format:H:i",
         "pairing.end_time" => "required|date_format:H:i",
@@ -48,6 +48,12 @@ class Request extends Model {
         "interested.*" => "string|regex:/\w+/",
     ];
 
+    public static $mentor_update_rules = [
+        "mentor_id" => "required|string",
+        "mentee_name" => "required|string",
+        "match_date" => "numeric|required"
+    ];
+
     public function users()
     {
         return $this->belongsTo("App\User");
@@ -62,4 +68,5 @@ class Request extends Model {
     {
         return $this->belongsTo("App\Status");
     }
+
 }

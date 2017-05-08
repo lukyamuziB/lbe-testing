@@ -54,3 +54,6 @@ Temporary Items
 Vagrantfile
 .vscode
 # End of https://www.gitignore.io/api/laravel,macos
+
+#vscode settings
+.vscode/

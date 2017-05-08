@@ -1,15 +1,24 @@
-<?php namespace App\Http\Controllers;
+<?php
+
+namespace App\Http\Controllers;
+
+use App\User;
+use App\Status;
+use App\Request as MentorshipRequest;
+use App\RequestSkill;
+
+use App\Exceptions\Exception;
+use App\Exceptions\NotFoundException;
+use App\Exceptions\AccessDeniedException;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Exceptions\Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+
 use Lcobucci\JWT\Parser;
-use App\Exceptions\NotFoundException;
-use App\Exceptions\AccessDeniedException;
-use App\User;
-use App\Request as MentorshipRequest;
-use App\RequestSkill;
+use GuzzleHttp\Client;
+
 
 class RequestController extends Controller {
 
@@ -19,7 +28,7 @@ class RequestController extends Controller {
     use RESTActions;
 
     /**
-     * Gets all Mentorship Request
+     * Gets all Mentorship Requests
      *
      * @return Response Object
      */
@@ -188,6 +197,72 @@ class RequestController extends Controller {
         $mentorship_request->save();
 
         return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+    }
+
+    /**
+     * Edit a mentorship request mentor_id field
+     *
+     * @param  integer $id Unique ID of the mentorship request
+     */
+    public function updateMentor(Request $request, $id)
+    {
+        $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
+
+        $this->validate($request, MentorshipRequest::$mentor_update_rules);
+
+        try {
+            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
+
+            if (is_null($mentorship_request)) {
+                throw new NotFoundException("The specified request was not found", 1);
+            }
+
+            $current_user = $request->user();
+
+            if ($current_user->uid !== $mentorship_request->mentee_id) {
+                throw new AccessDeniedException("you don't have permission to edit the mentorship request", 1);
+            }
+
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
+
+        $mentorship_request->mentor_id = $request->mentor_id;
+        $mentorship_request->match_date = $request->match_date;
+ +      $mentorship_request->status_id = Status::MATCHED;
+
+        $mentorship_request->save();
+
+        // Fetching the email address of the mentor for the email we are about to send
+        $client = new Client();
+
+        $auth_header = $request->header("Authorization");
+
+        $staging_url = getenv('API_STAGING_URL');
+
+        $response = $client->request('GET', "{$staging_url}/users/{$request->mentor_id}", [
+            'headers' => ['Authorization' => $auth_header]
+        ]);
+
+        $body = json_decode($response->getBody(), true);
+
+        $this->recipients_email = $body['email'];
+
+        $mentee_name = $request->mentee_name;
+
+        $this->data = [
+            'content' => "{$mentee_name} selected you as a mentor",
+            'title' => 'Mentorship interest accepted',
+        ];
+
+        Mail::send(['html' => 'email'], $this->data, function($msg){
+            $msg->to([$this->recipients_email]);
+            $msg->from(['lenken-tech@andela.com']);
+        });
+
+        return $this->respond(Response::HTTP_OK, $mentorship_request);
     }
 
     /**

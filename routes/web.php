@@ -25,6 +25,7 @@ $app->group(['prefix' => 'api/v1'], function($app)
     $app->post('requests', 'RequestController@add');
     $app->put('requests/{id}', 'RequestController@update');
     $app->patch('requests/{id}', 'RequestController@updateInterested');
+    $app->patch('requests/{id}/update-mentor', 'RequestController@updateMentor');
     $app->delete('requests/{id}', 'RequestController@remove');
 });
 
