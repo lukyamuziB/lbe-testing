@@ -2,7 +2,8 @@
 
 use Illuminate\Database\Eloquent\Model;
 
-class Request extends Model {
+class Request extends Model
+{
 
     protected $table = 'requests';
 
@@ -25,7 +26,7 @@ class Request extends Model {
     ];
 
     public static $rules = [
-        "mentee_id" => "required|string",
+        "mentee_id" => "string",
         "mentor_id" => "string",
         "title" => "required",
         "description" => "required",
@@ -68,5 +69,4 @@ class Request extends Model {
     {
         return $this->belongsTo("App\Status");
     }
-
 }

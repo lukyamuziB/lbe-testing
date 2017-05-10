@@ -37,7 +37,7 @@ class RequestController extends Controller
         /** generic collection to hold requests to be sent as response **/
         $mentorship_requests =[];
 
-        if ($request->input('mine')) {
+        if ($request->input('self')) {
             $mentorship_requests = $this->getMenteeRequests($request->user()->uid);
         } elseif ($request->input('mentor')) {
             $mentorship_requests = $this->getMentorRequests($request->user()->uid);
@@ -211,7 +211,7 @@ class RequestController extends Controller
                 'title' => "Hello {$mentee_name},",
             ];
 
-            Mail::send(['html' => 'email'], $this->data, function($msg){
+            Mail::send(['html' => 'email'], $this->data, function ($msg) {
                 $msg->subject('Lenken Notification');
                 $msg->to([$this->mentee_email]);
                 $msg->from(['lenken-tech@andela.com']);
@@ -273,8 +273,8 @@ class RequestController extends Controller
         try {
             $body = $this->get_user_details($request, $request->mentor_id);
             $this->recipients_email = $body['email'];
-            
-            Mail::send(['html' => 'email'], $this->data, function($msg){
+
+            Mail::send(['html' => 'email'], $this->data, function ($msg) {
                 $msg->subject('Lenken Notification');
                 $msg->to([$this->recipients_email]);
                 $msg->from(['lenken-tech@andela.com']);
@@ -449,7 +449,7 @@ class RequestController extends Controller
      * @param string $id the user id
      * @return array of the json encoded response
      */
-    private function get_user_details($request, $id) 
+    private function get_user_details($request, $id)
     {
         $client = new Client();
 
