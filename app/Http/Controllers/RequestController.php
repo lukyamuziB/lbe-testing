@@ -298,6 +298,10 @@ class RequestController extends Controller
      */
     private function map_request_to_skills($request_id, $primary, $secondary)
     {
+        // Delete all skills from the request_skills table that match the given
+        // $request_id before performing another insert
+        RequestSkill::where('request_id', $request_id)->delete();
+
         if ($primary) {
             foreach ($primary as $skill) {
                 RequestSkill::create([
@@ -373,7 +377,6 @@ class RequestController extends Controller
     private function format_request_skills($request_skills)
     {
         $skills = [];
-
         foreach ($request_skills as $request) {
             $result = (object) array(
                 'id' => $request->skill_id,
