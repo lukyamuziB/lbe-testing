@@ -458,7 +458,8 @@ class RequestController extends Controller
         $staging_url = getenv('API_STAGING_URL');
 
         $response = $client->request('GET', "{$staging_url}/users/{$id}", [
-            'headers' => ['Authorization' => $auth_header]
+            'headers' => ['Authorization' => $auth_header],
+            'verify' => false
         ]);
 
         return json_decode($response->getBody(), true);
