@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\Mail;
 use Lcobucci\JWT\Parser;
 use GuzzleHttp\Client;
 
-
-class RequestController extends Controller {
+class RequestController extends Controller
+{
 
     const MODEL = "App\Request";
     const MODEL2 = "App\RequestSkill";
@@ -32,25 +32,24 @@ class RequestController extends Controller {
      *
      * @return Response Object
      */
-    public function all()
+    public function all(Request $request)
     {
-        $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
-        $results = [];
-        foreach ($mentorship_requests as $mentorship_request) {
-            $mentorship_request->request_skills = $mentorship_request->requestSkills;
-            $mentorship_request->status = $mentorship_request->status;
+        /** generic collection to hold requests to be sent as response **/
+        $mentorship_requests =[];
 
-            foreach ($mentorship_request->request_skills as $skill) {
-                $skill = $skill->skill;
-            }
-
-            $result = $this->format_request_data($mentorship_request);
-
-            array_push($results, $result);
+        if ($request->input('mine')) {
+            $mentorship_requests = $this->getMenteeRequests($request->user()->uid);
+        } elseif ($request->input('mentor')) {
+            $mentorship_requests = $this->getMentorRequests($request->user()->uid);
+        } else {
+            $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
         }
 
+        // transform the result objects into API ready responses
+        $transformed_mentorship_requests = $this->transformRequestData($mentorship_requests);
+
         $response = [
-            'data' => $results
+            'data' => $transformed_mentorship_requests
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
@@ -178,7 +177,6 @@ class RequestController extends Controller {
             if (array_keys($request->all()) !== ["interested"]) {
                 throw new AccessDeniedException("this request can only accept an array of interested mentors", 1);
             }
-
         } catch (NotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
         } catch (AccessDeniedException $exception) {
@@ -188,7 +186,7 @@ class RequestController extends Controller {
         }
 
         $interested = $mentorship_request->interested;
-        if ($interested === NULL) {
+        if ($interested === null) {
             $interested = [];
         }
         $request->interested = array_unique(array_merge($interested, $request->interested));
@@ -222,7 +220,6 @@ class RequestController extends Controller {
             if ($current_user->uid !== $mentorship_request->mentee_id) {
                 throw new AccessDeniedException("you don't have permission to edit the mentorship request", 1);
             }
-
         } catch (NotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
         } catch (Exception $exception) {
@@ -231,7 +228,7 @@ class RequestController extends Controller {
 
         $mentorship_request->mentor_id = $request->mentor_id;
         $mentorship_request->match_date = $request->match_date;
- +      $mentorship_request->status_id = Status::MATCHED;
+        $mentorship_request->status_id = Status::MATCHED;
 
         $mentorship_request->save();
 
@@ -257,7 +254,7 @@ class RequestController extends Controller {
             'title' => 'Mentorship interest accepted',
         ];
 
-        Mail::send(['html' => 'email'], $this->data, function($msg){
+        Mail::send(['html' => 'email'], $this->data, function ($msg) {
             $msg->to([$this->recipients_email]);
             $msg->from(['lenken-tech@andela.com']);
         });
@@ -273,7 +270,8 @@ class RequestController extends Controller {
      * @param string $secondary type of skill to map
      * @return void
      */
-    private function map_request_to_skills($request_id, $primary, $secondary) {
+    private function map_request_to_skills($request_id, $primary, $secondary)
+    {
         if ($primary) {
             foreach ($primary as $skill) {
                 RequestSkill::create([
@@ -302,8 +300,9 @@ class RequestController extends Controller {
      * @param object $request
      * @return object
      */
-    private function filter_request($request) {
-        return array_filter($request, function($value, $key) {
+    private function filter_request($request)
+    {
+        return array_filter($request, function ($value, $key) {
             return $key !== 'primary' && $key !== 'secondary';
         }, ARRAY_FILTER_USE_BOTH);
     }
@@ -375,5 +374,42 @@ class RequestController extends Controller {
         }
 
         return date('Y-m-d H:i:s', $time->getTimestamp());
+    }
+
+    /**
+     * Returns the requests for a particular mentee
+     *
+     * @param string $user_id
+     * @return Response Object
+     */
+    private function getMenteeRequests($user_id)
+    {
+        return MentorshipRequest::where('mentee_id', $user_id)
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+    }
+
+    /**
+     * Method that transforms the mentorship requests into a response object
+     *
+     * @param array $mentorship_requests
+     * @return Response Object
+     */
+    private function transformRequestData($mentorship_requests)
+    {
+        $transformed_mentorship_requests = [];
+        foreach ($mentorship_requests as $mentorship_request) {
+            $mentorship_request->request_skills = $mentorship_request->requestSkills;
+
+            foreach ($mentorship_request->request_skills as $skill) {
+                $skill = $skill->skill;
+            }
+
+            $transformed_mentorship_request = $this->format_request_data($mentorship_request);
+
+            array_push($transformed_mentorship_requests, $transformed_mentorship_request);
+        }
+
+        return $transformed_mentorship_requests;
     }
 }
