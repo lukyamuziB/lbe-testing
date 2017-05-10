@@ -190,9 +190,37 @@ class RequestController extends Controller
             $interested = [];
         }
         $request->interested = array_unique(array_merge($interested, $request->interested));
+
         $mentorship_request->interested = $request->interested;
 
         $mentorship_request->save();
+
+        $mentor_name = $current_user->name;
+        $mentee_id = $mentorship_request->mentee_id;
+        $request_url = getenv('BASE_URL') . "/requests/{$id}";
+
+        try {
+            $mentee_details = $this->get_user_details($request, $mentee_id);
+
+            $mentee_name = $mentee_details['name'];
+            $this->mentee_email = $mentee_details['email'];
+
+            $this->data = [
+                'content' => "{$mentor_name} has indicated interest in mentoring you.
+                You can view the details of the request here {$request_url}",
+                'title' => "Hello {$mentee_name},",
+            ];
+
+            Mail::send(['html' => 'email'], $this->data, function($msg){
+                $msg->subject('Lenken Notification');
+                $msg->to([$this->mentee_email]);
+                $msg->from(['lenken-tech@andela.com']);
+            });
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
 
         return $this->respond(Response::HTTP_CREATED, $mentorship_request);
     }
@@ -204,9 +232,9 @@ class RequestController extends Controller
      */
     public function updateMentor(Request $request, $id)
     {
-        $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
-
         $this->validate($request, MentorshipRequest::$mentor_update_rules);
+
+        $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
 
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
@@ -232,32 +260,30 @@ class RequestController extends Controller
 
         $mentorship_request->save();
 
-        // Fetching the email address of the mentor for the email we are about to send
-        $client = new Client();
-
-        $auth_header = $request->header("Authorization");
-
-        $staging_url = getenv('API_STAGING_URL');
-
-        $response = $client->request('GET', "{$staging_url}/users/{$request->mentor_id}", [
-            'headers' => ['Authorization' => $auth_header]
-        ]);
-
-        $body = json_decode($response->getBody(), true);
-
-        $this->recipients_email = $body['email'];
-
         $mentee_name = $request->mentee_name;
 
+        $request_url = getenv('BASE_URL') . "/requests/{$id}/mentor";
+
         $this->data = [
-            'content' => "{$mentee_name} selected you as a mentor",
+            'content' => "{$mentee_name} selected you as a mentor
+            You can view the details of the request here {$request_url}",
             'title' => 'Mentorship interest accepted',
         ];
 
-        Mail::send(['html' => 'email'], $this->data, function ($msg) {
-            $msg->to([$this->recipients_email]);
-            $msg->from(['lenken-tech@andela.com']);
-        });
+        try {
+            $body = $this->get_user_details($request, $request->mentor_id);
+            $this->recipients_email = $body['email'];
+            
+            Mail::send(['html' => 'email'], $this->data, function($msg){
+                $msg->subject('Lenken Notification');
+                $msg->to([$this->recipients_email]);
+                $msg->from(['lenken-tech@andela.com']);
+            });
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
 
         return $this->respond(Response::HTTP_OK, $mentorship_request);
     }
@@ -411,5 +437,27 @@ class RequestController extends Controller
         }
 
         return $transformed_mentorship_requests;
+    }
+
+    /**
+     * get user details
+     *
+     * @param array $request the request facade
+     * @param string $id the user id
+     * @return array of the json encoded response
+     */
+    private function get_user_details($request, $id) 
+    {
+        $client = new Client();
+
+        $auth_header = $request->header("Authorization");
+
+        $staging_url = getenv('API_STAGING_URL');
+
+        $response = $client->request('GET', "{$staging_url}/users/{$id}", [
+            'headers' => ['Authorization' => $auth_header]
+        ]);
+
+        return json_decode($response->getBody(), true);
     }
 }
