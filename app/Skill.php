@@ -8,6 +8,10 @@ class Skill extends Model
 {
     protected $fillable = ['name'];
 
+    public static $rules = [
+       "name" => "required|string"
+    ];
+
     /**
      * Lookup a skill that matches the argument
      *
