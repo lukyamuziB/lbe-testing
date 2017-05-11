@@ -10,8 +10,8 @@ class Status extends Model
 
     protected $fillable = ['name'];
 
-    const OPEN = 0;
-    const MATCHED = 1;
-    const CLOSED = 2;
-    const CANCELLED = 3;
+    const OPEN = 1;
+    const MATCHED = 2;
+    const CLOSED = 3;
+    const CANCELLED = 4;
 }
