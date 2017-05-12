@@ -12,13 +12,8 @@ class Skill extends Model
        "name" => "required|string"
     ];
 
-    /**
-     * Lookup a skill that matches the argument
-     *
-     * @param  string $name Name of the skill
-     */
-    public static function findMatching($name)
+    public function userSkills()
     {
-        return self::where('name', 'iLIKE', "%$name%")->get();
+        return $this->hasMany('App\UserSkill', 'skill_id', 'id');
     }
 }
