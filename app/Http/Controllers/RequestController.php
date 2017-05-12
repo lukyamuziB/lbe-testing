@@ -289,6 +289,26 @@ class RequestController extends Controller
     }
 
     /**
+     * Set a request status to cancelled
+     *
+     * @param integer $id Unique ID used to identify the request
+     */
+    public function cancelRequest(Request $request, $id)
+    {
+        try {
+            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
+            $mentorship_request->status_id = Status::CANCELLED;
+            $mentorship_request->save();
+
+            $this->respond(Response::HTTP_OK, ["message" => "Request Cancelled"]);
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        }
+
+        return $this->respond(Response::HTTP_OK, $mentorship_request);
+    }
+
+    /**
      * Maps the skills in the request body by type and saves them in the request_skills table
      *
      * @param integer $request_id the id of the request
