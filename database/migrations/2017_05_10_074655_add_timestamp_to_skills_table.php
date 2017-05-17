@@ -26,7 +26,8 @@ class AddTimestampToSkillsTable extends Migration
     public function down()
     {
         Schema::table('skills', function($table) {
-            $table->dropColumn('timestamps');
+            $table->dropColumn('updated_at');
+            $table->dropColumn('created_at');
         });
     }
 }
