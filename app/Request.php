@@ -39,7 +39,7 @@ class Request extends Model
         "pairing.days.*" => "in:monday,tuesday,wednesday,thursday,friday,saturday,sunday",
         "pairing.timezone" => "required|timezone",
         "primary" => "required|array",
-        "secondary" => "required|array",
+        "secondary" => "array",
         "primary.*" => "numeric|min:1",
         "secondary.*" => "numeric|min:1"
     ];
