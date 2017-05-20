@@ -41,6 +41,9 @@ class RequestController extends Controller
             $mentorship_requests = $this->getMenteeRequests($request->user()->uid);
         } elseif ($request->input('mentor')) {
             $mentorship_requests = $this->getMentorRequests($request->user()->uid);
+        } elseif ($request->input('period')) {
+            $limit = $request->input('limit');
+            $mentorship_requests = $this->getRequestsByDate($request->input('period'), $limit);
         } else {
             $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
         }
@@ -436,6 +439,50 @@ class RequestController extends Controller
         return MentorshipRequest::where('mentee_id', $user_id)
                                 ->orderBy('created_at', 'desc')
                                 ->get();
+    }
+
+
+    /**
+     * Returns a list of requests filtered by date
+     *
+     * @param string $period
+     * @param string $limit
+     * @return Response Object
+     */
+    private function getRequestsByDate($period, $limit)
+    {
+        $date = '';
+
+        switch ($period) {
+            // one week
+            case '1':
+                $date = date('Y-m-d H:i:s', strtotime('-1 week'));
+                break;
+
+            // last two weeks
+            case '2':
+                $date = date('Y-m-d H:i:s', strtotime('-2 week'));
+                break;
+
+            // last four weeks (1 month)
+            case '4':
+                $date = date('Y-m-d H:i:s', strtotime('-4 week'));
+                break;
+
+            // last eight weeks (2 months)
+            case '8':
+                $date = date('Y-m-d H:i:s', strtotime('-8 week'));
+                break;
+            default:
+                $date = date('Y-m-d H:i:s', strtotime('January 1 1970'));
+        }
+
+        return MentorshipRequest::whereDate('created_at', '>=', $date)
+                                ->orderBy('created_at', 'desc')
+                                ->limit($limit)
+                                ->get();
+
+
     }
 
     /**
