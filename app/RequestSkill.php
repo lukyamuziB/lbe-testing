@@ -23,4 +23,9 @@ class RequestSkill extends Model {
     {
         return $this->belongsTo("App\Skill");
     }
+
+    public function userSkills()
+    {
+        return $this->belongsTo("App\UserSkill");
+    }
 }

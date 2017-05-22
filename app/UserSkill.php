@@ -25,4 +25,9 @@ class UserSkill extends Model
     {
         return $this->hasOne("App\Skill", 'id', 'skill_id');
     }
+
+    public function matchingRequests()
+    {
+        return $this->hasMany('App\RequestSkill', 'skill_id', 'skill_id')->with('request');
+    }
 }
