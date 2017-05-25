@@ -6,13 +6,12 @@ Below are the steps required to successfully install and start the lenken-server
 
 ## Technologies Used
 - Php 7
-- TypeScript
-- Angular V2
 - Composer
 - Lumen
 - Postgres SQL
 - Redis
 - Peridot
+
 
 ## Getting Started
 _*Manual Installation*_
@@ -20,14 +19,15 @@ _*Manual Installation*_
 - Install [Redis](https://redis.io/download)
 - Install [Postresql ](https://www.postgresql.org/download/)
 - Install [Composer](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-osx)
-- Run ```Composer install``` in your terminal to install dependencies 
+- Install [PHP CodeSniffer](https://github.com/andela/lenken-server/wiki/Installing-PHP-Code-Sniffer-with-Composer)
+- Install [PHP Mess Detector](https://github.com/andela/lenken-server/wiki/Installing-PHP-Mess-Detector-with-Composer)
+- Run ```Composer install``` in your terminal to install dependencies
 - Copy the .env.sample file and rename it to .env
 - Fill in the required settings values for the .env settings
 - Run ```php artisan migrate``` to create the tables
 - Run ```php artisan db:seed``` to seed the tables
-- Start the server with ```php -S <hostname>:<port>```
-
-
+- Run ```cd public``` to navigate to the entry point, `index.php`
+- Start the server with ```php -S <localhost>:<port>```
 
 
 ## How to Install/Upgrade Php Mac
@@ -45,6 +45,11 @@ Then re-run the commands above.
   - Test files are located at `~/tests`
   - Run ```composer test``` to run tests
 
+## CodeStyle
+- To contribute, you MUST adhere to the style guide as provided by:
+  - [phpcs](https://github.com/andela/lenken-server/wiki/Installing-PHP-Code-Sniffer-with-Composer)
+  - [phpmd](https://github.com/andela/lenken-server/wiki/Installing-PHP-Mess-Detector-with-Composer)
+
 ## Contribute
 
-[Engineering Playbook](https://github.com/andela/engineering-playbook/)
+- [Engineering Playbook](https://github.com/andela/engineering-playbook/)
