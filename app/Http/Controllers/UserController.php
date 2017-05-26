@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+
+use App\Request as MentorshipRequest;
 use App\UserSkill;
 use App\Skill;
 
@@ -23,7 +25,7 @@ class UserController extends Controller
 
         $staging_url = getenv('API_STAGING_URL');
 
-        $response = $client->request('GET', '{$staging_url}/users/{$id}', [
+        $response = $client->request('GET', $staging_url.'/users/'.$id, [
             'headers' => ['Authorization' => $auth_header],
             'verify' => false
         ]);
@@ -42,11 +44,26 @@ class UserController extends Controller
             array_push($user_skills, $extracted_skills);
         }
 
+        $request_count = $this->getMenteeRequests($id);
+
         $response = [
             "data" => $body,
-            "skills" => $user_skills
+            "skills" => $user_skills,
+            "request_count" => $request_count
         ];
         
         return $response;
+    }
+
+    /**
+     * Returns the requests for a particular mentee
+     *
+     * @param string $user_id
+     * @return integer total number of mentorship request made
+     */
+    private function getMenteeRequests($user_id)
+    {
+        return MentorshipRequest::where('mentee_id', $user_id)
+            ->count();
     }
 }
