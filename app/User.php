@@ -18,15 +18,14 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        'name', 'email',
+        "user_id",
+        "slack_id",
+        "email"
     ];
 
-    /**
-     * The attributes excluded from the model's JSON form.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'password',
+    public static $rules = [
+        "user_id" => "required|string",
+        "slack_id"=>"string",
+        "email"=>"required|string"            
     ];
 }
