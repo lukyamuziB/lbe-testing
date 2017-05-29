@@ -44,7 +44,7 @@ class Request extends Model
         "secondary" => "array",
         "primary.*" => "numeric|min:1",
         "secondary.*" => "numeric|min:1",
-        "location" => "string|required",
+        "location" => "string",
     ];
 
     public static $mentee_rules = [
