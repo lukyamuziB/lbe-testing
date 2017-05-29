@@ -31,7 +31,8 @@ class SkillController extends Controller
             return $this->getUserSkills($input['id']);
         } else if (array_keys($input) === ['q']) {
             if (!preg_match("/^[a-zA-Z0-9-]+$/", $input['q'])) {
-                return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => "only alphanumeric characters and hyphens allowed"]);
+                return $this->respond(Response::HTTP_BAD_REQUEST,
+                    ["message" => "only alphanumeric characters and hyphens allowed"]);
             }
 
             $search_query = $input['q'];
@@ -45,17 +46,25 @@ class SkillController extends Controller
 
     /**
      * GET all skills that belongs to a user
-     * 
+     *
      * @param string $user_id
      *
      * @return json JSON object containing skill(s)
      */
     private function getUserSkills($user_id)
     {
-        $user_skills = UserSkill::where('user_id', $user_id)->with('skill')->get();
+        $user_skills = UserSkill::where('user_id', $user_id)
+                                ->with('skill')
+                                ->get()
+                                ->toArray();
+
+        // pluck just skills out
+        $skills = array_map(function ($user_skill) {
+          return $user_skill["skill"];
+        }, $user_skills);
 
         $response = [
-            'data' => $user_skills
+            "data" => $skills
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
