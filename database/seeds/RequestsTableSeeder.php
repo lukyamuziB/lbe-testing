@@ -30,7 +30,8 @@ class RequestsTableSeeder extends Seeder
                     'end_time' => '2017-05-27T18:17:10+00:00',
                     'days' => ['monday'],
                     'timezone' => 'EAT'
-                ])
+                ]),
+                'location' => $faker->randomElement($array = array('NBO', 'LOS'))
             ]);
         }
     }

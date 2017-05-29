@@ -33,15 +33,16 @@ class RequestController extends Controller
     {
         // generic collection to hold requests to be sent as response
         $mentorship_requests =[];
+
+        $where_clause = MentorshipRequest::buildWhereClause($request);
+
         if ($request->input('self')) {
-            $mentorship_requests = $this->getMenteeRequests($request->user()->uid);
+            $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $where_clause);
         } elseif ($request->input('mentor')) {
-            $mentorship_requests = $this->getAllRequestByMentorSkills($request->user()->uid);
-        } elseif ($request->input('period')) {
-            $limit = $request->input('limit');
-            $mentorship_requests = $this->getRequestsByDate($request->input('period'), $limit);
+            $mentorship_requests = $this->getAllRequestByMentorSkills($request->user()->uid, $where_clause);
         } else {
-            $mentorship_requests = MentorshipRequest::orderBy('created_at', 'desc')->get();
+            $mentorship_requests = MentorshipRequest::where($where_clause)
+                                                    ->orderBy('created_at', 'desc')->get();
         }
         // transform the result objects into API ready responses
         $transformed_mentorship_requests = $this->transformRequestData($mentorship_requests);
@@ -62,11 +63,9 @@ class RequestController extends Controller
     {
         $result = MentorshipRequest::find($id);
         $result->request_skills = $result->requestSkills;
-
         foreach ($result->request_skills as $skill) {
             $skill = $skill->skill;
         }
-
         $result = $this->format_request_data($result);
         $response = [
             'data' => $result
@@ -126,11 +125,9 @@ class RequestController extends Controller
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-
         $new_record = $this->filter_request($request->all());
 
         $mentorship_request->fill($new_record)->save();
-
         if ($request->primary || $request->secondary) {
             $this->map_request_to_skills($id,
                 $request->primary,
@@ -169,20 +166,16 @@ class RequestController extends Controller
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-
         $interested = $mentorship_request->interested;
-
         if ($interested === null) {
             $interested = [];
         }
-
         $request->interested = array_unique(array_merge($interested, $request->interested));
         $mentorship_request->interested = $request->interested;
         $mentorship_request->save();
         $mentor_name = $current_user->name;
         $mentee_id = $mentorship_request->mentee_id;
         $request_url = getenv('BASE_URL') . "/requests/{$id}";
-
         try {
             $mentee_details = $this->get_user_details($request, $mentee_id);
             $mentee_name = $mentee_details['name'];
@@ -216,7 +209,6 @@ class RequestController extends Controller
         $this->validate($request, MentorshipRequest::$mentor_update_rules);
 
         $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
-
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
             if (is_null($mentorship_request)) {
@@ -231,7 +223,6 @@ class RequestController extends Controller
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-
         $mentorship_request->mentor_id = $request->mentor_id;
         $mentorship_request->match_date = $request->match_date;
         $mentorship_request->status_id = Status::MATCHED;
@@ -245,7 +236,6 @@ class RequestController extends Controller
             You can view the details of the request here {$request_url}",
             'title' => 'Mentorship interest accepted',
         ];
-
         try {
             $body = $this->get_user_details($request, $request->mentor_id);
             $this->recipients_email = $body['email'];
@@ -305,6 +295,7 @@ class RequestController extends Controller
                 ]);
             }
         }
+
         if ($secondary) {
             foreach ($secondary as $skill) {
                 RequestSkill::create([
@@ -382,19 +373,6 @@ class RequestController extends Controller
     }
 
     /**
-     * Returns the requests for a particular mentee
-     *
-     * @param string $user_id
-     * @return Array array of object matching the mentee's id
-     */
-    private function getMenteeRequests($user_id)
-    {
-        return MentorshipRequest::where('mentee_id', $user_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-    }
-
-    /**
      * format time
      * checks if the given time is null and returns null else it returns the time in the date format
      *
@@ -403,51 +381,24 @@ class RequestController extends Controller
      */
     private function format_time($time)
     {
-        if ($time == null) {
+        if ($time === null) {
             return null;
         }
 
         return date('Y-m-d H:i:s', $time->getTimestamp());
     }
 
-    /**        
-     * Returns a list of requests filtered by date        
-     *        
-     * @param string $period        
-     * @param string $limit        
-     * @return Response Object        
-     */        
-    private function getRequestsByDate($period, $limit)        
-    {        
-        $date = '';        
-
-        switch ($period) {        
-            // one week        
-            case '1':        
-                $date = date('Y-m-d H:i:s', strtotime('-1 week'));        
-                break;        
-
-            // last two weeks        
-            case '2':        
-                $date = date('Y-m-d H:i:s', strtotime('-2 week'));        
-                break;        
-
-            // last four weeks (1 month)        
-            case '4':        
-                $date = date('Y-m-d H:i:s', strtotime('-4 week'));        
-                break;        
-
-            // last eight weeks (2 months)        
-            case '8':        
-                $date = date('Y-m-d H:i:s', strtotime('-8 week'));        
-                break;        
-            default:        
-                $date = date('Y-m-d H:i:s', strtotime('January 1 1970'));        
-        }        
-
-        return MentorshipRequest::whereDate('created_at', '>=', $date)        
-                                ->orderBy('created_at', 'desc')        
-                                ->limit($limit)        
+    /**
+     * Returns the requests for a particular mentee
+     *
+     * @param string $user_id
+     * @return Response Object
+     */
+    private function getMenteeRequests($user_id, $where_clause)
+    {
+        $where_clause['mentee_id'] = $user_id;
+        return MentorshipRequest::where($where_clause)
+                                ->orderBy('created_at', 'desc')
                                 ->get();
     }
 
@@ -457,7 +408,7 @@ class RequestController extends Controller
      * @param array $mentorship_requests
      * @return Response Object
      */
-    private function transformRequestData($mentorship_requests)
+    public function transformRequestData($mentorship_requests)
     {
         $transformed_mentorship_requests = [];
 
@@ -492,23 +443,23 @@ class RequestController extends Controller
 
         return json_decode($response->getBody(), true);
     }
-    
+
     /**
      * Gets all the requests that match a mentor's skill
      *
      * @param string $user_id
      * @return Object Response Object
      */
-    private function getAllRequestByMentorSkills($user_id)
+    private function getAllRequestByMentorSkills($user_id, $where_clause)
     {
         // retrieve mentorship requests that match current user's skills
+        $where_clause['user_id'] = $user_id;
         $user_skills = UserSkill::with('matchingRequests')
-                                        ->where('user_id', $user_id)
-                                        ->get();
-        
+                                ->where($where_clause)
+                                ->get();
+
         // pluck out the actual mentorship request from query result
         $mentorship_requests = [];
-
         foreach ($user_skills as $user_skill) {
             foreach($user_skill->matchingRequests as $user_request) {
                 array_push($mentorship_requests, $user_request->request);

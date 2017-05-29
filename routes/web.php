@@ -57,3 +57,11 @@ $app->group(['prefix' => 'api/v1'], function($app)
 {
     $app->get('users/{id}', 'UserController@get');
 });
+
+/**
+* Routes for reports
+*/
+$app->group(['prefix' => 'api/v1'], function($app)
+{
+   $app->get('reports', 'ReportController@index');
+});

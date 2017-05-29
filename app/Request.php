@@ -1,6 +1,7 @@
 <?php namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Request extends Model
 {
@@ -15,7 +16,8 @@ class Request extends Model
         "status_id",
         "match_date",
         "pairing",
-        "duration"
+        "duration",
+        "location"
     ];
 
     protected $dates = [];
@@ -41,7 +43,8 @@ class Request extends Model
         "primary" => "required|array",
         "secondary" => "array",
         "primary.*" => "numeric|min:1",
-        "secondary.*" => "numeric|min:1"
+        "secondary.*" => "numeric|min:1",
+        "location" => "string|required",
     ];
 
     public static $mentee_rules = [
@@ -68,5 +71,42 @@ class Request extends Model
     public function status()
     {
         return $this->belongsTo("App\Status");
+    }
+
+    /**
+    * Gets the timestamp of how many weeks ago request was made
+    *
+    * @param $period {String}
+    * @return Epoch timestamp format {String}
+    */
+    public static function getTimeStamp($period)
+    {
+        $date = (int)$period;
+
+        if (!$date) {
+            return null;
+        }
+
+        return Carbon::now()->subWeeks($date)->__toString();
+    }
+
+    /**
+    * Returns an array of the location from which request was made
+    * and period when requests were made
+    *
+    * @return array of location and period of requests
+    */
+    public static function buildWhereClause($request) {
+      $where_clause = [];
+
+      if ($request->input('location')) {
+        $where_clause[] = ['location', '=', $request->input('location')];
+      }
+
+      if ($request->input('period')) {
+        $where_clause[] = ['created_at', '>=', Request::getTimeStamp($request->input('period'))];
+      }
+
+      return $where_clause;
     }
 }
