@@ -13,26 +13,6 @@ class ReportController extends Controller
     use RESTActions;
 
     /**
-    * Gets all Mentorship Requests by location and period
-    *
-    * @param Request object
-    * @return Response object
-    */
-    public function index(Request $request) {
-      $where_clause = MentorshipRequest::buildWhereClause($request);
-      $mentorship_requests = MentorshipRequest::where($where_clause)
-                                              ->orderBy('created_at', 'desc')->get();
-
-      // transform the result objects into API ready responses
-      $skill_count = $this->getSkillCount($mentorship_requests);
-      $response = [
-          'data' => $skill_count
-      ];
-
-      return $this->respond(Response::HTTP_OK, $response);
-    }
-
-    /**
      * Gets all Mentorship Requests report
      *
      * @param object $request Request
@@ -40,51 +20,58 @@ class ReportController extends Controller
      */
     public function all(Request $request)
     {
-        $requests_count = $this->getRequestsCount($request->input('period'));
-        $matched_count = $this->getMatchedRequestsCount($request->input('period'));
+      // initialize response object
+      $response = [ "data" => [] ];
 
-        $response = (object) [
-            'data' => compact('requests_count', 'matched_count')
-        ];
+      // build where clause based off of query params (location & time)
+      $where_clause = MentorshipRequest::buildWhereClause($request);
+      $mentorship_requests = MentorshipRequest::where($where_clause)
+                                              ->orderBy('created_at', 'desc')->get();
 
-        return $this->respond(Response::HTTP_OK, $response);
+      // transform the result objects into API ready responses
+      $skill_count = $this->getSkillCount($mentorship_requests);
+
+      $response["data"]["skills"] = $skill_count;
+
+      // evaluate includes
+      if ($request->input('includes')) {
+        $includes_options = explode(",", $request->input('includes'));
+
+        if (in_array('totalRequests', $includes_options)) {
+          $totalRequests = $this->getRequestsCount($where_clause);
+          $response["data"]["totalRequests"] = $totalRequests;
+        }
+
+        if (in_array('totalRequestsMatched', $includes_options)) {
+          $totalRequestsMatched = $this->getMatchedRequestsCount($where_clause);
+          $response["data"]["totalRequestsMatched"] = $totalRequestsMatched;
+        }
+      }
+
+      return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
      * Gets all requests count
      *
-     * @param date $date date period expected
-     * @return number
+     * @param Array $where_clause array of query params (location & period)
+     * @return Number count of total requests made
      */
-    private function getRequestsCount($date)
+    private function getRequestsCount($where_clause)
     {
-        $selected_date = MentorshipRequest::getTimeStamp($date);
-
-        return MentorshipRequest::when($selected_date, function($query) use ($selected_date) {
-            if ($selected_date) {
-                return $query->whereDate('created_at', '>=', $selected_date);
-            }
-        })
-        ->count();
+      return MentorshipRequest::where($where_clause)->count();
     }
 
     /**
      * Gets all matched requests count
      *
-     * @param date $date date period expected
-     * @return number
+     * @param Array $where_clause array of query params (location & period)
+     * @return Number count of requests matched
      */
-    private function getMatchedRequestsCount($date)
+    private function getMatchedRequestsCount($where_clause)
     {
-        $selected_date = MentorshipRequest::getTimeStamp($date);
-
-        return MentorshipRequest::where('status_id', Status::MATCHED)
-            ->when($selected_date, function($query) use ($selected_date) {
-                if ($selected_date) {
-                    return $query->where('created_at', '>=', $selected_date);
-                }
-            })
-            ->count();
+        $where_clause[] = ["status_id", "=", Status::MATCHED];
+        return MentorshipRequest::where($where_clause)->count();
     }
 
     /**

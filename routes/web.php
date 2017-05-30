@@ -63,5 +63,5 @@ $app->group(['prefix' => 'api/v1'], function($app)
 */
 $app->group(['prefix' => 'api/v1'], function($app)
 {
-   $app->get('reports', 'ReportController@index');
+   $app->get('reports', 'ReportController@all');
 });
