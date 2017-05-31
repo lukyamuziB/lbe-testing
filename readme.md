@@ -14,31 +14,34 @@ Below are the steps required to successfully install and start the lenken-server
 
 
 ## Getting Started
-_*Manual Installation*_
+_*Manual Installation*_(for mac)
+* Clone the application:
+
+      $ git clone https://github.com/andela/lenken-server.git
+
 - Install [PHP 7](http://php.net/manual/en/install.php)
+
+  Run the following commands to Install/Upgrade Php Mac.
+    - ```brew update```
+    - ```brew install homebrew/php/php70```
+    - ```export PATH="$(brew --prefix homebrew/php/php70)/bin:$PATH"```
+
+  If you encounter errors during install, run the below commands
+    - ```brew untap josegonzalez/php```
+
+  Then re-run the commands above.
 - Install [Redis](https://redis.io/download)
 - Install [Postresql ](https://www.postgresql.org/download/)
 - Install [Composer](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-osx)
 - Install [PHP CodeSniffer](https://github.com/andela/lenken-server/wiki/Installing-PHP-Code-Sniffer-with-Composer)
 - Install [PHP Mess Detector](https://github.com/andela/lenken-server/wiki/Installing-PHP-Mess-Detector-with-Composer)
 - Run ```Composer install``` in your terminal to install dependencies
-- Copy the .env.sample file and rename it to .env
+- Copy the .env.example file and rename it to .env
 - Fill in the required settings values for the .env settings
 - Run ```php artisan migrate``` to create the tables
 - Run ```php artisan db:seed``` to seed the tables
 - Run ```cd public``` to navigate to the entry point, `index.php`
 - Start the server with ```php -S <localhost>:<port>```
-
-
-## How to Install/Upgrade Php Mac
-Run the following commands.
-- ```brew update```
-- ```brew install homebrew/php/php70```
-- ```export PATH="$(brew --prefix homebrew/php/php70)/bin:$PATH"```
-
-If you encounter errors during install, run the below commands
-- ```brew untap josegonzalez/php```
-Then re-run the commands above.
 
 ## Testing
 - [Peridot](http://peridot-php.github.io/)
