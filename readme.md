@@ -39,6 +39,8 @@ _*Manual Installation*_(for mac)
 - Copy the .env.example file and rename it to .env
 - Fill in the required settings values for the .env settings
 - Run ```php artisan migrate``` to create the tables
+  - When running this command, you can possibly run into a ```cannot find driver``` error
+    You can fix that by running ```brew install php70-pdo-pgsql```
 - Run ```php artisan db:seed``` to seed the tables
 - Run ```cd public``` to navigate to the entry point, `index.php`
 - Start the server with ```php -S <localhost>:<port>```
