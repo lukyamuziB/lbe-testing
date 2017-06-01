@@ -34,15 +34,14 @@ class RequestController extends Controller
         // generic collection to hold requests to be sent as response
         $mentorship_requests =[];
 
-        $where_clause = MentorshipRequest::buildWhereClause($request);
-
+        // build all where clauses based off of query params (location & time)
         if ($request->input('self')) {
-            $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $where_clause);
+            $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $request);
         } elseif ($request->input('mentor')) {
-            $mentorship_requests = $this->getAllRequestByMentorSkills($request->user()->uid, $where_clause);
+            $mentorship_requests = $this->getAllRequestByMentorSkills($request->user()->uid);
         } else {
-            $mentorship_requests = MentorshipRequest::where($where_clause)
-                                                    ->orderBy('created_at', 'desc')->get();
+            $mentorship_requests = MentorshipRequest::buildWhereClause($request)
+                ->orderBy('created_at', 'desc')->get();
         }
 
         // transform the result objects into API ready responses
@@ -132,7 +131,10 @@ class RequestController extends Controller
             ];
 
             // send the email to the first person and bcc everyone else
-            $this->sendEmail($email_content, $bulk_email_addresses[0], array_slice($bulk_email_addresses, 1));
+            if (sizeof($bulk_email_addresses) > 0) {
+                $this->sendEmail($email_content, $bulk_email_addresses[0],
+                    array_slice($bulk_email_addresses, 1));
+            }
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
@@ -430,7 +432,7 @@ class RequestController extends Controller
      * checks if the given time is null and returns null else it returns the time in the date format
      *
      * @param string $time
-     * @return void
+     * @return mixed null|string
      */
     private function formatTime($time)
     {
@@ -441,21 +443,22 @@ class RequestController extends Controller
      * Returns the requests for a particular mentee
      *
      * @param string $user_id
+     * @param Request $request request payload
      * @return Response Object
      */
-    private function getMenteeRequests($user_id, $where_clause)
+    private function getMenteeRequests($user_id, $request)
     {
-        $where_clause['mentee_id'] = $user_id;
-        return MentorshipRequest::where($where_clause)
-                                ->orderBy('created_at', 'desc')
-                                ->get();
+        return MentorshipRequest::buildWhereClause($request)
+            ->where('mentee_id', $user_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     /**
      * Method that transforms the mentorship requests into a response object
      *
      * @param array $mentorship_requests
-     * @return Response Object
+     * @return array
      */
     public function transformRequestData($mentorship_requests)
     {
@@ -499,15 +502,14 @@ class RequestController extends Controller
      * Gets all the requests that match a mentor's skill
      *
      * @param string $user_id
-     * @return Object Response Object
+     * @return array $mentorship_requests
      */
-    private function getAllRequestByMentorSkills($user_id, $where_clause)
+    private function getAllRequestByMentorSkills($user_id)
     {
         // retrieve mentorship requests that match current user's skills
-        $where_clause['user_id'] = $user_id;
         $user_skills = UserSkill::with('matchingRequests')
-                                ->where($where_clause)
-                                ->get();
+            ->where('user_id', $user_id)
+            ->get();
 
         // pluck out the actual mentorship request from query result
         $mentorship_requests = [];

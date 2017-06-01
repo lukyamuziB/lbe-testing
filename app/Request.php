@@ -74,20 +74,27 @@ class Request extends Model
     }
 
     /**
-    * Gets the timestamp of how many weeks ago request was made
-    *
-    * @param $period {String}
-    * @return Epoch timestamp format {String}
-    */
+     * Gets the timestamp of how many weeks ago request was made
+     *
+     * @param string $location
+     * @return mixed string|null
+     */
     public static function getTimeStamp($period)
     {
         $date = (int)$period;
 
-        if (!$date) {
-            return null;
-        }
+        return ($date) ? Carbon::now()->subWeeks($date)->__toString() : null;
+    }
 
-        return Carbon::now()->subWeeks($date)->__toString();
+    /**
+     * Sets the location to be returned in the where clause
+     *
+     * @param string $location
+     * @return mixed string|null
+     */
+    public static function getLocation($location)
+    {
+        return ($location === 'ALL') ? null : $location;
     }
 
     /**
@@ -96,17 +103,20 @@ class Request extends Model
     *
     * @return array of location and period of requests
     */
-    public static function buildWhereClause($request) {
-      $where_clause = [];
+    public static function buildWhereClause($request)
+    {
+        $selected_date = Request::getTimeStamp($request->input('period'));
+        $selected_location = Request::getLocation($request->input('location'));
 
-      if ($request->input('location')) {
-        $where_clause[] = ['location', '=', $request->input('location')];
-      }
-
-      if ($request->input('period')) {
-        $where_clause[] = ['created_at', '>=', Request::getTimeStamp($request->input('period'))];
-      }
-
-      return $where_clause;
+        return Request::when($selected_date, function($query) use ($selected_date) {
+            if ($selected_date) {
+                return $query->where('created_at', '>=', $selected_date);
+            }
+        })
+        ->when($selected_location, function($query) use ($selected_location) {
+            if($selected_location) {
+                return $query->where('location', $selected_location);
+            }
+        });
     }
 }

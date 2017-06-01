@@ -6,98 +6,110 @@ use App\Status;
 use App\Request as MentorshipRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Carbon\CarbonInterval;
 
 class ReportController extends Controller
 {
     use RESTActions;
 
     /**
-     * Gets all Mentorship Requests report
+     * Gets all Mentorship Requests by location and period
      *
-     * @param object $request Request
-     * @return Response Object
+     * @param Request object
+     * @return Response object
      */
     public function all(Request $request)
     {
-      // initialize response object
-      $response = [ "data" => [] ];
+        // initialize response object
+        $response = ["data"=> []];
 
-      // build where clause based off of query params (location & time)
-      $where_clause = MentorshipRequest::buildWhereClause($request);
-      $mentorship_requests = MentorshipRequest::where($where_clause)
-                                              ->orderBy('created_at', 'desc')->get();
+        // build all where clauses based off of query params (location & time)
+        $mentorship_requests = MentorshipRequest::buildWhereClause($request)->get();
 
-      // transform the result objects into API ready responses
-      $skill_count = $this->getSkillCount($mentorship_requests);
+        $response["data"]["skills_count"] = $this->getSkillCount($mentorship_requests);
 
-      $response["data"]["skills"] = $skill_count;
+        // transform the result objects into API ready responses
+        if ($request->input('include')) {
+            $includes = explode(",", $request->input('include'));
 
-      // evaluate includes
-      if ($request->input('includes')) {
-        $includes_options = explode(",", $request->input('includes'));
+            if (in_array("totalRequests", $includes)) {
+                $response["data"]["totalRequests"] = MentorshipRequest::buildWhereClause($request)->count();
+            }
 
-        if (in_array('totalRequests', $includes_options)) {
-          $totalRequests = $this->getRequestsCount($where_clause);
-          $response["data"]["totalRequests"] = $totalRequests;
-        }
+            if (in_array("totalRequestsMatched", $includes)) {
+                $response["data"]["totalRequestsMatched"] = $this->getMatchedRequestsCount($request);
+            }
 
-        if (in_array('totalRequestsMatched', $includes_options)) {
-          $totalRequestsMatched = $this->getMatchedRequestsCount($where_clause);
-          $response["data"]["totalRequestsMatched"] = $totalRequestsMatched;
-        }
-      }
+            if (in_array("averageTimeToMatch", $includes)) {
+                $response["data"]["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
+            }
+         }
 
-      return $this->respond(Response::HTTP_OK, $response);
-    }
-
-    /**
-     * Gets all requests count
-     *
-     * @param Array $where_clause array of query params (location & period)
-     * @return Number count of total requests made
-     */
-    private function getRequestsCount($where_clause)
-    {
-      return MentorshipRequest::where($where_clause)->count();
+        return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
      * Gets all matched requests count
      *
-     * @param Array $where_clause array of query params (location & period)
-     * @return Number count of requests matched
+     * @param $date request request payload
+     * @return number
      */
-    private function getMatchedRequestsCount($where_clause)
+    private function getMatchedRequestsCount($request)
     {
-        $where_clause[] = ["status_id", "=", Status::MATCHED];
-        return MentorshipRequest::where($where_clause)->count();
+        return MentorshipRequest::buildWhereClause($request)
+            ->where('status_id', Status::MATCHED)
+            ->count();
     }
 
     /**
-    * Calculate the number of occurences for the skills requested
-    *
-    * @param $request_skill object
-    * @return array of skills and the number of occurrences
-    */
+     * Calculate the number of occurrences for the skills requested
+     *
+     * @param $mentorship_requests object
+     * @return array of skills and the number of occurrences
+     */
     private function getSkillCount($mentorship_requests)
     {
-      $skill_count = [];
+        $skill_count = [];
 
-      foreach ($mentorship_requests as $mentorship_request) {
-        foreach ($mentorship_request->requestSkills as $skill) {
-          array_push($skill_count, $skill->skill->name);
+        foreach ($mentorship_requests as $mentorship_request) {
+            foreach ($mentorship_request->requestSkills as $skill) {
+                array_push($skill_count, $skill->skill->name);
+            }
         }
-      }
 
-      // format the output
-      $skill_count = array_count_values($skill_count);
-      $formatted_skill_count = [];
+        // format the output
+        $skill_count = array_count_values($skill_count);
+        $formatted_skill_count = [];
 
-      foreach($skill_count as $skill_name => $count) {
-        $formatted_skill_count[] = ["name" => $skill_name, "count" => $count];
-      }
+        foreach($skill_count as $skill_name => $count) {
+            $formatted_skill_count[] = ["name" => $skill_name, "count" => $count];
+        }
 
-      return $formatted_skill_count;
+        return $formatted_skill_count;
+    }
+
+    /**
+     * Gets the average time to match a request based on the selected filter
+     *
+     * @param $request request payload
+     * @return mixed number|null
+     */
+    private function getAverageTimeToMatch($request)
+    {
+        $average_time = MentorshipRequest::buildWhereClause($request)
+            ->groupBy('status_id')
+            ->having('status_id', Status::MATCHED)
+            ->select(
+                'status_id',
+                DB::raw('(SELECT AVG(match_date - created_at) as average_time)')
+            )
+            ->first();
+
+        if (!$average_time) {
+            return null;
+        }
+
+        return $average_time->average_time;
     }
 }
