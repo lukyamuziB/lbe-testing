@@ -1,7 +1,10 @@
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/c83190839f8203b0a76b)
+
 # Lenken Server
 Server side for the Lenken mentorship matching application.
 
 ## Documentation
+Checkout [Apiary](http://docs.lenken.apiary.io/) for Leken API documentation.
 Below are the steps required to successfully install and start the lenken-server on a local system:
 
 ## Technologies Used
