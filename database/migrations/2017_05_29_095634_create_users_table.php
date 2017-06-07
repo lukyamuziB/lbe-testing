@@ -15,7 +15,7 @@ class CreateUsersTable extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->string('user_id');
-            $table->string('slack_id');       
+            $table->string('slack_id');
             $table->string('email');
             $table->unique(['user_id', 'slack_id', 'email']);
         });

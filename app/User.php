@@ -12,6 +12,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 {
     use Authenticatable, Authorizable;
 
+    protected $primaryKey = 'user_id'; // or null
+    public $incrementing = false;
+    public $timestamps = false;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -25,7 +29,16 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     public static $rules = [
         "user_id" => "required|string",
-        "slack_id"=>"string",
-        "email"=>"required|string"            
+        "slack_id" => "string",
+        "email" => "required|string"
+    ];
+
+    public static $slack_update_rules = [
+        "slack_handle" => "string|regex:/^@\w+.?\w+$/|required",
+    ];
+
+    public static $slack_send_rules = [
+        "channel" => "string|required",
+        "text" => "string|required",
     ];
 }

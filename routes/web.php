@@ -65,3 +65,13 @@ $app->group(['prefix' => 'api/v1'], function($app)
 {
    $app->get('reports', 'ReportController@all');
 });
+
+/**
+ * Routes for messages
+ */
+$app->group(['prefix' => 'api/v1/messages'], function($app)
+{
+    $app->post('slack', 'SlackController@updateUserId');
+    $app->post('slack/send', 'SlackController@sendMessage');
+});
+
