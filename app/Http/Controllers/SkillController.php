@@ -69,4 +69,27 @@ class SkillController extends Controller
 
         return $this->respond(Response::HTTP_OK, $response);
     }
+
+    /**
+     * Creates a new skill and saves in the skills table
+     *
+     * @param object $request Request
+     * @return object Response object of created skill
+     */
+    public function add(Request $request)
+    {
+        $this->validate($request, Skill::$rules);
+
+        if (Skill::where('name', 'ilike', $request->name)->exists()) {
+            return $this->respond(
+                Response::HTTP_CONFLICT, ["message" => "Skill already exists"]
+            );
+        }
+
+        $skill = Skill::create([
+            "name" => $request->name
+        ]);
+
+        return $this->respond(Response::HTTP_CREATED, ["data" => $skill]);
+    }
 }
