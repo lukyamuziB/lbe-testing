@@ -54,7 +54,11 @@ class SlackController extends Controller
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
 
-        return $this->respond(Response::HTTP_OK, $user);
+        $response = [
+            "data" => $user
+        ];
+
+        return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**

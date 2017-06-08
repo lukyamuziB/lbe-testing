@@ -7,6 +7,7 @@ use App\Status;
 use App\Skill;
 use App\RequestSkill;
 use App\Request as MentorshipRequest;
+use App\Utility\SlackUtility as Slack;
 use App\Exceptions\Exception;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\AccessDeniedException;
@@ -250,9 +251,9 @@ class RequestController extends Controller
     /**
      * Edit a mentorship request mentor_id field
      *
-     * @param  integer $id Unique ID of the mentorship request
+     * @param integer $id Unique ID of the mentorship request
      */
-    public function updateMentor(Request $request, $id)
+    public function updateMentor(Request $request,  Slack $slack_provider, $id)
     {
         $this->validate($request, MentorshipRequest::$mentor_update_rules);
 
@@ -297,6 +298,19 @@ class RequestController extends Controller
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
+        
+        // Send the mentor a slack message when notified
+        try {
+            $slack_handle = User::select('slack_id')
+                ->where('user_id', $request->input('mentor_id'))
+                ->first();
+            $message = "{$mentee_name} selected you as a mentor
+            You can view the details of the request here {$request_url}";
+            $slack_provider->sendMessage($slack_handle->slack_id, $message);
+
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
         }
 
         return $this->respond(Response::HTTP_OK, $mentorship_request);
