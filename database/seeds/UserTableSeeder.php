@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Seeder;
 
-class RequestSkillsTableSeeder extends Seeder
+class UserTableSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,11 +15,11 @@ class RequestSkillsTableSeeder extends Seeder
         $limit = 1;
 
         for ($i = 0; $i < $limit; $i++) {
-            DB::table('request_skills')->insert([
-                'request_id' => $i + 1,
-                'skill_id' => $faker->numberBetween($min = 1, $max = 50),
-                'type' => 'primary'
+            DB::table('users')->insert([
+                'user_id' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
+                'slack_id' => ($i + 1) * 2,
+                'email' => $faker->unique()->email
             ]);
-        }
+        }    
     }
 }

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateUsersTable extends Migration
+class AddUsersRelationshipToRequestsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,9 @@ class CreateUsersTable extends Migration
      */
     public function up()
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->string('user_id');
-            $table->string('slack_id')->nullable();
-            $table->string('email');
-            $table->unique(['user_id', 'slack_id', 'email']);
-        });
+        Schema::table('requests', function (Blueprint $table) {
+            $table->foreign('mentee_id')->references('user_id')->on('users');
+        });    
     }
 
     /**
@@ -28,6 +25,6 @@ class CreateUsersTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users');
+        $table->dropForeign('requests_mentee_id_foreign');
     }
 }

@@ -58,9 +58,9 @@ class Request extends Model
         "match_date" => "numeric|required"
     ];
 
-    public function users()
+    public function user()
     {
-        return $this->belongsTo("App\User");
+        return $this->belongsTo('App\User', 'mentee_id');
     }
 
     public function requestSkills()

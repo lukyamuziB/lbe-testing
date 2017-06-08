@@ -23,6 +23,7 @@ $app->group(['prefix' => 'api/v1'], function($app)
     $app->get('requests', 'RequestController@all');
     $app->get('requests/{id}', 'RequestController@get');
     $app->post('requests', 'RequestController@add');
+    $app->post('requests/populate', 'RequestController@populateUserTable');    
     $app->put('requests/{id}', 'RequestController@update');
     $app->patch('requests/{id}/update-interested', 'RequestController@updateInterested');
     $app->patch('requests/{id}/update-mentor', 'RequestController@updateMentor');

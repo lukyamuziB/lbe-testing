@@ -89,9 +89,11 @@ class RequestController extends Controller
         $request_skill = self::MODEL2;
 
         $this->validate($request, MentorshipRequest::$rules);
-
         $user = $request->user();
-        $user_array = ["mentee_id" => $user->uid, "status_id" => 1];
+
+        // update the user table with the mentee details
+        $this->updateUserTable($request, $user->uid);
+        $user_array = ["mentee_id" => $user->uid, "status_id" => Status::OPEN];
         $new_record = $this->filterRequest($request->all());
         $new_record = array_merge($new_record, $user_array);
         $created_request = $mentorship_request::create($new_record);
@@ -387,6 +389,7 @@ class RequestController extends Controller
         $formatted_result = (object) [
             "id" => $result->id,
             "mentee_id" => $result->mentee_id,
+            "mentee_email" => $result->user->email ?? '',
             "mentor_id" => $result->mentor_id,
             "title" => $result->title,
             "description" => $result->description,
@@ -400,7 +403,6 @@ class RequestController extends Controller
             "created_at" => $this->formatTime($result->created_at),
             "updated_at" => $this->formatTime($result->updated_at)
         ];
-
         return $formatted_result;
     }
 
@@ -560,4 +562,58 @@ class RequestController extends Controller
     {
         return getenv(strtoupper(app()->environment()).'_BASE_URL');
     }
+
+    /**
+     * Gets all mentee ids from requests table and gets their details 
+     * from FIS and adds them to users table
+     * this is meant to be a one time use method
+     *
+     * @param string $request
+     * @return array $unique_mentee_info     
+     */
+     public function populateUserTable(Request $request)
+     {
+        // retrieve all unique ids from requests table
+        $unique_mentee_info = [];
+        $unique_mentee_ids = MentorshipRequest::select('mentee_id')->distinct()->get()->toArray();
+
+        // get all the users' details from FIS based on retrieved ids
+        try {            
+            foreach ($unique_mentee_ids as $id) {
+                $user_info = $this->getUserDetails($request, $id['mentee_id']);
+                if ($user_info) {
+                    $unique_mentee_info[] = [
+                        "user_id"  => $user_info["id"], 
+                        "slack_id" => null, 
+                        "email"    => $user_info["email"]
+                    ];
+                }
+            }
+        } catch (NotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        }
+
+        // add the user info to the users table
+        User::insert($unique_mentee_info);    
+     }
+
+    /**
+     * Updates the users table with unique user details
+     * each time a new request is made
+     *
+     * @param string $user_id
+     * @return array $unique_mentee_info      
+     */
+     public function updateUserTable(Request $request, $user_id)
+     {  
+        // fetch the user's details from FIS            
+        $user_info = $this->getUserDetails($request, $user_id);
+        
+        // if the user_id is not in the table, add their details
+        User::firstOrCreate([
+            "user_id"  => $user_info["id"], 
+            "slack_id" => null, 
+            "email"    => $user_info["email"]
+        ]);
+     }
 }

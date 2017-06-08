@@ -12,12 +12,12 @@ class RequestsTableSeeder extends Seeder
     public function run()
     {
         $faker = Faker\Factory::create();
-        $limit = 15;
+        $limit = 1;
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('requests')->insert([
-                'mentee_id' => $faker->numberBetween($min = 1, $max = 20),
-                'mentor_id' => $faker->numberBetween($min = 1, $max = 20),
+                'mentee_id' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
+                'mentor_id' => $faker->randomElement(['-KesEogCwjq6lkOzKmLI']),
                 'title' => $faker->sentence($nbWords = 6, $variableNbWords = true),
                 'description' => $faker->text($maxNbChars = 300),
                 'status_id' => $faker->randomElement($array = array(1, 2)),
@@ -31,7 +31,7 @@ class RequestsTableSeeder extends Seeder
                     'days' => ['monday'],
                     'timezone' => 'EAT'
                 ]),
-                'location' => $faker->randomElement($array = array('Nairobi', 'Lagos'))
+                'location' => $faker->randomElement(['Nairobi', 'Lagos'])
             ]);
         }
     }
