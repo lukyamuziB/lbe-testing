@@ -11,7 +11,6 @@ use App\Utility\SlackUtility as Slack;
 use App\Exceptions\Exception;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\AccessDeniedException;
-use App\Utility\SlackUtility as Slack;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -250,7 +249,7 @@ class RequestController extends Controller
             $query_results = User::select('slack_id')
                                 -> where('user_id', $mentee_id)
                                 ->first();
-        
+
             $message = "*{$mentor_name}* has indicated interest in mentoring you.
                 You can view the details of the request <{$request_url}|here>";
             $slack_provider->sendMessage($query_results->slack_id, $message);
@@ -312,7 +311,7 @@ class RequestController extends Controller
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-        
+
         // Send the mentor a slack message when notified
         try {
             $slack_handle = User::select('slack_id')
@@ -591,12 +590,12 @@ class RequestController extends Controller
     }
 
     /**
-     * Gets all mentee ids from requests table and gets their details 
+     * Gets all mentee ids from requests table and gets their details
      * from FIS and adds them to users table
      * this is meant to be a one time use method
      *
      * @param string $request
-     * @return array $unique_mentee_info     
+     * @return array $unique_mentee_info
      */
      public function populateUserTable(Request $request)
      {
@@ -605,13 +604,13 @@ class RequestController extends Controller
         $unique_mentee_ids = MentorshipRequest::select('mentee_id')->distinct()->get()->toArray();
 
         // get all the users' details from FIS based on retrieved ids
-        try {            
+        try {
             foreach ($unique_mentee_ids as $id) {
                 $user_info = $this->getUserDetails($request, $id['mentee_id']);
                 if ($user_info) {
                     $unique_mentee_info[] = [
-                        "user_id"  => $user_info["id"], 
-                        "slack_id" => null, 
+                        "user_id"  => $user_info["id"],
+                        "slack_id" => null,
                         "email"    => $user_info["email"]
                     ];
                 }
@@ -621,7 +620,7 @@ class RequestController extends Controller
         }
 
         // add the user info to the users table
-        User::insert($unique_mentee_info);    
+        User::insert($unique_mentee_info);
      }
 
     /**
@@ -629,17 +628,17 @@ class RequestController extends Controller
      * each time a new request is made
      *
      * @param string $user_id
-     * @return array $unique_mentee_info      
+     * @return array $unique_mentee_info
      */
      public function updateUserTable(Request $request, $user_id)
-     {  
-        // fetch the user's details from FIS            
+     {
+        // fetch the user's details from FIS
         $user_info = $this->getUserDetails($request, $user_id);
-        
+
         // if the user_id is not in the table, add their details
         User::firstOrCreate([
-            "user_id"  => $user_info["id"], 
-            "slack_id" => null, 
+            "user_id"  => $user_info["id"],
+            "slack_id" => null,
             "email"    => $user_info["email"]
         ]);
      }
