@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Skill extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = [
+        "name",
+        "active"
+    ];
 
     public static $rules = [
-       "name" => "required|string"
+       "name" => "required|string",
+       "active" => "boolean"
     ];
 
     public function userSkills()
