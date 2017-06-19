@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<ruleset name="Lenken-Server PHPCS rule set">
+
+ <description>
+    Lenken-Server PHPCS rule set contains a collection of rules about 
+    unused code, code size, names, and so forth.
+</description>
+
+<!-- Import Whitespace ObjectOperatorIndent from the PEAR ruleset -->
+<rule ref="PEAR.WhiteSpace.ObjectOperatorIndent" />
+
+<!-- Import ForEachLoopDeclaration from the Squiz ruleset -->
+<rule ref="Squiz.ControlStructures.ForEachLoopDeclaration" />
+
+<!-- Import ForLoopDeclaration from the Squiz ruleset -->
+<rule ref="Squiz.ControlStructures.ForLoopDeclaration" />
+
+<!-- Import CSS Indentation from the Squiz ruleset -->
+<rule ref="Squiz.CSS.Indentation" />
+
+<!-- Import Whitespace Function Spacing from the Squiz ruleset -->
+<rule ref="Squiz.WhiteSpace.FunctionSpacing">
+    <properties>
+        <property name="spacing" value="1" />
+    </properties>
+</rule>
+
+<!-- Import Superfluous Whitespace from the Squiz ruleset -->
+<rule ref="Squiz.WhiteSpace.SuperfluousWhitespace" />
+
+<!-- Import LineLength from the Generic ruleset -->
+<rule ref="Generic.Files.LineLength">
+    <properties>
+        <property name="lineLimit" value="80" />
+        <property name="absoluteLineLimit" value="120" />
+    </properties>
+</rule>
+
+<!-- Import LineEndings from the Generic ruleset -->
+<rule ref="Generic.Files.LineEndings" />
+
+<!-- Import OpeningFunctionBraceBsdAllman from the Generic ruleset -->
+<rule ref="Generic.Functions.OpeningFunctionBraceBsdAllman">
+    <properties>
+        <property name="checkFunctions" value="true" />
+        <property name="checkClosures" value="true" />
+    </properties>
+</rule>
+
+<!-- Import CyclomaticComplexity from the Generic ruleset -->
+<rule ref="Generic.Metrics.CyclomaticComplexity">
+    <properties>
+        <property name="complexity" value="10" />
+        <property name="absoluteComplexity" value="30" />
+    </properties>
+</rule>
+
+<!-- Import CamelCapsFunctionName from the Generic ruleset -->
+<rule ref="Generic.NamingConventions.CamelCapsFunctionName" />
+
+<!-- Import ForbiddenFunctions from the Generic ruleset -->
+<rule ref="Generic.PHP.ForbiddenFunctions">
+    <properties>
+        <property name="error" value="false" />
+    </properties>
+</rule>
+
+<!-- Import Whitespace Scope Indent from the Generic ruleset -->
+<rule ref="Generic.WhiteSpace.ScopeIndent" />
+
+</ruleset>

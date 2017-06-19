@@ -33,7 +33,7 @@ class RequestController extends Controller
     public function all(Request $request)
     {
         // generic collection to hold requests to be sent as response
-        $mentorship_requests =[];
+        $mentorship_requests = [];
 
         // build all where clauses based off of query params (location & time)
         if ($request->input('self')) {
@@ -46,9 +46,9 @@ class RequestController extends Controller
         }
 
         // transform the result objects into API ready responses
-        $transformed_mentorship_requests = $this->transformRequestData($mentorship_requests);
+        $transformed_requests = $this->transformRequestData($mentorship_requests);
         $response = [
-            "data" => $transformed_mentorship_requests
+            "data" => $transformed_requests
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
@@ -87,7 +87,6 @@ class RequestController extends Controller
     public function add(Request $request)
     {
         $mentorship_request = self::MODEL;
-        $request_skill = self::MODEL2;
 
         $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
@@ -208,28 +207,21 @@ class RequestController extends Controller
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        } catch (AccessDeniedException $exception) {
-            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
-        } catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
-        }
+            // update the mentorship request model with new interested mentor
+            $interested = $mentorship_request->interested;
+            if ($interested === null) {
+                $interested = [];
+            }
 
-        $interested = $mentorship_request->interested;
-        if ($interested === null) {
-            $interested = [];
-        }
+            $request->interested = array_unique(array_merge($interested, $request->interested));
+            $mentorship_request->interested = $request->interested;
+            $mentorship_request->save();
 
-        $request->interested = array_unique(array_merge($interested, $request->interested));
-        $mentorship_request->interested = $request->interested;
-        $mentorship_request->save();
+            $mentor_name = $current_user->name;
+            $mentee_id = $mentorship_request->mentee_id;
+            $request_url = $this->getClientBaseUrl()."/requests/{$id}";
 
-        $mentor_name = $current_user->name;
-        $mentee_id = $mentorship_request->mentee_id;
-        $request_url = $this->getClientBaseUrl()."/requests/{$id}";
-
-        try {
+            // get user details from FIS and send email
             $mentee_details = $this->getUserDetails($request, $mentee_id);
             $mentee_name = $mentee_details["name"];
             $to_address = $mentee_details["email"];
@@ -239,25 +231,24 @@ class RequestController extends Controller
                 "title" => "Hello {$mentee_name}"
             ];
             $this->sendEmail($email_content, $to_address);
+
+            // Send a slack notification to a mentee when a mentor shows interest in their request
+            $user = User::select('slack_id')
+                        ->where('user_id', $mentee_id)
+                        ->first();
+            $message = "*{$mentor_name}* has indicated interest in mentoring you.
+                You can view the details of the request <{$request_url}|here>";
+            $slack_provider->sendMessage($user->slack_id, $message);
+
+            return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+
         } catch (NotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (AccessDeniedException $exception) {
+            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-        // Send a slack notification to a mentee when a mentor shows interest in their request
-        try {
-            $query_results = User::select('slack_id')
-                                -> where('user_id', $mentee_id)
-                                ->first();
-
-            $message = "*{$mentor_name}* has indicated interest in mentoring you.
-                You can view the details of the request <{$request_url}|here>";
-            $slack_provider->sendMessage($query_results->slack_id, $message);
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        }
-
-        return $this->respond(Response::HTTP_CREATED, $mentorship_request);
     }
 
     /**
@@ -283,37 +274,27 @@ class RequestController extends Controller
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        } catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
-        }
+            // update mentor for mentorship request
+            $mentorship_request->mentor_id = $request->mentor_id;
+            $mentorship_request->match_date = $request->match_date;
+            $mentorship_request->status_id = Status::MATCHED;
+            $mentorship_request->save();
 
-        $mentorship_request->mentor_id = $request->mentor_id;
-        $mentorship_request->match_date = $request->match_date;
-        $mentorship_request->status_id = Status::MATCHED;
-        $mentorship_request->save();
+            // get mentee name and request url and add to email content
+            $mentee_name = $request->mentee_name;
+            $request_url = $this->getClientBaseUrl().'/requests/'.$id.'/mentor';
+            $content = [
+                "content" => "{$mentee_name} selected you as a mentor
+                You can view the details of the request here {$request_url}",
+                "title" => 'Mentorship interest accepted'
+            ];
 
-        $mentee_name = $request->mentee_name;
-        $request_url = $this->getClientBaseUrl().'/requests/'.$id.'/mentor';
-        $content = [
-            "content" => "{$mentee_name} selected you as a mentor
-            You can view the details of the request here {$request_url}",
-            "title" => 'Mentorship interest accepted'
-        ];
-
-        try {
+            // get mentor id and send email content
             $body = $this->getUserDetails($request, $request->mentor_id);
             $to_address = $body["email"];
             $this->sendEmail($content, $to_address);
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        } catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
-        }
 
-        // Send the mentor a slack message when notified
-        try {
+            // Send the mentor a slack message when notified
             $slack_handle = User::select('slack_id')
                 ->where('user_id', $request->input('mentor_id'))
                 ->first();
@@ -321,11 +302,13 @@ class RequestController extends Controller
             You can view the details of the request here {$request_url}";
             $slack_provider->sendMessage($slack_handle->slack_id, $message);
 
+            return $this->respond(Response::HTTP_OK, $mentorship_request);
+
         } catch (NotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
-
-        return $this->respond(Response::HTTP_OK, $mentorship_request);
     }
 
     /**
@@ -333,7 +316,7 @@ class RequestController extends Controller
     *
     * @param integer $id Unique ID used to identify the request
     */
-    public function cancelRequest(Request $request, $id)
+    public function cancelRequest($id)
     {
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
@@ -490,7 +473,7 @@ class RequestController extends Controller
      */
     public function transformRequestData($mentorship_requests)
     {
-        $transformed_mentorship_requests = [];
+        $transformed_requests = [];
 
         foreach ($mentorship_requests as $mentorship_request) {
             $mentorship_request->request_skills = $mentorship_request->requestSkills;
@@ -499,11 +482,11 @@ class RequestController extends Controller
                 $skill = $skill->skill;
             }
 
-            $transformed_mentorship_request = $this->formatRequestData($mentorship_request);
-            array_push($transformed_mentorship_requests, $transformed_mentorship_request);
+            $transformed_request = $this->formatRequestData($mentorship_request);
+            array_push($transformed_requests, $transformed_request);
         }
 
-        return $transformed_mentorship_requests;
+        return $transformed_requests;
     }
 
     /**
