@@ -8,7 +8,6 @@ use App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
-
 class SkillController extends Controller
 {
     const MODEL = 'App\Skill';
@@ -90,6 +89,36 @@ class SkillController extends Controller
             "name" => $request->name
         ]);
 
-        return $this->respond(Response::HTTP_CREATED, ["data" => $skill]);
+        $response = [
+            "data" => ["skill" => $skill, "message" => "Skill was successfully created"]
+        ];
+
+        return $this->respond(Response::HTTP_CREATED, $response);
+    }
+
+    /**
+     * Edit a Skills name field
+     *
+     * @param integer $id Unique ID of a particular skill
+     * @return object response of modified skill and success message
+     */
+    public function put(Request $request, $id)
+    {
+        $this->validate($request, Skill::$rules);
+        $skill = Skill::find($id);
+        if (is_null($skill)) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "The specified skill request was not found"]);
+        }
+
+        if (Skill::where('name', 'ilike', $request->name)->exists()) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => "Skill already exists"]);
+        }
+
+        $skill->update($request->all());
+        $response = [
+            "data" => ["skill" => $skill, "message" => "Skill was successfully modified"]
+        ];
+
+        return $this->respond(Response::HTTP_OK, $response);
     }
 }

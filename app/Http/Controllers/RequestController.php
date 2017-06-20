@@ -573,40 +573,6 @@ class RequestController extends Controller
     }
 
     /**
-     * Gets all mentee ids from requests table and gets their details
-     * from FIS and adds them to users table
-     * this is meant to be a one time use method
-     *
-     * @param string $request
-     * @return array $unique_mentee_info
-     */
-     public function populateUserTable(Request $request)
-     {
-        // retrieve all unique ids from requests table
-        $unique_mentee_info = [];
-        $unique_mentee_ids = MentorshipRequest::select('mentee_id')->distinct()->get()->toArray();
-
-        // get all the users' details from FIS based on retrieved ids
-        try {
-            foreach ($unique_mentee_ids as $id) {
-                $user_info = $this->getUserDetails($request, $id['mentee_id']);
-                if ($user_info) {
-                    $unique_mentee_info[] = [
-                        "user_id"  => $user_info["id"],
-                        "slack_id" => null,
-                        "email"    => $user_info["email"]
-                    ];
-                }
-            }
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        }
-
-        // add the user info to the users table
-        User::insert($unique_mentee_info);
-     }
-
-    /**
      * Updates the users table with unique user details
      * each time a new request is made
      *
