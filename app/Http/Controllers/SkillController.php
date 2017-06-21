@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Skill;
 use App\UserSkill;
-use App\Http\Controllers;
+use App\Exceptions\Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -120,5 +121,27 @@ class SkillController extends Controller
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    /**
+     * Deletes a skill
+     *
+     * @param object  $request the request object
+     * @param integer $id skill id
+     *
+     * @return object Response object
+     */
+    public function remove(Request $request, $id)
+    {
+        try {
+            $skill = Skill::findOrFail($id);
+            $skill->delete();
+
+            return $this->respond(Response::HTTP_OK, ["data" => "Skill deleted"]);
+        } catch (ModelNotFoundException $exception) {
+            return $this->respond(
+                Response::HTTP_NOT_FOUND, ["message" => "Skill does not exist!"]
+            );
+        }
     }
 }
