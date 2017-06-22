@@ -21,7 +21,7 @@ class AISClient
     public function __construct()
     {
         $this->client = new Client();
-        $this->api_url = getenv('API_STAGING_URL');
+        $this->api_url = getenv('AIS_API_URL');
         $this->authorization_token = getenv('AIS_API_TOKEN');
     }
 

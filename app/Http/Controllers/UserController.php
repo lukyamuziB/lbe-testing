@@ -23,9 +23,9 @@ class UserController extends Controller
 
         $auth_header = $request->header("Authorization");
 
-        $staging_url = getenv('API_STAGING_URL');
+        $api_url = getenv('AIS_API_URL');
 
-        $response = $client->request('GET', $staging_url.'/users/'.$id, [
+        $response = $client->request('GET', $api_url.'/users/'.$id, [
             'headers' => ['Authorization' => $auth_header],
             'verify' => false
         ]);

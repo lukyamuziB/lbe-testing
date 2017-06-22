@@ -500,8 +500,8 @@ class RequestController extends Controller
     {
         $client = new Client();
         $auth_header = $request->header("Authorization");
-        $staging_url = getenv('API_STAGING_URL');
-        $response = $client->request('GET', "{$staging_url}/users/{$id}", [
+        $api_url = getenv('AIS_API_URL');
+        $response = $client->request('GET', "{$api_url}/users/{$id}", [
             "headers" => ["Authorization" => $auth_header],
             "verify" => false
         ]);
@@ -569,7 +569,7 @@ class RequestController extends Controller
     */
     private function getClientBaseUrl()
     {
-        return getenv(strtoupper(app()->environment()).'_BASE_URL');
+        return getenv('LENKEN_FRONTEND_BASE_URL');
     }
 
     /**
