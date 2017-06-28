@@ -1,4 +1,12 @@
-# V 1.0.3
+# V 1.0.5
+
+## Fixed Bugs
+- fix Invalid Request error when trying to create Request
+
+## Pending Bugs
+- Slack notifications not working for mentor and mentee
+
+# V 1.0.4
 
 ## Features
 

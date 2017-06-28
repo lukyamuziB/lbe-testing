@@ -574,21 +574,20 @@ class RequestController extends Controller
 
     /**
      * Updates the users table with unique user details
-     * each time a new request is made
+     * each time a new request is made. In the case when
+     * user details are already there the method terminates
+     * to allow program flow without any errors
      *
      * @param string $user_id
-     * @return array $unique_mentee_info
+     * @param object Request
      */
-     public function updateUserTable(Request $request, $user_id)
-     {
-        // fetch the user's details from FIS
+    public function updateUserTable(Request $request, $user_id)
+    {
+        // fetch the user's details from AIS
         $user_info = $this->getUserDetails($request, $user_id);
 
-        // if the user_id is not in the table, add their details
-        User::firstOrCreate([
-            "user_id"  => $user_info["id"],
-            "slack_id" => null,
-            "email"    => $user_info["email"]
-        ]);
-     }
+        // if the user's user_id is not in the table, create a new user with id and email
+        User::firstOrCreate(["user_id" => $user_info["id"]], ["email" => $user_info["email"]]);
+    }
+
 }
