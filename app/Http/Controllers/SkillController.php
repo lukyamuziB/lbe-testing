@@ -40,7 +40,7 @@ class SkillController extends Controller
 
             return $this->respond(Response::HTTP_OK, ["data" => $matched_skill]);
         } else {
-            return $this->respond(Response::HTTP_OK, ["data" => $m::orderBy('name')->get()]);
+            return $this->respond(Response::HTTP_OK, ["data" => $m::withCount('requestSkills', 'userSkills')->orderBy('name')->get()]);
         }
     }
 
@@ -134,6 +134,12 @@ class SkillController extends Controller
     public function remove(Request $request, $id)
     {
         try {
+            if (UserSkill::where('skill_id', $id)->exists()
+                || \App\RequestSkill::where('skill_id', $id)->exists()
+            ){
+                return $this->respond(Response::HTTP_FORBIDDEN, ["data" => "Skill is currently in use"]);
+            }
+            
             $skill = Skill::findOrFail($id);
             $skill->delete();
 

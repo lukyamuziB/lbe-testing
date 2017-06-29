@@ -23,4 +23,9 @@ class Skill extends Model
     {
         return $this->hasMany('App\UserSkill', 'skill_id', 'id');
     }
+
+    public function requestSkills()
+    {
+        return $this->hasMany('App\RequestSkill', 'skill_id', 'id');
+    }
 }
