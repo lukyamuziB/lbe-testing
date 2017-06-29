@@ -74,3 +74,13 @@ $app->group(['prefix' => 'api/v1/messages'], function($app)
     $app->post('slack', 'SlackController@updateUserId');
     $app->post('slack/send', 'SlackController@sendMessage');
 });
+
+/**
+ * Routes for sessions
+ */
+ $app->group(['prefix' => 'api/v1'], function ($app)
+ {
+      $app->get('sessions/{id}', 'SessionController@getSessionsReport');
+      $app->post('sessions', 'SessionController@logSession');
+      $app->patch('sessions/{id}/approve', 'SessionController@approveSession');
+ });
