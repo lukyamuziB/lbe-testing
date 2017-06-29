@@ -126,9 +126,9 @@ class SessionController extends Controller
     {
         $sessions_pending = Session::where('request_id', $request_id)
           ->where(function ($query) {
-            $query->where('mentee_approved', true)->where('mentor_approved', false);
+            $query->where('mentee_approved', true)->where('mentor_approved', null);
           })->orWhere(function ($query) {
-            $query->where('mentee_approved', false)->where('mentor_approved', true);
+            $query->where('mentee_approved', null)->where('mentor_approved', true);
           })->count();
 
         return $sessions_pending;

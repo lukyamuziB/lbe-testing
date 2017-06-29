@@ -19,8 +19,8 @@ class CreateSessionTable extends Migration
             $table->timestamp('date');
             $table->string('start_time');
             $table->string('end_time');
-            $table->boolean('mentee_approved');
-            $table->boolean('mentor_approved');
+            $table->boolean('mentee_approved')->nullable();
+            $table->boolean('mentor_approved')->nullable();
             $table->timestamp('mentee_logged_at')->nullable();
             $table->timestamp('mentor_logged_at')->nullable();
             $table->foreign('request_id')->references('id')->on('requests');

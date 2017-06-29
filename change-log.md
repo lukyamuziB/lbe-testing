@@ -1,3 +1,12 @@
+# V 1.1.0
+
+## Features
+- implement Sessions feature
+- show if a Skill is linked to a Request or User
+
+## Pending Bugs
+- Slack notifications not working for mentor and mentee
+
 # V 1.0.5
 
 ## Fixed Bugs
