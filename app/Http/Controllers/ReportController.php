@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Status;
 use App\Request as MentorshipRequest;
+use App\Session;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,10 @@ class ReportController extends Controller
 
             if (in_array("averageTimeToMatch", $includes)) {
                 $response["data"]["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
+            }
+
+            if (in_array("sessionsCompleted", $includes)) {
+                $response["data"]["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
             }
          }
 
@@ -111,5 +116,35 @@ class ReportController extends Controller
         }
 
         return $average_time->average_time;
+    }
+
+    /**
+     * Gets count of all sessions completed
+     *
+     * @param object $request request payload
+     * @return number count of sessions completed
+     */
+    private function getSessionsCompletedCount($request)
+    {
+        $selected_date = MentorshipRequest::getTimeStamp($request->input('period'));
+        $selected_location = MentorshipRequest::getLocation($request->input('location'));
+
+        $sessions_completed = Session::whereHas(
+            'request', function ($query) use ($selected_location) {
+                if ($selected_location) {
+                    $query->where('location', $selected_location);
+                }
+            }
+        )
+            ->when(
+                $selected_date, function ($query) use ($selected_date) {
+                    $query->where('date', '>=', $selected_date);
+                }
+            )
+        ->where('mentee_approved', true)
+        ->where('mentor_approved', true)
+        ->count();
+
+        return $sessions_completed;
     }
 }
