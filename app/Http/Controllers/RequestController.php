@@ -14,10 +14,15 @@ use App\Exceptions\AccessDeniedException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 use Lcobucci\JWT\Parser;
 use GuzzleHttp\Client;
 
+/**
+ * Class RequestController
+ * @package App\Http\Controllers
+ */
 class RequestController extends Controller
 {
     const MODEL = "App\Request";
@@ -28,6 +33,7 @@ class RequestController extends Controller
     /**
      * Gets all Mentorship Requests
      *
+     * @param Request $request - request  object
      * @return Response Object
      */
     public function all(Request $request)
@@ -81,10 +87,11 @@ class RequestController extends Controller
      * Creates a new Mentorship request and saves in the request table
      * Also saves the request skills in the request skills table
      *
-     * @param object $request Request
+     * @param Request $request - request object
+     * @param Slack $slack - slack class
      * @return object Response object of created request
      */
-    public function add(Request $request)
+    public function add(Request $request, Slack $slack)
     {
         $mentorship_request = self::MODEL;
 
@@ -118,6 +125,17 @@ class RequestController extends Controller
         $mentor_ids = array_unique($mentor_ids);
         $request_url = $this->getClientBaseUrl().'/requests/'.$created_request->id;
         $bulk_email_addresses = [];
+        $base_url = getenv('BASE_URL');
+        $app_environment = getenv('APP_ENV');
+
+        $slack_message = "*New Mentorship Request*".
+            "\n*Title:* {$created_request->title}".
+            "\n*Link:* {$request_url}";
+
+        $slack_channels_to_notify
+            = Config::get("slack.{$app_environment}.new_request_channels");
+
+        $slack->sendMessageToMultipleChannels($slack_channels_to_notify, $slack_message);
 
         try {
             // get email address of all the people to send the email to
@@ -147,7 +165,9 @@ class RequestController extends Controller
     /**
      * Edit a mentorship request
      *
+     * @param Request $request - request object
      * @param  integer $id Unique ID of the mentorship request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -190,6 +210,7 @@ class RequestController extends Controller
      * Edit a mentorship request interested field
      *
      * @param  integer $id Unique ID of the mentorship request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function updateInterested(Request $request, Slack $slack_provider, $id)
     {
@@ -254,7 +275,11 @@ class RequestController extends Controller
     /**
      * Edit a mentorship request mentor_id field
      *
+     * @param Request $request
+     * @param Slack $slack_provider
      * @param integer $id Unique ID of the mentorship request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws AccessDeniedException
      */
     public function updateMentor(Request $request,  Slack $slack_provider, $id)
     {
@@ -319,10 +344,11 @@ class RequestController extends Controller
     }
 
     /**
-    * Set a request status to cancelled
-    *
-    * @param integer $id Unique ID used to identify the request
-    */
+     * Set a request status to cancelled
+     *
+     * @param integer $id Unique ID used to identify the request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function cancelRequest($id)
     {
         try {
@@ -499,7 +525,7 @@ class RequestController extends Controller
     /**
      * get user details
      *
-     * @param array $request the request facade
+     * @param Request $request the request facade
      * @param string $id the user id
      * @return array of the json encoded response
      */
@@ -541,12 +567,12 @@ class RequestController extends Controller
     }
 
     /**
-    * Generic send email method
-    *
-    * @param array $email_content the email content to be sent
-    * @param string $to_address email address the email is supposed to go to
-    * @param array $bcc optional argument, recipients of the email
-    * @param $blade_template email template to be used
+     * Generic send email method
+     *
+     * @param array $email_content the email content to be sent
+     * @param string $to_address email address the email is supposed to go to
+     * @param boolean $bcc optional argument, recipients of the email
+     * @param string $blade_template email template to be used
     */
     private function sendEmail($email_content, $to_address, $bcc = false, $blade_template = 'email')
     {
@@ -586,7 +612,7 @@ class RequestController extends Controller
      * to allow program flow without any errors
      *
      * @param string $user_id
-     * @param object Request
+     * @param Request $request
      */
     public function updateUserTable(Request $request, $user_id)
     {

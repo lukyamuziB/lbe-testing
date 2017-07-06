@@ -90,6 +90,7 @@ $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(App\Providers\SlackServiceProvider::class);
 $app->configure('cors');
 $app->configure('mail');
+$app->configure('slack');
 
 /*
 |--------------------------------------------------------------------------
