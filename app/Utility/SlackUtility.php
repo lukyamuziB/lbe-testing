@@ -2,6 +2,7 @@
 
 namespace App\Utility;
 
+use Illuminate\Support\Facades\Cache;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Promise;
@@ -23,22 +24,23 @@ class SlackUtility
     {
         $client = new Client();
 
-        $slack_api_url = getenv("SLACK_API_URL");
+        $api_url = getenv("SLACK_API_URL")."chat.postMessage";
 
-        $response = $client->request('POST', $slack_api_url, [
-            "form_params" => [
-                "token" => getenv("SLACK_TOKEN"),
-                "username" => "Lenken Notifications",
-                "as_user" => false,
-                "link_names" => true,
-                "icon_url" => getenv("SLACK_ICON"),
-                "channel" => $channel,
-                "text" => $text,
-            ],
-            "verify" => false
-        ]);
+        $response = $client->request('POST', $api_url, [
+                    "form_params" => [
+                        "token" => getenv("SLACK_TOKEN"),
+                        "username" => "Lenken Notifications",
+                        "as_user" => false,
+                        "link_names" => true,
+                        "icon_url" => getenv("SLACK_ICON"),
+                        "channel" => $channel,
+                        "text" => $text,
+                    ],
+                    "verify" => false
+            ]
+        );
 
-        $response = json_decode($response->getBody(), true);
+        $response = json_decode($response->getBody(), true);        
 
         if (!isset($response["message"])) {
             throw new NotFoundException('The Slack channel or user ' . $channel . ', was not found');
@@ -61,7 +63,7 @@ class SlackUtility
     {
         $client = new Client();
 
-        $slack_api_url = getenv("SLACK_API_URL");
+        $slack_api_url = getenv("SLACK_API_URL")."chat.postMessage";
 
         $requests = [];
         foreach ($channels as $channel) {
@@ -84,5 +86,29 @@ class SlackUtility
             // TODO: Report slack error to lenken team
         }
 
+    }
+    
+     /**
+     * verifyUserSlackHandle - verifies the provided slack user handle
+     * @param $channels - string $channel the slack user handle or channel name
+     * @param $current_user_email - string $current_user_email the email of the 
+     * current logged in user
+     * @internal param array $data - array of objects containing user's slack details
+     * @return array
+     */
+    public function verifyUserSlackHandle($channel, $current_user_email)
+    {
+        $verify_response = Cache::get('slack-users');
+        foreach ($verify_response['members'] as $data) {
+            if ($data["name"] === str_replace('@', '', $channel)) {
+                // Check if the user email matches the current logged in user's email
+                if ($data["profile"]['email'] === $current_user_email) {
+                    return $data;
+                }
+                throw new NotFoundException('Wrong slack Handle');
+            }
+        }
+
+        throw new NotFoundException('Slack Handle not found');
     }
 }

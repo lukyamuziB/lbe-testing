@@ -34,6 +34,8 @@ class SlackController extends Controller
             if (!$current_user) {
                 throw new AccessDeniedException('You are not authorized to perform this action.', 1);
             }
+            // Verify the user's slack handle
+            $slack_provider->verifyUserSlackHandle($request->slack_handle, $current_user->email);
 
             // Retrieve the users' slack id using the handle supplied in the request and save it.
             $message = 'You\'ve just updated your Slack id on Lenken ' . $request->slack_handle;
@@ -44,9 +46,11 @@ class SlackController extends Controller
             $user_slack_id = substr($matches[0], 1);
             $user_details = [
                 "user_id" => $current_user->uid,
-                "email" => $current_user->email
+                "email" => $current_user->email,
+                "slack_id" => $user_slack_id
             ];
-            $user = User::updateOrCreate($user_details, ["slack_id" => $user_slack_id]);
+
+            $user = User::updateOrCreate($user_details);
 
         } catch (NotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
