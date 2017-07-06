@@ -263,8 +263,15 @@ class RequestController extends Controller
         $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
 
         try {
-            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
+            $mentorship_request = MentorshipRequest::with('requestSkills')->findOrFail(intval($id));
             $current_user = $request->user();
+            $requestSkills = $mentorship_request->requestSkills()->get();
+            foreach($requestSkills as $skill) {
+                UserSkill::firstOrCreate(
+                    ["skill_id" => $skill->skill_id, "user_id" => $request->mentor_id]
+                );
+            }
+            
 
             if (is_null($mentorship_request)) {
                 throw new NotFoundException("The specified mentor request was not found", 1);
