@@ -10,7 +10,7 @@ use App\Request as MentorshipRequest;
 use App\Utility\SlackUtility as Slack;
 use App\Exceptions\Exception;
 use App\Exceptions\NotFoundException;
-use App\Exceptions\AccessDeniedException;
+use App\Exceptions\UnauthorizedException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -345,16 +345,23 @@ class RequestController extends Controller
     /**
      * Set a request status to cancelled
      *
+     * @param Request $request
      * @param integer $id Unique ID used to identify the request
      * @return \Illuminate\Http\JsonResponse
+     * @throws AccessDeniedException
      */
-    public function cancelRequest($id)
+    public function cancelRequest(Request $request, $id)
     {
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
+            $current_user = $request->user();
 
             if (is_null($mentorship_request)) {
                 throw new NotFoundException("The specified mentor request was not found", 1);
+            }
+
+            if ($current_user->uid !== $mentorship_request->mentee_id) {
+                throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
 
             $mentorship_request->status_id = Status::CANCELLED;
@@ -363,6 +370,8 @@ class RequestController extends Controller
             $this->respond(Response::HTTP_OK, ["message" => "Request Cancelled"]);
         } catch (NotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (UnauthorizedException $exception) {
+            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
         }
 
         return $this->respond(Response::HTTP_OK, $mentorship_request);
