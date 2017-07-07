@@ -123,9 +123,8 @@ class RequestController extends Controller
         /* we have a list of userids to send emails to, some of the user ids are duplicated
         because one person might have more than one skill matched */
         $mentor_ids = array_unique($mentor_ids);
-        $request_url = $this->getClientBaseUrl().'/requests/'.$created_request->id;
+        $request_url = $this->getClientBaseUrl().'/requests/'.$created_request->id.'/mentor';
         $bulk_email_addresses = [];
-        $base_url = getenv('BASE_URL');
         $app_environment = getenv('APP_ENV');
 
         $slack_message = "*New Mentorship Request*".
