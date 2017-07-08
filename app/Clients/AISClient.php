@@ -82,7 +82,7 @@ class AISClient
         $response = $this->client->request(
             'GET', $this->api_url.'/users?emails='.join(",", $emails).'&limit='.$limit,
             [
-                "headers" => ["api-token" => $this->authorization_token]
+                "headers" => ["api-token" => $this->authorization_token],
             ]
         );
 

@@ -91,6 +91,7 @@ $app->register(App\Providers\SlackServiceProvider::class);
 $app->configure('cors');
 $app->configure('mail');
 $app->configure('slack');
+$app->configure('notifications');
 
 /*
 |--------------------------------------------------------------------------

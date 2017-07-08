@@ -1,3 +1,12 @@
+# V 1.1.1
+
+## Features
+- implement placed Mentee email notifications
+- implement Slack notifications for new Requests
+
+## Pending Bugs
+- Users can register other people's slack handles
+
 # V 1.1.0
 
 ## Features
