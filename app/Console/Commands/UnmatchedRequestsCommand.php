@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Config;
 use App\Clients\AISClient as AISClient;
 use App\Request as MentorshipRequest;
 use App\Mail\UnmatchedRequests as UnmatchedRequestMail;
+use Mockery\Exception;
 
 class UnmatchedRequestsCommand extends Command
 {
@@ -55,6 +56,10 @@ class UnmatchedRequestsCommand extends Command
         // get placement info from AIS for placed fellows only
         $placed_mentee_info
             = $this->getPlacedMenteeInfoByEmails($unmatched_requests_emails);
+
+        if (empty($placed_mentee_info)) {
+            return; //no placed mentees
+        }
 
         // append unmatched request details to mentee's details
         $unmatched_requests_details
