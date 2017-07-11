@@ -18,6 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call('RequestsTableSeeder');
         $this->call('RequestSkillsTableSeeder');
         $this->call('RequestLogsTableSeeder');
-        $this->call('RatingsTableSeeder');
+        $this->call('SessionRatingsTableSeeder');
     }
 }

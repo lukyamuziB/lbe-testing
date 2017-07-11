@@ -1,18 +1,14 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Request as MentorshipRequest;
 use App\Session;
 use Carbon\Carbon;
-
 class SessionController extends Controller
 {
     use RESTActions;
-
     /**
      * Get all the logged sessions of a particular request
      * including sessions logged by both mentee & mentor,
@@ -25,30 +21,23 @@ class SessionController extends Controller
     public function getSessionsReport(Request $request, $id)
     {
         $data = [];
-
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
-
             $data["sessions"] = $this->getSessionsByRequestId($mentorship_request->id);
-
             if ($request->input('include')) {
                 $includes = explode(",", $request->input('include'));
-
                 if (in_array('totalSessions', $includes)) {
                     $data["totalSessions"] = $this->getTotalSessions(
                         $mentorship_request->duration,
                         count($mentorship_request->pairing['days'])
                     );
                 }
-
                 if (in_array('totalSessionsLogged', $includes)) {
                     $data["totalSessionsLogged"] = $this->getTotalSessionsLogged($mentorship_request->id);
                 }
-
                 if (in_array('totalSessionsPending', $includes)) {
                     $data["totalSessionsPending"] = $this->getTotalSessionsPending($mentorship_request->id);
                 }
-
                 if (in_array('totalSessionsUnlogged', $includes)) {
                     $data["totalSessionsUnlogged"] = $this->getTotalSessionsUnlogged(
                         $mentorship_request->id,
@@ -57,15 +46,12 @@ class SessionController extends Controller
                     );
                 }
             }
-
             $response = ["data" => $data];
-
             return $this->respond(Response::HTTP_OK, $response);
         } catch (ModelNotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "Mentorship request does not exist"]);
         }
     }
-
     /**
      * Get all existing logged sessions of a particular request
      *
@@ -77,10 +63,8 @@ class SessionController extends Controller
     public function getSessionsByRequestId($request_id)
     {
         $request_sessions = Session::where('request_id', $request_id)->get();
-
         return $request_sessions;
     }
-
     /**
      * Get the total number of sessions a request can have
      *
@@ -93,10 +77,8 @@ class SessionController extends Controller
     public function getTotalSessions($request_duration, $request_days)
     {
         $total_sessions = ($request_duration * 4) * $request_days;
-
         return $total_sessions;
     }
-
     /**
      * Get total number of sessions logged both by mentor and mentee
      *
@@ -111,10 +93,8 @@ class SessionController extends Controller
           ->where('mentee_approved', true)
           ->where('mentor_approved', true)
           ->count();
-
         return $sessions_logged;
     }
-
     /**
      * Get total number of sessions logged by either mentor and mentee
      *
@@ -130,10 +110,8 @@ class SessionController extends Controller
           })->orWhere(function ($query) {
             $query->where('mentee_approved', null)->where('mentor_approved', true);
           })->count();
-
         return $sessions_pending;
     }
-
     /**
      * Get all the number of remaining unlogged sessions for a particular
      * request duration
@@ -148,10 +126,8 @@ class SessionController extends Controller
         $total_sessions = $this->getTotalSessions($request_duration, $request_days);
         $total_sessions_logged = $this->getTotalSessionsLogged($request_id);
         $total_sessions_unlogged = $total_sessions - $total_sessions_logged;
-
         return $total_sessions_unlogged;
     }
-
     /**
      * Log completed sessions
      *
@@ -162,7 +138,6 @@ class SessionController extends Controller
     {
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($request->input('request_id')));
-
             $user_id = $request->input('user_id');
             $date = $request->input('date');
             $start_time = $request->input('start_time');
@@ -173,12 +148,10 @@ class SessionController extends Controller
             $sessions_logged = $this->getSessionByRequestIdAndDate(
                 $request_id, $session_date
             );
-
             if (sizeof($sessions_logged)) {
                 return $this->respond(Response::HTTP_CONFLICT,
                     ["message" => "Session already logged"]);
             }
-
             $approver = [];
             if ($user_id === $mentorship_request->mentor_id) {
                 $approver["mentor_approved"] = true;
@@ -187,7 +160,6 @@ class SessionController extends Controller
                 $approver["mentee_approved"] = true;
                 $approver["mentee_logged_at"] = Carbon::now($timezone);
             }
-
             $session_logged = Session::create(array_merge(
                 [
                     "request_id" => $request_id,
@@ -197,14 +169,12 @@ class SessionController extends Controller
                 ],
                 $approver)
             );
-
             $response = ["data" => $session_logged];
             return $this->respond(Response::HTTP_CREATED, $response);
         } catch (ModelNotFoundException $exception) {
             return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "Mentorship request does not exist"]);
         }
     }
-
     /**
      * Check whether a session of a given request has already been logged
      * for a given date
@@ -219,7 +189,6 @@ class SessionController extends Controller
           ->whereDate('date', $date)
           ->get();
     }
-
     /**
      * Update existing logged session for either the mentee or mentor
      * that logs to confirm a completed session
@@ -233,17 +202,14 @@ class SessionController extends Controller
         try {
             $session = Session::findOrFail(intval($id));
             $mentorship_request = $session->request;
-
             $user_id = $request->input('user_id');
             $timezone = $mentorship_request->pairing['timezone'];
             $session_update_date = Carbon::now($timezone);
-
             if ($user_id === $mentorship_request->mentee_id) {
                 $approver = ["mentee_approved" => true, "mentee_logged_at" => $session_update_date];
             } elseif ($user_id === $mentorship_request->mentor_id) {
                 $approver = ["mentor_approved" => true, "mentor_logged_at" => $session_update_date];
             }
-
             $session->fill($approver)->save();
             $response = ["data" => $session];
             return $this->respond(Response::HTTP_OK, $response);
