@@ -2,11 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\User;
-use App\DripEmailer;
-use GuzzleHttp\Client;
+use App\Utility\SlackUtility;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
 class CacheSlackUsersCommand extends Command
@@ -24,25 +21,19 @@ class CacheSlackUsersCommand extends Command
      * @var string
      */
     protected $description = 'Cache all the slack users details';
-    protected $client;
-    protected $user_info_url;
-    protected $token;
+
+    protected $slackUtility;
 
     /**
      * Create a new command instance.
      *
-     * @param  Client  $client
-     * @param  token   $token
-     * @param  user_info_url  $user_info_url
-     * @return void
+     * @param  SlackUtility $slackUtility
      */
-    public function __construct()
+    public function __construct(SlackUtility $slackUtility)
     {
         parent::__construct();
 
-        $this->user_info_url = getenv("SLACK_API_URL")."users.list";
-        $this->token = getenv("SLACK_TOKEN");
-        $this->client = new Client();
+        $this->slackUtility = $slackUtility;
     }
 
     /**
@@ -52,33 +43,35 @@ class CacheSlackUsersCommand extends Command
      */
     public function handle()
     {
-        // make request to slack api
-        $data = $this->slackRequest();
-        // cache the returned response from slack api
-        $this->cacheSlackDetails($data);
+        $slack_users = $this->slackUtility->getAllUsers();
+
+        $transformed_users = $this->transform($slack_users);
+
+        Redis::set("slack:allUsers", json_encode($transformed_users));
     }
 
     /**
-     * Cache all users' slack details
+     * Transforms the slack result to a useful model
      *
-     * @param  array  $data 
-     * @return array of user details objects
+     * @param array $slackUsers raw result from slack
+     *
+     * @return array $transformedUsers array of transformed user models
      */
-    private function cacheSlackDetails($data)
+    public function transform($slackUsers)
     {
-        return Cache::put('slack-users', $data, 24 * 60);
-    }
+        $transformed_users = [];
 
-    private function slackRequest()
-    {
-        $response = $this->client->request('POST', $this->user_info_url,
-            [
-                "form_params" => [
-                    "token" => $this->token
-                ]
-            ]
-        );
-        $response = json_decode($response->getBody(), true);
-        return $response;
+        foreach ($slackUsers as $user) {
+            $transformed_user = new \stdClass();
+
+            $transformed_user->id = $user["id"];
+            $transformed_user->fullname = $user["real_name"] ?? "";
+            $transformed_user->email = $user["profile"]["email"] ?? "";
+            $transformed_user->handle = "@" . $user["name"] ?? "";
+
+            $transformed_users[$transformed_user->id] = $transformed_user;
+        };
+
+        return $transformed_users;
     }
 }
