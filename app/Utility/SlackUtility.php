@@ -2,15 +2,26 @@
 
 namespace App\Utility;
 
-use Illuminate\Support\Facades\Cache;
+use App\Exceptions\UnauthorizedException;
+use App\Repositories\SlackUsersRepository;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Promise;
-use Psr\Http\Message\ResponseInterface;
 use App\Exceptions\NotFoundException;
 
 class SlackUtility
 {
+
+    protected $client;
+    protected $token;
+
+    public function __construct()
+    {
+        $this->client = new Client();
+        $this->base_url = getenv("SLACK_API_URL");
+        $this->token = getenv("SLACK_TOKEN");
+    }
+
     /**
      * sendMessage sends a slack message to a specified user Id, slackhandle
      * or slack channel
@@ -22,13 +33,11 @@ class SlackUtility
      */
     public function sendMessage($channel, $text)
     {
-        $client = new Client();
+        $api_url = $this->base_url."/chat.postMessage";
 
-        $api_url = getenv("SLACK_API_URL")."chat.postMessage";
-
-        $response = $client->request('POST', $api_url, [
+        $response = $this->client->request('POST', $api_url, [
                     "form_params" => [
-                        "token" => getenv("SLACK_TOKEN"),
+                        "token" => $this->token,
                         "username" => "Lenken Notifications",
                         "as_user" => false,
                         "link_names" => true,
@@ -43,7 +52,7 @@ class SlackUtility
         $response = json_decode($response->getBody(), true);        
 
         if (!isset($response["message"])) {
-            throw new NotFoundException('The Slack channel or user ' . $channel . ', was not found');
+            throw new NotFoundException("The Slack channel or user $channel, was not found");
         }
 
         return $response;
@@ -61,15 +70,13 @@ class SlackUtility
      */
     public function sendMessageToMultipleChannels($channels, $message)
     {
-        $client = new Client();
-
-        $slack_api_url = getenv("SLACK_API_URL")."chat.postMessage";
+        $slack_api_url = $this->base_url."/chat.postMessage";
 
         $requests = [];
         foreach ($channels as $channel) {
-            $requests[] = $client->postAsync(
+            $requests[] = $this->client->postAsync(
                 $slack_api_url, ["form_params" => [
-                    "token" => getenv("SLACK_TOKEN"),
+                    "token" => $this->token,
                     "username" => "Lenken Notifications",
                     "as_user" => false,
                     "link_names" => true,
@@ -87,28 +94,54 @@ class SlackUtility
         }
 
     }
-    
-     /**
-     * verifyUserSlackHandle - verifies the provided slack user handle
-     * @param $channels - string $channel the slack user handle or channel name
-     * @param $current_user_email - string $current_user_email the email of the 
-     * current logged in user
-     * @internal param array $data - array of objects containing user's slack details
-     * @return array
+
+    /**
+     * Verifies a slack handle with the user's email using the slack user repository
+     *
+     * @param string $slack_handle slack handle being entered
+     * @param string $current_user_email email address of current user
+     *
+     * @return object the slack user
+     *
+     * @throws NotFoundException if the handle isn't found
+     * @throws UnauthorizedException if the handle belongs to another user
      */
-    public function verifyUserSlackHandle($channel, $current_user_email)
+    public function verifyUserSlackHandle($slack_handle, $current_user_email)
     {
-        $verify_response = Cache::get('slack-users');
-        foreach ($verify_response['members'] as $data) {
-            if ($data["name"] === str_replace('@', '', $channel)) {
-                // Check if the user email matches the current logged in user's email
-                if ($data["profile"]['email'] === $current_user_email) {
-                    return $data;
-                }
-                throw new NotFoundException('Wrong slack Handle');
-            }
+        $slackUserRepository = new SlackUsersRepository();
+
+        $slack_user = $slackUserRepository->getByHandle($slack_handle);
+
+        if (is_null($slack_user)) {
+            throw new NotFoundException("slack handle not found");
         }
 
-        throw new NotFoundException('Slack Handle not found');
+        if ($slack_user->email !== $current_user_email) {
+            throw new UnauthorizedException("wrong slack handle");
+        }
+
+        return $slack_user;
     }
+
+    /**
+     * Gets all users in the slack team
+     *
+     * @return array containing all users in the slack team
+     */
+    public function getAllUsers()
+    {
+        $api_url = $this->base_url."/users.list";
+        $response = $this->client->request(
+            "POST", $api_url, [
+                "form_params" => [
+                    "token" => $this->token
+                ]
+            ]
+        );
+
+        $response = json_decode($response->getBody(), true);
+
+        return $response["ok"] ? $response["members"] : [];
+    }
+
 }
