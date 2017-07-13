@@ -14,18 +14,21 @@ class CreateRatingsTable extends Migration
 
     public function up()
     {
-        Schema::create('session_ratings', function (Blueprint $table) {
-            $table->json('ratings');
-            $table->integer('scale');
-            $table->timestamps();
+        Schema::create(
+            'ratings', function (Blueprint $table) {
+                $table->integer('session_id')->unsigned();
+                $table->foreign('session_id')->references('id')->on('sessions');
 
-            $table->string('user_id')->unsigned();
-            $table->foreign('user_id')->references('user_id')->on('users');
-            $table->integer('session_id')->unsigned();
-            $table->foreign('session_id')->references('id')->on('sessions');
-            $table->primary(array('session_id', 'user_id'));
+                $table->string('user_id')->unsigned();
+                $table->foreign('user_id')->references('user_id')->on('users');
 
-    });
+                $table->json('values');
+                $table->integer('scale');
+                $table->timestamps();
+
+                $table->primary(array('session_id', 'user_id'));
+            }
+        );
     }
 
     /**
@@ -33,9 +36,9 @@ class CreateRatingsTable extends Migration
      *
      * @return void
      */
-    
+
     public function down()
     {
-        Schema::dropIfExists('session_ratings');
+        Schema::dropIfExists('ratings');
     }
 }

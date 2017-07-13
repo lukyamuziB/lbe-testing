@@ -3,23 +3,23 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SessionRating extends Model {
-    protected $table = "session_ratings";
+class Rating extends Model {
+    protected $table = "ratings";
     protected $primaryKey = ['session_id', 'user_id'];
     public $incrementing = false;
 
     protected $fillable = [
         "user_id",
         "session_id",
-        "ratings",
+        "values",
         "scale"
     ];
 
     public static $rules = [
         // Validation rules
-        "user_id" => "required|string",
+        "user_id" => "string",
         "session_id"   => "required|numeric",
-        "ratings" => "required|array",
+        "values" => "required|array",
         "scale" => "required|integer"
     ];
 

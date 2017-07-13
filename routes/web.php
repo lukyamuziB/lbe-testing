@@ -18,8 +18,7 @@ $app->get('/', function () use ($app) {
 /**
  * Routes for resource requests
  */
-$app->group(['prefix' => 'api/v1'], function($app)
-{
+$app->group(['prefix' => 'api/v1'], function ($app) {
     $app->get('requests', 'RequestController@all');
     $app->get('requests/{id}', 'RequestController@get');
     $app->post('requests', 'RequestController@add');
@@ -33,8 +32,7 @@ $app->group(['prefix' => 'api/v1'], function($app)
 /**
  * Routes for resource skills
  */
-$app->group(['prefix' => 'api/v1'], function($app)
-{
+$app->group(['prefix' => 'api/v1'], function ($app) {
     $app->get('skills', 'SkillController@all');
     $app->get('skills/{id}', 'SkillController@get');
     $app->post('skills', 'SkillController@add');
@@ -45,32 +43,28 @@ $app->group(['prefix' => 'api/v1'], function($app)
 /**
  * Routes for status
  */
-$app->group(['prefix' => 'api/v1'], function($app)
-{
+$app->group(['prefix' => 'api/v1'], function ($app) {
     $app->get('status', 'StatusController@all');
 });
 
 /**
-* Routes for user information
-*/
-$app->group(['prefix' => 'api/v1'], function($app)
-{
+ * Routes for user information
+ */
+$app->group(['prefix' => 'api/v1'], function ($app) {
     $app->get('users/{id}', 'UserController@get');
 });
 
 /**
-* Routes for reports
-*/
-$app->group(['prefix' => 'api/v1'], function($app)
-{
-   $app->get('reports', 'ReportController@all');
+ * Routes for reports
+ */
+$app->group(['prefix' => 'api/v1'], function ($app) {
+    $app->get('reports', 'ReportController@all');
 });
 
 /**
  * Routes for messages
  */
-$app->group(['prefix' => 'api/v1/messages'], function($app)
-{
+$app->group(['prefix' => 'api/v1/messages'], function ($app) {
     $app->post('slack', 'SlackController@updateUserId');
     $app->post('slack/send', 'SlackController@sendMessage');
 });
@@ -78,9 +72,16 @@ $app->group(['prefix' => 'api/v1/messages'], function($app)
 /**
  * Routes for sessions
  */
- $app->group(['prefix' => 'api/v1'], function ($app)
- {
-      $app->get('sessions/{id}', 'SessionController@getSessionsReport');
-      $app->post('sessions', 'SessionController@logSession');
-      $app->patch('sessions/{id}/approve', 'SessionController@approveSession');
- });
+$app->group(['prefix' => 'api/v1'], function ($app) {
+    $app->get('sessions/{id}', 'SessionController@getSessionsReport');
+    $app->post('sessions', 'SessionController@logSession');
+    $app->patch('sessions/{id}/approve', 'SessionController@approveSession');
+});
+
+/**
+ * Routes for resource session-rating
+ */
+$app->group(['prefix' => 'api/v1'], function ($app) {
+    $app->post('ratings', 'RatingController@rateSession');
+});
+

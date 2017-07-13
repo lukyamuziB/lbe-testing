@@ -1,3 +1,12 @@
+# V 1.1.2
+
+## Features
+- implement Session Ratings
+- implement Redis cache for all Slack users
+
+## Fixed Bugs
+- prevent Users from adding others Slack IDs
+
 # V 1.1.1
 
 ## Features
