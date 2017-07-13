@@ -3,13 +3,13 @@
 return [
     "local" => [
         "new_request_channels" => [
-            "lenken"
+            "lenken-connect"
         ]
     ],
 
     "staging" => [
         "new_request_channels" => [
-            "lenken"
+            "lenken-connect"
         ]
     ],
 

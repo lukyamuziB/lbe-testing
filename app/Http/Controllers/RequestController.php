@@ -125,7 +125,7 @@ class RequestController extends Controller
         /* we have a list of userids to send emails to, some of the user ids are duplicated
         because one person might have more than one skill matched */
         $mentor_ids = array_unique($mentor_ids);
-        $request_url = $this->getClientBaseUrl().'/requests/'.$created_request->id.'/mentor';
+        $request_url = $this->getClientBaseUrl().'/requests/'.$created_request->id;
         $bulk_email_addresses = [];
         $app_environment = getenv('APP_ENV');
 
@@ -298,7 +298,7 @@ class RequestController extends Controller
 
             // get mentee name and request url and add to email content
             $mentee_name = $request->mentee_name;
-            $request_url = $this->getClientBaseUrl().'/requests/'.$id.'/mentor';
+            $request_url = $this->getClientBaseUrl().'/requests/'.$id;
             $content = [
                 "content" => "{$mentee_name} selected you as a mentor
                 You can view the details of the request here {$request_url}",
