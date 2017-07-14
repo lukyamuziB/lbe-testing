@@ -145,9 +145,9 @@ class SkillController extends Controller
 
             return $this->respond(Response::HTTP_OK, ["data" => "Skill deleted"]);
         } catch (ModelNotFoundException $exception) {
-            return $this->respond(
-                Response::HTTP_NOT_FOUND, ["message" => "Skill does not exist!"]
-            );
+            throw new NotFoundException("Skill does not exist!");
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
 }

@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Response;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -45,6 +46,42 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $e)
     {
-        return parent::render($request, $e);
+        $response = null;
+
+        // Get exception type
+        switch ($e) {
+            case $e instanceof NotFoundException:
+                $response = $this->composeJsonResponse(
+                    Response::HTTP_NOT_FOUND, $e->getMessage()
+                );
+                break;
+            case $e instanceof UnauthorizedException:
+                $response = $this->composeJsonResponse(
+                    Response::HTTP_UNAUTHORIZED, $e->getMessage()
+                );
+                break;
+            case $e instanceof AccessDeniedException:
+                $response = $this->composeJsonResponse(
+                    Response::HTTP_FORBIDDEN, $e->getMessage()
+                );
+                break;
+            default:
+                $response = parent::render($request, $e);
+        }
+
+        return $response;
     }
+
+    /**
+     * Compose http json responses
+     *
+     * @param  $header
+     * @param  $message
+     * @return \Illuminate\Http\Response
+     */
+    private function composeJsonResponse($header, $message)
+    {
+        return response()->json(["message" => $message], $header);
+    }
+
 }

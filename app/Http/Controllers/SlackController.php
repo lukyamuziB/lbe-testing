@@ -32,9 +32,7 @@ class SlackController extends Controller
             $current_user = $request->user();
 
             if (!$current_user) {
-                throw new AccessDeniedException(
-                    'You are not authorized to perform this action.', 1
-                );
+                throw new AccessDeniedException('You are not authorized to perform this action.');
             }
 
             // Verify the user's slack handle
@@ -56,14 +54,6 @@ class SlackController extends Controller
 
             $slack_utility->sendMessage($request->slack_handle, $message);
 
-        } catch (NotFoundException $exception) {
-            return $this->respond(
-                Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]
-            );
-        } catch (UnauthorizedException $exception) {
-            return $this->respond(
-                Response::HTTP_UNAUTHORIZED, ["message" => $exception->getMessage()]
-            );
         } catch (Exception $exception) {
             return $this->respond(
                 Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]
@@ -96,8 +86,7 @@ class SlackController extends Controller
             }
 
             $slack_response = $slack_utility->sendMessage($request->channel, $request->text);
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }

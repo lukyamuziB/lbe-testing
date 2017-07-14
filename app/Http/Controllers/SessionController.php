@@ -1,11 +1,14 @@
 <?php
 namespace App\Http\Controllers;
+use App\Exceptions\NotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Request as MentorshipRequest;
 use App\Session;
 use Carbon\Carbon;
+use Mockery\Exception;
+
 class SessionController extends Controller
 {
     use RESTActions;
@@ -49,7 +52,9 @@ class SessionController extends Controller
             $response = ["data" => $data];
             return $this->respond(Response::HTTP_OK, $response);
         } catch (ModelNotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "Mentorship request does not exist"]);
+            throw new NotFoundException("The specified mentor request was not found");
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
     /**
@@ -172,7 +177,9 @@ class SessionController extends Controller
             $response = ["data" => $session_logged];
             return $this->respond(Response::HTTP_CREATED, $response);
         } catch (ModelNotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "Mentorship request does not exist"]);
+            throw new NotFoundException("The specified mentor request was not found");
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
     /**
@@ -214,7 +221,9 @@ class SessionController extends Controller
             $response = ["data" => $session];
             return $this->respond(Response::HTTP_OK, $response);
         } catch (ModelNotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "Session does not exist"]);
+            throw new NotFoundException("Session does not exist");
+        } catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
 }

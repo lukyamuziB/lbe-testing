@@ -11,6 +11,8 @@ use App\Utility\SlackUtility as Slack;
 use App\Exceptions\Exception;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\UnauthorizedException;
+use App\Exceptions\AccessDeniedException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -172,25 +174,19 @@ class RequestController extends Controller
     {
         $this->validate($request, MentorshipRequest::$rules);
 
-        try {
+         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
             $current_user = $request->user();
-
-            if (is_null($mentorship_request)) {
-                throw new NotFoundException("The specified mentor request was not found", 1);
-            }
 
             if ($current_user->uid !== $mentorship_request->mentee_id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        } catch (AccessDeniedException $exception) {
-            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
-        } catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
-        }
+         } catch (ModelNotFoundException $exception) {
+             throw new NotFoundException("The specified mentor request was not found");
+         }  catch (Exception $exception) {
+             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+         }
 
         $new_record = $this->filterRequest($request->all());
         $mentorship_request->fill($new_record)->save();
@@ -218,10 +214,6 @@ class RequestController extends Controller
         try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
             $current_user = $request->user();
-
-            if (is_null($mentorship_request)) {
-                throw new NotFoundException("The specified mentor request was not found", 1);
-            }
 
             if (!$current_user) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
@@ -262,10 +254,8 @@ class RequestController extends Controller
 
             return $this->respond(Response::HTTP_CREATED, $mentorship_request);
 
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
-        } catch (AccessDeniedException $exception) {
-            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
+        } catch (ModelNotFoundException $exception) {
+            throw new NotFoundException("The specified mentor request was not found");
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
@@ -294,11 +284,6 @@ class RequestController extends Controller
                 UserSkill::firstOrCreate(
                     ["skill_id" => $skill->skill_id, "user_id" => $request->mentor_id]
                 );
-            }
-            
-
-            if (is_null($mentorship_request)) {
-                throw new NotFoundException("The specified mentor request was not found", 1);
             }
 
             if ($current_user->uid !== $mentorship_request->mentee_id) {
@@ -335,8 +320,8 @@ class RequestController extends Controller
 
             return $this->respond(Response::HTTP_OK, $mentorship_request);
 
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (ModelNotFoundException $exception) {
+            throw new NotFoundException("The specified mentor request was not found");
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
@@ -356,10 +341,6 @@ class RequestController extends Controller
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
             $current_user = $request->user();
 
-            if (is_null($mentorship_request)) {
-                throw new NotFoundException("The specified mentor request was not found", 1);
-            }
-
             if ($current_user->uid !== $mentorship_request->mentee_id) {
                 throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
@@ -368,8 +349,8 @@ class RequestController extends Controller
             $mentorship_request->save();
 
             $this->respond(Response::HTTP_OK, ["message" => "Request Cancelled"]);
-        } catch (NotFoundException $exception) {
-            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => $exception->getMessage()]);
+        } catch (ModelNotFoundException $exception) {
+            throw new NotFoundException("The specified mentor request was not found");
         } catch (UnauthorizedException $exception) {
             return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
         }
