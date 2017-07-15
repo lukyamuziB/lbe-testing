@@ -34,4 +34,9 @@ class Session extends Model
     {
         return $this->belongsTo("App\Models\Request", "request_id", "id");
     }
+
+    public function rating()
+    {
+        return $this->hasOne("App\Models\Rating", "session_id", "id");
+    }
 }

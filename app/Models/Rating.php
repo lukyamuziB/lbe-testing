@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +12,7 @@ class Rating extends Model {
         "user_id",
         "session_id",
         "values",
-        "scale"
+        "scale",
     ];
 
     public static $rules = [
@@ -20,7 +20,7 @@ class Rating extends Model {
         "user_id" => "string",
         "session_id"   => "required|numeric",
         "values" => "required|array",
-        "scale" => "required|integer"
+        "scale" => "required|integer",
     ];
 
     // Relationships
@@ -33,5 +33,5 @@ class Rating extends Model {
     {
         return $this->belongsTo("App\Models\User", "user_id", "user_id");
     }
-    
+
 }

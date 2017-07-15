@@ -67,7 +67,7 @@ class SessionController extends Controller
      */
     public function getSessionsByRequestId($request_id)
     {
-        $request_sessions = Session::where('request_id', $request_id)->get();
+        $request_sessions = Session::withCount('rating')->where('request_id', $request_id)->get();
         return $request_sessions;
     }
     /**
