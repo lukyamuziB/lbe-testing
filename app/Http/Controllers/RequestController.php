@@ -41,7 +41,7 @@ class RequestController extends Controller
     public function all(Request $request)
     {
         // generic collection to hold requests to be sent as response
-        $mentorship_requests = [];
+        $limit = $request->input('limit') ? $request->input('limit') : 20;
 
         // build all where clauses based off of query params (location & time)
         if ($request->input('self')) {
@@ -50,14 +50,19 @@ class RequestController extends Controller
             $mentorship_requests = $this->getAllRequestByMentorSkills($request->user()->uid);
         } else {
             $mentorship_requests = MentorshipRequest::buildWhereClause($request)
-                ->orderBy('created_at', 'desc')->get();
+                ->orderBy('created_at', 'desc')
+                ->paginate($limit);
+
+            $response["pagination"] = [
+                "totalCount" => $mentorship_requests->total(),
+                "pageSize" => $mentorship_requests->perPage()
+            ];
         }
 
         // transform the result objects into API ready responses
         $transformed_requests = $this->transformRequestData($mentorship_requests);
-        $response = [
-            "data" => $transformed_requests
-        ];
+
+        $response["data"] = $transformed_requests;
 
         return $this->respond(Response::HTTP_OK, $response);
     }
