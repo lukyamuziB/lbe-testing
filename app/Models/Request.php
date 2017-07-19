@@ -66,6 +66,11 @@ class Request extends Model
         return $this->belongsTo('App\Models\User', 'mentee_id');
     }
 
+    public function mentor()
+    {
+        return $this->belongsTo('App\Models\User', 'mentor_id');
+    }
+    
     public function requestSkills()
     {
         return $this->hasMany("App\Models\RequestSkill");

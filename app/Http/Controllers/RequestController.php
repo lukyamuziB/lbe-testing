@@ -235,6 +235,12 @@ class RequestController extends Controller
             $mentorship_request->save();
 
             $mentor_name = $current_user->name;
+            $mentor_id = $current_user->uid;
+            $mentor_email=$current_user->email;
+
+            //update users table with mentor details if they don't exist
+             User::firstOrCreate(["user_id" => $mentor_id], ["email" => $mentor_email]);
+
             $mentee_id = $mentorship_request->mentee_id;
             $request_url = $this->getClientBaseUrl()."/requests/{$id}";
 
@@ -427,6 +433,7 @@ class RequestController extends Controller
             "mentee_id" => $result->mentee_id,
             "mentee_email" => $result->user->email ?? '',
             "mentor_id" => $result->mentor_id,
+            "mentor_email" => $result->mentor->email ?? '',
             "title" => $result->title,
             "description" => $result->description,
             "interested" => $result->interested,
