@@ -48,6 +48,17 @@ class RequestController extends Controller
             $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $request);
         } elseif ($request->input('mentor')) {
             $mentorship_requests = $this->getMentorRequests($request->user()->uid);
+        } elseif ($request->input('q')) {
+            $search_query = $request->input('q');
+            $mentorship_requests = MentorshipRequest::whereHas(
+                'mentor', function ($query) use ($search_query) {
+                    $query -> where('email', 'iLIKE', '%'.$search_query.'%');
+                }
+            )->orWhereHas(
+                'user', function ($query) use ($search_query) {
+                    $query -> where('email', 'iLIKE', '%'.$search_query.'%');
+                    }
+            )-> get();
         } else {
             $mentorship_requests = MentorshipRequest::buildWhereClause($request)
                 ->orderBy('created_at', 'desc')
