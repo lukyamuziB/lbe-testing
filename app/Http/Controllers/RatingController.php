@@ -4,9 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
-use App\Rating;
-use App\Request as MentorshipRequest;
-use App\Session;
+use App\Models\Rating;
+use App\Models\Request as MentorshipRequest;
+use App\Models\Session;
 
 class RatingController extends Controller
 {

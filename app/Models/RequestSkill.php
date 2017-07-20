@@ -1,4 +1,4 @@
-<?php namespace App;
+<?php namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,16 +16,16 @@ class RequestSkill extends Model {
 
     public function request()
     {
-        return $this->belongsTo("App\Request");
+        return $this->belongsTo("App\Models\Request");
     }
 
     public function skill()
     {
-        return $this->belongsTo("App\Skill");
+        return $this->belongsTo("App\Models\Skill");
     }
 
     public function userSkills()
     {
-        return $this->belongsTo("App\UserSkill");
+        return $this->belongsTo("App\Models\UserSkill");
     }
 }

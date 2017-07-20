@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Skill;
-use App\UserSkill;
+use App\Models\Skill;
+use App\Models\UserSkill;
 use App\Exceptions\Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -11,7 +11,7 @@ use Illuminate\Http\Response;
 
 class SkillController extends Controller
 {
-    const MODEL = 'App\Skill';
+    const MODEL = 'App\Models\Skill';
 
     use RESTActions;
 

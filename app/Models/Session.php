@@ -1,5 +1,5 @@
 <?php
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,6 +32,6 @@ class Session extends Model
 
     public function request()
     {
-        return $this->belongsTo("App\Request", "request_id", "id");
+        return $this->belongsTo("App\Models\Request", "request_id", "id");
     }
 }

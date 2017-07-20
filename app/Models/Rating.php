@@ -1,5 +1,5 @@
 <?php 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,12 +26,12 @@ class Rating extends Model {
     // Relationships
     public function session()
     {
-        return $this->belongsTo("App\Session", "session_id", "id");
+        return $this->belongsTo("App\Models\Session", "session_id", "id");
     }
 
     public function user()
     {
-        return $this->belongsTo("App\User", "user_id", "user_id");
+        return $this->belongsTo("App\Models\User", "user_id", "user_id");
     }
     
 }

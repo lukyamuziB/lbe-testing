@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
 
 use App\Clients\AISClient as AISClient;
-use App\Request as MentorshipRequest;
+use App\Models\Request as MentorshipRequest;
 use App\Mail\UnmatchedRequests as UnmatchedRequestMail;
 use Mockery\Exception;
 

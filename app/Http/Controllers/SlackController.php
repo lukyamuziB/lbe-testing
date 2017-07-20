@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\UnauthorizedException;
-use App\User as User;
+use App\Models\User as User;
 use App\Exceptions\Exception;
 use App\Exceptions\AccessDeniedException;
 use App\Exceptions\NotFoundException;

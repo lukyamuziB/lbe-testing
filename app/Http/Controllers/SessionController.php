@@ -4,8 +4,8 @@ use App\Exceptions\NotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use App\Request as MentorshipRequest;
-use App\Session;
+use App\Models\Request as MentorshipRequest;
+use App\Models\Session;
 use Carbon\Carbon;
 use Mockery\Exception;
 

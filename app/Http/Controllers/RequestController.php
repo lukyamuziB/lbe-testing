@@ -1,12 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\User;
-use App\UserSkill;
-use App\Status;
-use App\Skill;
-use App\RequestSkill;
-use App\Request as MentorshipRequest;
+use App\Models\User;
+use App\Models\UserSkill;
+use App\Models\Status;
+use App\Models\Skill;
+use App\Models\RequestSkill;
+use App\Models\Request as MentorshipRequest;
 use App\Utility\SlackUtility as Slack;
 use App\Exceptions\Exception;
 use App\Exceptions\NotFoundException;

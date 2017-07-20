@@ -11,7 +11,7 @@
 |
 */
 
-$factory->define(App\User::class, function (Faker\Generator $faker) {
+$factory->define(App\Models\User::class, function (Faker\Generator $faker) {
     return [
         'id' => $faker->numberBetween($min = 1, $max = 9000),
         'firstname' => $faker->name,

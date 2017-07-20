@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Status;
-use App\Request as MentorshipRequest;
-use App\Session;
+use App\Models\Status;
+use App\Models\Request as MentorshipRequest;
+use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;

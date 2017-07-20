@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-use App\Request as MentorshipRequest;
-use App\UserSkill;
-use App\Skill;
+use App\Models\Request as MentorshipRequest;
+use App\Models\UserSkill;
+use App\Models\Skill;
 
 use GuzzleHttp\Client;
 

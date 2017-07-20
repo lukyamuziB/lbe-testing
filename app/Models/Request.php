@@ -1,4 +1,4 @@
-<?php namespace App;
+<?php namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -63,17 +63,17 @@ class Request extends Model
 
     public function user()
     {
-        return $this->belongsTo('App\User', 'mentee_id');
+        return $this->belongsTo('App\Models\User', 'mentee_id');
     }
 
     public function requestSkills()
     {
-        return $this->hasMany("App\RequestSkill");
+        return $this->hasMany("App\Models\RequestSkill");
     }
 
     public function status()
     {
-        return $this->belongsTo("App\Status");
+        return $this->belongsTo("App\Models\Status");
     }
 
     /**

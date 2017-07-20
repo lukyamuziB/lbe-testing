@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,16 +18,16 @@ class UserSkill extends Model
 
     public function skills()
     {
-        return $this->belongsTo("App\Skill");
+        return $this->belongsTo("App\Models\Skill");
     }
 
     public function skill()
     {
-        return $this->hasOne("App\Skill", 'id', 'skill_id');
+        return $this->hasOne("App\Models\Skill", 'id', 'skill_id');
     }
 
     public function matchingRequests()
     {
-        return $this->hasMany('App\RequestSkill', 'skill_id', 'skill_id')->with('request');
+        return $this->hasMany('App\Models\RequestSkill', 'skill_id', 'skill_id')->with('request');
     }
 }
