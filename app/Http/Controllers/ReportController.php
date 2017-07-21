@@ -110,12 +110,14 @@ class ReportController extends Controller
                 DB::raw('(SELECT AVG(match_date - created_at) as average_time)')
             )
             ->first();
+        /*
+        1970-01-01 is added to get only the number of seconds contained in ($average_time->average_time) and
+        excluding the number of seconds since 1970-01-01
+        */
+        $timeStamp = strtotime("1970-01-01 ".$average_time->average_time);
+        $days = round(($timeStamp/86400));
 
-        if (!$average_time) {
-            return null;
-        }
-
-        return $average_time->average_time;
+        return (!$days) ? 0 : $days . "day(s)";
     }
 
     /**
