@@ -27,8 +27,8 @@ use GuzzleHttp\Client;
  */
 class RequestController extends Controller
 {
-    const MODEL = "App\Request";
-    const MODEL2 = "App\RequestSkill";
+    const MODEL = "App\Models\Request";
+    const MODEL2 = "App\Models\RequestSkill";
 
     use RESTActions;
 

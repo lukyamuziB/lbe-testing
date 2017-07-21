@@ -23,18 +23,18 @@ $factory->define(App\Models\User::class, function (Faker\Generator $faker) {
 });
 
 /**
- * Factory definition for model App\Requests.
+ * Factory definition for model App\Models\Requests.
  */
-$factory->define(App\Requests::class, function (Faker\Generator $faker) {
+$factory->define(App\Models\Requests::class, function (Faker\Generator $faker) {
     return [
         'user_id' => $faker->key,
     ];
 });
 
 /**
- * Factory definition for model App\Skill.
+ * Factory definition for model App\Models\Skill.
  */
-$factory->define(App\Skill::class, function (Faker\Generator $faker) {
+$factory->define(App\Models\Skill::class, function (Faker\Generator $faker) {
     return [
         'id' => $faker->numberBetween($min = 1, $max = 9000),
         'name' => $faker->name
