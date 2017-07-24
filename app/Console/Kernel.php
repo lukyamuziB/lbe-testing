@@ -15,7 +15,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\UnmatchedRequestsCommand::class,
         Commands\CacheSlackUsersCommand::class,
-
+        Commands\SaveMentorDetailsCommand::class
     ];
 
     /**
@@ -28,6 +28,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('notify:unmatched-requests')->dailyAt('6:00');
         $schedule->command('cache:slack-users')->dailyAt('12:00');
+        
     }
 
 }
