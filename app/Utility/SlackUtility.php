@@ -15,8 +15,17 @@ class SlackUtility
     protected $client;
     protected $token;
 
-    public function __construct()
+    protected $slack_repository;
+
+    /**
+     * SlackUtility constructor.
+     *
+     * @param SlackUsersRepository $slack_repository Dependency Injection
+     */
+    public function __construct(SlackUsersRepository $slack_repository)
     {
+        $this->slack_repository = $slack_repository;
+
         $this->client = new Client();
         $this->base_url = getenv("SLACK_API_URL");
         $this->token = getenv("SLACK_TOKEN");
@@ -108,9 +117,7 @@ class SlackUtility
      */
     public function verifyUserSlackHandle($slack_handle, $current_user_email)
     {
-        $slackUserRepository = new SlackUsersRepository();
-
-        $slack_user = $slackUserRepository->getByHandle($slack_handle);
+        $slack_user = $this->slack_repository->getByHandle($slack_handle);
 
         if (is_null($slack_user)) {
             throw new NotFoundException("slack handle not found");

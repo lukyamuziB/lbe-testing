@@ -89,6 +89,7 @@ $app->register(Barryvdh\Cors\ServiceProvider::class);
 $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(App\Providers\SlackServiceProvider::class);
 $app->register(\App\Providers\FreckleServiceProvider::class);
+$app->register(App\Providers\SlackUsersRepositoryProvider::class);
 $app->configure('cors');
 $app->configure('mail');
 $app->configure('redis');
