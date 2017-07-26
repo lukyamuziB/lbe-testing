@@ -19,17 +19,13 @@ class SlackUsersRepository implements RepositoryInterface
     }
 
     /**
-     * Populate $model from Redis cache
+     * Populate $model from Redis cache or make it an empty array if cache is empty
      */
     public function make()
     {
         $key = "slack:allUsers";
 
-        if (Redis::exists($key)) {
-            $this->model = json_decode(Redis::get($key));
-        } else {
-            throw new RepositoryException("Redis cache is not populated");
-        }
+        $this->model = Redis::exists($key) ? json_decode(Redis::get($key)) : [];
     }
 
     /**
@@ -37,11 +33,11 @@ class SlackUsersRepository implements RepositoryInterface
      *
      * @param integer $id slack id
      *
-     * @return object slack user
+     * @return object|null slack user or null if the user does not exist
      */
     public function getById($id)
     {
-        return $this->model[$id];
+        return $this->model[$id] ?? null;
     }
 
     /**
@@ -63,7 +59,7 @@ class SlackUsersRepository implements RepositoryInterface
      */
     public function getByEmail($email)
     {
-        $slack_user = new \stdClass();
+        $slack_user = null;
 
         foreach ($this->model as $record) {
             if ($record->email === $email) {
