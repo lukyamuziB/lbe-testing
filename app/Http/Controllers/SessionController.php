@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\Request as MentorshipRequest;
+use App\Models\User;
+use App\Clients\FreckleClient;
 use App\Models\Session;
 use Carbon\Carbon;
 use Mockery\Exception;
@@ -12,6 +14,14 @@ use Mockery\Exception;
 class SessionController extends Controller
 {
     use RESTActions;
+
+    protected $freckle_client;
+
+    public function __construct(FreckleClient $freckle_client) 
+    {
+            $this->freckle_client = $freckle_client;
+    }
+
     /**
      * Get all the logged sessions of a particular request
      * including sessions logged by both mentee & mentor,
@@ -212,18 +222,85 @@ class SessionController extends Controller
             $user_id = $request->input('user_id');
             $timezone = $mentorship_request->pairing['timezone'];
             $session_update_date = Carbon::now($timezone);
+
             if ($user_id === $mentorship_request->mentee_id) {
                 $approver = ["mentee_approved" => true, "mentee_logged_at" => $session_update_date];
             } elseif ($user_id === $mentorship_request->mentor_id) {
                 $approver = ["mentor_approved" => true, "mentor_logged_at" => $session_update_date];
             }
-            $session->fill($approver)->save();
-            $response = ["data" => $session];
-            return $this->respond(Response::HTTP_OK, $response);
+
+            //Send Sessions to Freckle
+            $sessionApproved = $session->fill($approver)->save();
+            if ($sessionApproved) {
+               return $this->logSessionToFreckle($session, $mentorship_request);
+            }
+            
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("Session does not exist");
         } catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+            $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
+    }
+
+    /**
+      * Calculate the time difference and return result in minutes
+      *
+      * @param String $start_time - session start time
+      * @param String $end_time - session end time
+      *
+      * @return String $duration- the time difference in minutes
+      */
+    public function timeDifference($start_time, $end_time) 
+    {
+        $duration = abs(strtotime($start_time) - strtotime($end_time)) / 60;
+        return $duration;
+    }
+
+    /**
+      * Get the Freckle Project ID to log hours from .env file 
+      *
+      * @return String - project id
+      */
+    private function getFreckleProjectID()
+    {
+        return getenv('FRECKLE_PROJECT_ID');
+    }
+
+    /**
+      * Log mentorship session to mentor's freckle account
+      *
+      * @param Object $session - session being logged
+      * @param Object $mentorship_request - request object whose sessions are
+      * being logged
+      * @param Object $freckle_client - instance of the Freckle Client class
+      *
+      * @return Object $response- response meessage
+      */
+    public function logSessionToFreckle($session, $mentorship_request)
+    {
+        $minutes = $this->timeDifference($session->start_time, $session->end_time);
+        $mentor_email =$mentorship_request->mentor->email;
+        $freckle_user = $this->freckle_client->getUserByEmail($mentor_email);
+        
+        if ($freckle_user) {
+            $data = array(
+                "date"=>$session->date,
+                "user_id"=>$freckle_user[0]['id'],
+                "minutes"=>$minutes,
+                "description"=>$mentorship_request->description,
+                "project_id"=>(int) $this->getFreckleProjectID(),
+            );
+            
+            $this->freckle_client->postEntry($data);
+
+            $response = ["data" => $session];
+            return $this->respond(Response::HTTP_OK, $response);
+
+        } else {
+            return $this->respond(
+                Response::HTTP_NOT_FOUND,
+                ["message" => "Freckle account does not exist"]
+            );
         }
     }
 }
