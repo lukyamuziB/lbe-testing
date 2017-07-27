@@ -8,17 +8,16 @@ use Illuminate\Support\Facades\Config;
 
 use App\Clients\AISClient as AISClient;
 use App\Models\Request as MentorshipRequest;
-use App\Mail\UnmatchedRequests as UnmatchedRequestMail;
-use Mockery\Exception;
+use App\Mail\UnmatchedRequestsMail;
 
-class UnmatchedRequestsCommand extends Command
+class UnmatchedRequestsSuccessCommand extends Command
 {
     /**
      * The console command name.
      *
      * @var string
      */
-    protected $signature = 'notify:unmatched-requests';
+    protected $signature = 'notify:unmatched-requests:success';
 
     /**
      * The console command description.
@@ -31,13 +30,17 @@ class UnmatchedRequestsCommand extends Command
     protected $ais_client;
     protected $base_url;
 
-
+    /**
+     * UnmatchedRequestsSuccessCommand constructor.
+     *
+     * @param AISClient $ais_client AIS client
+     */
     public function __construct(AISClient $ais_client)
     {
         parent::__construct();
+
         $this->ais_client = $ais_client;
         $this->base_url = getenv('LENKEN_FRONTEND_BASE_URL');
-
     }
 
     /**
@@ -48,7 +51,7 @@ class UnmatchedRequestsCommand extends Command
     public function handle()
     {
         // get all unmatched requests
-        $unmatched_requests = MentorshipRequest::getUnmatchedRequests();
+        $unmatched_requests = MentorshipRequest::getUnmatchedRequests(24)->toArray();
 
         // get all unique emails from the unmatched requests
         $unmatched_requests_emails = $this->getUniqueEmails($unmatched_requests);
@@ -73,7 +76,7 @@ class UnmatchedRequestsCommand extends Command
 
         // send the email
         Mail::to($recipient)->send(
-            new UnmatchedRequestMail($unmatched_requests_details)
+            new UnmatchedRequestsMail($unmatched_requests_details)
         );
     }
 
@@ -130,7 +133,7 @@ class UnmatchedRequestsCommand extends Command
      * @param array $unmatched_requests unmatched mentorship requests
      * @param array $placed_mentee_info information about feach fellow's placement
      *
-     * @return array $mentee_request_data unmatched requests with placement information
+     * @return array $mentee_request_data unmatched requests with placement info
      */
     private function appendPlacementInfo($unmatched_requests, $placed_mentee_info)
     {
@@ -139,14 +142,17 @@ class UnmatchedRequestsCommand extends Command
         foreach ($placed_mentee_info as $fellow) {
             foreach ($unmatched_requests as $request) {
                 if ($request["user"]["email"] === $fellow["email"]) {
-                    $mentee_request_data[$fellow["name"]] = [
+                    $mentee_request_data[$request["id"]] = [
                         "name" => $fellow["name"],
                         "placement" => $fellow["placement"],
                         "client" => $fellow["client"],
                         "email" => $fellow["email"],
                         "avatar" => $fellow["avatar"],
                         "request_title" => $request["title"],
-                        "request_url" => $this->base_url . '/requests/' . $request["id"]
+                        "request_url"
+                        => $this->base_url . '/requests/' . $request["id"],
+                        "request_skills"
+                        => array_column($request["request_skills"], "skill")
                     ];
                 }
             }
@@ -154,5 +160,4 @@ class UnmatchedRequestsCommand extends Command
 
         return $mentee_request_data;
     }
-
 }

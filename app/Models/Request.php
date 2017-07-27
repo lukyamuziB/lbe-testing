@@ -3,9 +3,6 @@
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
-use App\Request as MentorshipRequest;
-use App\Status;
-
 class Request extends Model
 {
 
@@ -129,20 +126,21 @@ class Request extends Model
     }
 
     /**
-     * Get all OPEN requests that have been made in
-     * the last 24 hours or more
+     * Get all unmatched requests that have been made
+     * before the given duration
+     *
+     * @param integer $duration duration
      *
      * @return array
      */
-    public static function getUnmatchedRequests($duration = 24)
+    public static function getUnmatchedRequests($duration = 0)
     {
         $threshold_date = Carbon::now()->subHours($duration);
-        $unmatched_requests = MentorshipRequest::with('user')
+        $unmatched_requests = Request::with("requestSkills.skill", "user")
             ->where('status_id', Status::OPEN)
             ->whereDate('created_at', '<=', $threshold_date)
             ->get();
 
         return $unmatched_requests;
     }
-
 }

@@ -13,24 +13,27 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\UnmatchedRequestsCommand::class,
+        Commands\UnmatchedRequestsSuccessCommand::class,
         Commands\CacheSlackUsersCommand::class,
         Commands\UnapprovedSessionsReminderCommand::class,
-        Commands\GenerateGoogleCredentials::class
+        Commands\GenerateGoogleCredentials::class,
+        Commands\UnmatchedRequestsFellowsCommand::class
     ];
 
     /**
      * Define the application's command schedule.
      *
-     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule command schedule
      *
      * @return void
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('notify:unmatched-requests')->dailyAt('6:00');
+        $schedule->command('notify:unmatched-requests:success')->dailyAt('6:00');
         $schedule->command('cache:slack-users')->dailyAt('12:00');
         $schedule->command('notify:unapproved-sessions')->hourly();
+        $schedule->command('notify:unmatched-requests:fellows')
+            ->weekly()->mondays()->at('9:00');
     }
 
 }
