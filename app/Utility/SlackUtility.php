@@ -84,15 +84,18 @@ class SlackUtility
         $requests = [];
         foreach ($channels as $channel) {
             $requests[] = $this->client->postAsync(
-                $slack_api_url, ["form_params" => [
-                    "token" => $this->token,
-                    "username" => "Lenken Notifications",
-                    "as_user" => false,
-                    "link_names" => true,
-                    "icon_url" => getenv("SLACK_ICON"),
-                    "channel" => $channel,
-                    "text" => $message,
-                ]]
+                $slack_api_url, [
+                    "form_params" => [
+                        "token" => $this->token,
+                        "username" => "Lenken Notifications",
+                        "as_user" => false,
+                        "link_names" => true,
+                        "icon_url" => getenv("SLACK_ICON"),
+                        "channel" => $channel,
+                        "text" => $message,
+                    ],
+                    "verify" => false
+                ]
             );
         }
 
@@ -142,7 +145,8 @@ class SlackUtility
             "POST", $api_url, [
                 "form_params" => [
                     "token" => $this->token
-                ]
+                ],
+                "verify" => false
             ]
         );
 

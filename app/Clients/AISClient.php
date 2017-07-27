@@ -38,7 +38,8 @@ class AISClient
         $response = $this->client->request(
             'GET', $this->api_url.'/users/'.$id,
             [
-                "headers" => ["api-token" => $this->authorization_token]
+                "headers" => ["api-token" => $this->authorization_token],
+                "verify" => false
             ]
         );
 
@@ -59,7 +60,8 @@ class AISClient
         $response = $this->client->request(
             'GET', $this->api_url.'/users?emails='.$email,
             [
-                "headers" => ["api-token" => $this->authorization_token]
+                "headers" => ["api-token" => $this->authorization_token],
+                "verify" => false
             ]
         );
 
@@ -83,6 +85,7 @@ class AISClient
             'GET', $this->api_url.'/users?emails='.join(",", $emails).'&limit='.$limit,
             [
                 "headers" => ["api-token" => $this->authorization_token],
+                "verify" => false
             ]
         );
 
@@ -105,7 +108,8 @@ class AISClient
         $response = $this->client->request(
             'GET', $this->api_url.'/users?name='.$name.'&limit='.$limit,
             [
-                "headers" => ["api-token" => $this->authorization_token]
+                "headers" => ["api-token" => $this->authorization_token],
+                "verify" => false
             ]
         );
 
