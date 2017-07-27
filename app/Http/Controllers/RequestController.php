@@ -47,7 +47,7 @@ class RequestController extends Controller
         if ($request->input('self')) {
             $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $request);
         } elseif ($request->input('mentor')) {
-            $mentorship_requests = $this->getAllRequestByMentorSkills($request->user()->uid);
+            $mentorship_requests = $this->getMentorRequests($request->user()->uid);
         } else {
             $mentorship_requests = MentorshipRequest::buildWhereClause($request)
                 ->orderBy('created_at', 'desc')
@@ -545,26 +545,23 @@ class RequestController extends Controller
 
     /**
      * Gets all the requests that match a mentor's skill
+     * and all the requests a mentor has indicated
+     * interest in
      *
      * @param string $user_id
      * @return array $mentorship_requests
      */
-    private function getAllRequestByMentorSkills($user_id)
+    private function getMentorRequests($user_id)
     {
-        // retrieve mentorship requests that match current user's skills
-        $user_skills = UserSkill::with('matchingRequests')
-            ->where('user_id', $user_id)
+        $mentorship_requests = MentorshipRequest::with('requestSkills')
+            ->whereExists(function ($query) use ($user_id) {
+                $query
+                    ->from('user_skills')
+                    ->where('user_skills.user_id', $user_id);
+            })
+            ->orwhere('interested->', $user_id)
             ->get();
-
-        // pluck out the actual mentorship request from query result
-        $mentorship_requests = [];
-        foreach ($user_skills as $user_skill) {
-            foreach($user_skill->matchingRequests as $user_request) {
-                array_push($mentorship_requests, $user_request->request);
-            }
-        }
-
-        return $mentorship_requests;
+           return $mentorship_requests;
     }
 
     /**
