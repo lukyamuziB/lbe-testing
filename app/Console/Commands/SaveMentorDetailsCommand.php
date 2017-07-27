@@ -44,14 +44,17 @@ class SaveMentorDetailsCommand extends Command
         $mentors_ids = $this -> getAllMentorIds();
 
         foreach ($mentors_ids as $mentor_id) {
-            // Get mentor data by their id
-            $response = $this->ais_client->getUserById($mentor_id);
-            $mentor_details = [
-                "user_id" => $mentor_id,
-                "email" => $response['email']
-            ];
-            // Save Mentor email and id in the users table 
-            User::updateOrCreate($mentor_details);
+            // skips null mentor id
+            if ($mentor_id !== null) {
+                // Get mentor data by their id
+                $response = $this->ais_client->getUserById($mentor_id);
+                $mentor_details = [
+                    "user_id" => $mentor_id,
+                    "email" => $response['email']
+                ];
+                // Save Mentor email and id in the users table 
+                User::updateOrCreate($mentor_details);
+            }
         }
     }
 
