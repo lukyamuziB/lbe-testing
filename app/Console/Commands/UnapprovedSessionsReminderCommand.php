@@ -77,9 +77,11 @@ class UnapprovedSessionsReminderCommand extends Command
                 = "A Mentorship Session has been logged with you.".
                    "\nKindly approve: {$session_url}";
 
-            $this->slack_utility->sendMessage(
-                $session["request"]["user"]["slack_handle"], $message
-            );
+            if (isset($session["request"]["user"]["slack_handle"])) {
+                $this->slack_utility->sendMessage(
+                    $session["request"]["user"]["slack_handle"], $message
+                );
+            }
         }
     }
 
@@ -98,9 +100,11 @@ class UnapprovedSessionsReminderCommand extends Command
 
             $slack_user = $this->slack_repository
                 ->getByEmail($session["request"][$user_key]["email"]);
-            $handle = $slack_user->handle;
 
-            $unapproved_sessions[$key]["request"]["user"]["slack_handle"] = $handle;
+            if ($slack_user) {
+                $unapproved_sessions[$key]["request"]["user"]["slack_handle"]
+                    = $slack_user->handle;
+            }
         }
     }
 }

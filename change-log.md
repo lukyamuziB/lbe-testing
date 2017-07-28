@@ -1,3 +1,15 @@
+# V 1.2.0
+
+## Features
+- integrate Session logging with Freckle
+- disable Ratings for rated Sessions
+- paginate Dashboard Requests
+- display Mentor name with matched Requests for Admins
+- implement all Slack Users cache
+- round up Average Time to Match Report
+- implement global Exception handling
+- move Models to appropriate namespace
+
 # V 1.1.2
 
 ## Features
