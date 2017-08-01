@@ -25,6 +25,10 @@ class AddUniqueToNameColumnInSkillsTable extends Migration
      */
     public function down()
     {
-        Schema::dropColumn('name')->unique()->change();
+        Schema::table(
+            'skills', function (Blueprint $table) {
+                $table->dropUnique('skills_name_unique');
+            }
+        );
     }
 }

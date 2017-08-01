@@ -1,12 +1,11 @@
 machine:
   php:
     version: 7.0.7
-  services:
-    - docker 
   environment:
+    APP_ENV: testing
     POSTGRES_USER: ubuntu
     POSTGRES_HOST: "127.0.0.1"
-    POSTGRES_DB: circle_test
+    POSTGRES_DB: lenken-test
     COVERALLS_SERVICE_NAME: circle-ci
     PROJECT_NAME: microservices-kube
     CLUSTER_NAME: staging
@@ -21,22 +20,24 @@ machine:
     DEPLOYMENT_PROD: lenken-server
     IMAGE_PROD: lenken-server
     IMG_TAG: $(echo $CIRCLE_SHA1 | cut -c -7)
+  services:
+    - redis
 
-checkout:
-  post:
-    - git submodule sync
-    - git submodule init
-test:
-  pre:
+general:
+  artifacts:
+    - "reports"
+
+dependencies:
+  override:
     - curl -sS https://getcomposer.org/installer | php --filename=composer
-    - composer install --prefer-source --no-interaction
+    - composer install --prefer-dist --no-interaction
 
-deployment:
-  production:
-    branch: master
-    commands: 
-      - ./micro-shared/deploy-production.sh
-  staging:
-    branch: develop
-    commands:
-      - ./micro-shared/deploy-staging.sh
+test:
+  override:
+    - composer test
+
+#deployment:
+#  staging:
+#    branch: develop
+#    heroku:
+#      appname: lenken-api-staging

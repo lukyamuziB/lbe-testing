@@ -12,12 +12,12 @@ class RequestsTableSeeder extends Seeder
     public function run()
     {
         $faker = Faker\Factory::create();
-        $limit = 1;
+        $limit = 20;
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('requests')->insert([
                 'mentee_id' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
-                'mentor_id' => $faker->randomElement(['-KesEogCwjq6lkOzKmLI']),
+                'mentor_id' => $faker->randomElement(['-KesEogCwjq6lkOzKmLI', '-KXGy1MT1oimjQgFim7u']),
                 'title' => $faker->sentence($nbWords = 6, $variableNbWords = true),
                 'description' => $faker->text($maxNbChars = 300),
                 'status_id' => $faker->randomElement($array = array(1, 2)),

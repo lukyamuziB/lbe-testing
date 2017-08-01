@@ -27,8 +27,12 @@ class AddUniqueToAllColumnsInUsersTable extends Migration
      */
     public function down()
     {
-        Schema::dropColumn('user_id')->unique()->change();
-        Schema::dropColumn('slack_id')->unique()->change();
-        Schema::dropColumn('email')->unique()->change();        
+        Schema::table(
+            'users', function (Blueprint $table) {
+                $table->dropUnique('users_user_id_unique');
+                $table->dropUnique('users_slack_id_unique');
+                $table->dropUnique('users_email_unique');
+            }
+        );
     }
 }

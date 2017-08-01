@@ -49,7 +49,7 @@ _*Manual Installation*_(for mac)
 - Start the server with ```php -S <localhost>:<port>```
 
 ## Testing
-- [Peridot](http://peridot-php.github.io/)
+- [PHPUnit](https://phpunit.de/)
   - Test files are located at `~/tests`
   - Run ```composer test``` to run tests
 

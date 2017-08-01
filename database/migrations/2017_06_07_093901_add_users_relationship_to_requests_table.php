@@ -25,6 +25,10 @@ class AddUsersRelationshipToRequestsTable extends Migration
      */
     public function down()
     {
-        $table->dropForeign('requests_mentee_id_foreign');
+        Schema::table(
+            'requests', function (Blueprint $table) {
+                $table->dropForeign('requests_mentee_id_foreign');
+            }
+        );
     }
 }

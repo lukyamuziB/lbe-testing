@@ -135,7 +135,7 @@ class SkillController extends Controller
     {
         try {
             if (UserSkill::where('skill_id', $id)->exists()
-                || \App\RequestSkill::where('skill_id', $id)->exists()
+                || \App\Models\RequestSkill::where('skill_id', $id)->exists()
             ){
                 return $this->respond(Response::HTTP_FORBIDDEN, ["data" => "Skill is currently in use"]);
             }
