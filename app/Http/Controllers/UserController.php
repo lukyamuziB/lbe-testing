@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use App\Models\Request as MentorshipRequest;
+use App\Clients\AISClient;
 use App\Models\UserSkill;
 use App\Models\Skill;
 
@@ -17,20 +17,9 @@ class UserController extends Controller
      *
      * @return Response object
      */
-    public function get(Request $request, $id)
+    public function get(Request $request, AISClient $ais_client, $id)
     {
-        $client = new Client();
-
-        $auth_header = $request->header("Authorization");
-
-        $api_url = getenv('AIS_API_URL');
-
-        $response = $client->request('GET', $api_url.'/users/'.$id, [
-            'headers' => ['Authorization' => $auth_header],
-            'verify' => false
-        ]);
-
-        $body = json_decode($response->getbody(), true);
+        $user_details = $ais_client->getUserById($id);
 
         $user_skill_objects = UserSkill::with('skill')->where('user_id', $id)->get();
 
@@ -47,7 +36,7 @@ class UserController extends Controller
         $request_count = $this->getMenteeRequests($id);
 
         $response = [
-            "data" => $body,
+            "data" => $user_details,
             "skills" => $user_skills,
             "request_count" => $request_count
         ];
