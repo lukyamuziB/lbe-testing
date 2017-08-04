@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Redis;
 
 class SlackUsersRepository implements RepositoryInterface
 {
-    private $model;
+    protected $model;
 
     /**
-     * SlackUsersRepository constructor.
+     * SlackUsersRepositoryMock constructor.
      */
     public function __construct()
     {
@@ -81,7 +81,6 @@ class SlackUsersRepository implements RepositoryInterface
     public function getByHandle($handle)
     {
         $slack_user = null;
-
         foreach ($this->model as $record) {
             if ($record->handle === $handle) {
                 $slack_user = $record;

@@ -20,9 +20,10 @@ class SlackController extends Controller
     /**
      * updateUserId gets a users slack handle and updates the users' slack handle.
      *
-     * @param object $request the request object
-     * @param object $slack_utility the slack provider service
+     * @param Request|object $request the request object
+     * @param SlackUtility|object $slack_utility the slack provider service
      * @return object the updated user details
+     * @throws AccessDeniedException
      */
     public function updateUserId(Request $request, SlackUtility $slack_utility)
     {
@@ -70,9 +71,10 @@ class SlackController extends Controller
     /**
      * SendMessage sends a slack message to a user.
      *
-     * @param object $request the request object
-     * @param object $slack_utility the slack provider service
+     * @param Request|object $request the request object
+     * @param SlackUtility|object $slack_utility the slack provider service
      * @return object the slack response object
+     * @throws AccessDeniedException
      */
     public function sendMessage(Request $request, SlackUtility $slack_utility)
     {

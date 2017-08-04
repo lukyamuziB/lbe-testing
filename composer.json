@@ -49,7 +49,7 @@
         "post-root-package-install": [
             "php -r \"copy('.env.example', '.env');\""
         ],
-        "test": "phpunit --debug --coverage-html ./coverage || php -r \"return 0;\""
+        "test": "phpunit --debug --coverage-html ./coverage"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
