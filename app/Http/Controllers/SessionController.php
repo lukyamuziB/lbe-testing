@@ -10,6 +10,9 @@ use App\Clients\FreckleClient;
 use App\Models\Session;
 use Carbon\Carbon;
 use Mockery\Exception;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\FailedFreckleLoggingMail;
+use GuzzleHttp\Exception\TransferException;
 
 class SessionController extends Controller
 {
@@ -17,7 +20,7 @@ class SessionController extends Controller
 
     protected $freckle_client;
 
-    public function __construct(FreckleClient $freckle_client) 
+    public function __construct(FreckleClient $freckle_client)
     {
             $this->freckle_client = $freckle_client;
     }
@@ -232,9 +235,9 @@ class SessionController extends Controller
             //Send Sessions to Freckle
             $sessionApproved = $session->fill($approver)->save();
             if ($sessionApproved) {
-               return $this->logSessionToFreckle($session, $mentorship_request);
+                return $this->logSessionToFreckle($session, $mentorship_request);
             }
-            
+
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("Session does not exist");
         } catch (Exception $exception) {
@@ -278,29 +281,53 @@ class SessionController extends Controller
       */
     public function logSessionToFreckle($session, $mentorship_request)
     {
-        $minutes = $this->timeDifference($session->start_time, $session->end_time);
-        $mentor_email =$mentorship_request->mentor->email;
-        $freckle_user = $this->freckle_client->getUserByEmail($mentor_email);
-        
-        if ($freckle_user) {
-            $data = array(
-                "date"=>$session->date,
-                "user_id"=>$freckle_user[0]['id'],
-                "minutes"=>$minutes,
-                "description"=>$mentorship_request->description,
-                "project_id"=>(int) $this->getFreckleProjectID(),
+        try {
+            $minutes = $this->timeDifference(
+                $session->start_time,
+                $session->end_time
             );
-            
-            $this->freckle_client->postEntry($data);
-
+            $mentor_email =$mentorship_request->mentor->email;
+            $freckle_user = $this->freckle_client->getUserByEmail($mentor_email);
             $response = ["data" => $session];
-            return $this->respond(Response::HTTP_OK, $response);
 
-        } else {
-            return $this->respond(
-                Response::HTTP_NOT_FOUND,
-                ["message" => "Freckle account does not exist"]
-            );
-        }
+            if ($freckle_user) {
+                $data = array(
+                    "date"=>$session->date,
+                    "user_id"=>$freckle_user[0]['id'],
+                    "minutes"=>$minutes,
+                    "description"=>$mentorship_request->description,
+                    "project_id"=>(int) $this->getFreckleProjectID(),
+                );
+
+                $this->freckle_client->postEntry($data);
+
+            } else {
+                throw new TransferException();
+            }
+        } catch (TransferException $exception) {
+            $this->sendUnregisteredFreckleUserMail($session, $mentor_email);
+        };
+
+        return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    /**
+     * Notify unregistered freckle mentors of failed mentorship logging
+     *
+     * @param Object $session - session being logged
+     * @param String $to_address - recipient email
+     */
+    private function sendUnregisteredFreckleUserMail($session, $to_address)
+    {
+        $lenken_base_url = getenv("LENKEN_FRONTEND_BASE_URL");
+        $request_url = $lenken_base_url."/requests/".$session['request_id'];
+        $date = $session->date;
+        $session_details = array(
+            "date"=>$date,
+            "session_request_url"=>$request_url,
+        );
+        Mail::to($to_address)->send(
+            new FailedFreckleLoggingMail($session_details)
+        );
     }
 }
