@@ -127,8 +127,9 @@ class RequestController extends Controller
         $secondary = $request->all()["secondary"];
         $this->mapRequestToSkill($created_request->id, $primary, $secondary);
 
-        // find all mentors matching request we need to send them emails */
-        $all_skills = array_merge($primary, $secondary);
+        /* find all mentors matching request we need to send them emails. however the
+        the secondary field can sometimes be empty so no need to merge */
+        $all_skills = $secondary ? array_merge($primary, $secondary) : $primary;
         $user_info = UserSkill::wherein('skill_id', $all_skills)->select('user_id')->get()->toArray();
         $mentor_ids = [];
 
