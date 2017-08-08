@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/andela/lenken-server.svg?style=svg&circle-token=95f7933a124aa262d55c9f2b0915af7e8611b3eb)](https://circleci.com/gh/andela/lenken-server)
+
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/c83190839f8203b0a76b)
 
 # Lenken Server
