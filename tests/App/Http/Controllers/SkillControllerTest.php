@@ -19,7 +19,6 @@ class SkillControllerTest extends TestCase
                     "role" => "Admin",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "profile_pic" => "https://lh6.googleusercontent.com/-dBu1_ranW2c/AAAAAAAAAAI/AAAAAAAAACs/ocwqjL9lTFY/photo.jpg?sz=50",
                 ]
             )
         );
