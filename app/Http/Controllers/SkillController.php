@@ -31,8 +31,10 @@ class SkillController extends Controller
             return $this->getUserSkills($input['id']);
         } else if (array_keys($input) === ['q']) {
             if (!preg_match("/^[a-zA-Z0-9-]+$/", $input['q'])) {
-                return $this->respond(Response::HTTP_BAD_REQUEST,
-                    ["message" => "only alphanumeric characters and hyphens allowed"]);
+                return $this->respond(
+                    Response::HTTP_BAD_REQUEST,
+                    ["message" => "only alphanumeric characters and hyphens allowed"]
+                );
             }
 
             $search_query = $input['q'];

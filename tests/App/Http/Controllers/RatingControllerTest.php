@@ -91,7 +91,6 @@ class RatingsControllerTest extends TestCase
             'The session id field is required.'
         );
 
-
         // Invalid User
         $this->be(
             factory(User::class)->make(

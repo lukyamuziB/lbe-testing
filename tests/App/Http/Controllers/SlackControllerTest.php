@@ -10,7 +10,9 @@ use TestCase;
 class SlackControllerTest extends TestCase
 {
     /**
-     * setUp before each test
+     * SetUp before each test
+     *
+     * @return void
      */
     public function setUp()
     {
