@@ -17,7 +17,9 @@
         "barryvdh/laravel-cors": "^0.9.2",
         "illuminate/mail": "^5.4",
         "guzzlehttp/guzzle": "^6.2",
-        "doctrine/dbal": "^2.5"
+        "doctrine/dbal": "^2.5",
+        "google/apiclient": "^2.2",
+        "google/auth": "^1.0"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
@@ -30,7 +32,8 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/"
-        }
+        },
+        "classmap": [ "./vendor/google/apiclient/src/Google" ]
     },
     "autoload-dev": {
         "classmap": [
@@ -44,7 +47,7 @@
     },
     "scripts": {
         "post-install-cmd": [
-            "php artisan migrate"
+            "php artisan generate:google-credentials"
         ],
         "post-root-package-install": [
             "php -r \"copy('.env.example', '.env');\""
