@@ -65,9 +65,9 @@ class SkillControllerTest extends TestCase
      */
     public function testGetFailure()
     {
-        $this->get("/api/v1/skills/1b");
+        $this->get("/api/v1/skills/90");
 
-        $this->assertResponseStatus(500);
+        $this->assertResponseStatus(404);
         $response = json_decode($this->response->getContent());
         $this->assertEmpty($response);
     }
@@ -84,8 +84,8 @@ class SkillControllerTest extends TestCase
         $this->assertResponseStatus(201);
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("data", $response);
-        $this->assertEquals($response->data->skill->name, "PHPUnit");
-        $this->assertEquals($response->data->message, "Skill was successfully created");
+        $this->assertEquals("PHPUnit", $response->data->skill->name);
+        $this->assertEquals("Skill was successfully created", $response->data->message);
     }
 
     /**
@@ -101,7 +101,7 @@ class SkillControllerTest extends TestCase
 
         $this->assertResponseStatus(409);
         $response = json_decode($this->response->getContent());
-        $this->assertEquals($response->message, "Skill already exists");
+        $this->assertEquals("Skill already exists", $response->message);
 
         //Invalid skill input
         $this->post("/api/v1/skills", ["name" => ""]);
@@ -123,7 +123,7 @@ class SkillControllerTest extends TestCase
         
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertEquals($response->data, "Skill deleted");
+        $this->assertEquals("Skill deleted", $response->data);
     }
 
     /**
@@ -133,11 +133,14 @@ class SkillControllerTest extends TestCase
      */
     public function testRemoveFailure()
     {
-        $this->delete("/api/v1/skills/70");
+        $this->delete("/api/v1/skills/7");
         
-        $this->assertResponseStatus(500);
+        $this->assertResponseStatus(403);
         $response = json_decode($this->response->getContent());
-        $this->assertEmpty($response);
+        $this->assertEquals(
+            "Skill is currently in use",
+            $response->data
+        );
     }
 
     /**
@@ -154,8 +157,8 @@ class SkillControllerTest extends TestCase
         $this->assertObjectHasAttribute("data", $response);
         $this->assertEquals("Visual Basic", $response->data->skill->name);
         $this->assertEquals(
-            $response->data->message,
-            "Skill was successfully modified"
+            "Skill was successfully modified",
+            $response->data->message
         );
     }
 

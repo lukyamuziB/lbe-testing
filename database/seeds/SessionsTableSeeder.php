@@ -17,16 +17,18 @@ class SessionsTableSeeder extends Seeder
 
         for ($i = 0; $i < $limit; $i++) {
 
+            $isSessionApproved = $i%2;
+
             DB::table('sessions')->insert(
                 [
                     'request_id' => $faker->numberBetween($min = 1, $max = 20),
                     'date' => Carbon::today(),
                     'start_time' => Carbon::now()->addHour(12),
                     'end_time' => Carbon::now()->addHour(14),
-                    'mentee_approved' => $faker->boolean(),
-                    'mentor_approved' => $faker->boolean(),
-                    'mentee_logged_at' => Carbon::now(),
-                    'mentor_logged_at' => Carbon::now()
+                    'mentee_approved' => $isSessionApproved,
+                    'mentor_approved' => $isSessionApproved,
+                    'mentee_logged_at' => $isSessionApproved ? Carbon::now() : null,
+                    'mentor_logged_at' => $isSessionApproved ? Carbon::now() : null
                 ]
             );
         }

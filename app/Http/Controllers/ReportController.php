@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AccessDeniedException;
 use App\Models\Status;
 use App\Models\Request as MentorshipRequest;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Carbon\CarbonInterval;
 
 class ReportController extends Controller
 {
@@ -17,48 +17,57 @@ class ReportController extends Controller
     /**
      * Gets all Mentorship Requests by location and period
      *
-     * @param Request object
+     * @param Request $request
      * @return Response object
+     * @internal param object $Request
      */
     public function all(Request $request)
     {
-        // initialize response object
-        $response = ["data"=> []];
+        try {
+            if ($request->user()->role !== 'Admin') {
+                throw new AccessDeniedException('you do not have permission to perform this action');
+            }
+            // initialize response object
+            $response = ["data"=> []];
 
-        // build all where clauses based off of query params (location & time)
-        $mentorship_requests = MentorshipRequest::buildWhereClause($request)->get();
+            // build all where clauses based off of query params (location & time)
+            $mentorship_requests = MentorshipRequest::buildWhereClause($request)->get();
 
-        $response["data"]["skills_count"] = $this->getSkillCount($mentorship_requests);
+            $response["data"]["skills_count"] = $this->getSkillCount($mentorship_requests);
 
-        // transform the result objects into API ready responses
-        if ($request->input('include')) {
-            $includes = explode(",", $request->input('include'));
+            // transform the result objects into API ready responses
+            if ($request->input('include')) {
+                $includes = explode(",", $request->input('include'));
 
-            if (in_array("totalRequests", $includes)) {
-                $response["data"]["totalRequests"] = MentorshipRequest::buildWhereClause($request)->count();
+                if (in_array("totalRequests", $includes)) {
+                    $response["data"]["totalRequests"] = MentorshipRequest::buildWhereClause($request)->count();
+                }
+
+                if (in_array("totalRequestsMatched", $includes)) {
+                    $response["data"]["totalRequestsMatched"] = $this->getMatchedRequestsCount($request);
+                }
+
+                if (in_array("averageTimeToMatch", $includes)) {
+                    $response["data"]["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
+                }
+
+                if (in_array("sessionsCompleted", $includes)) {
+                    $response["data"]["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
+                }
             }
 
-            if (in_array("totalRequestsMatched", $includes)) {
-                $response["data"]["totalRequestsMatched"] = $this->getMatchedRequestsCount($request);
-            }
-
-            if (in_array("averageTimeToMatch", $includes)) {
-                $response["data"]["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
-            }
-
-            if (in_array("sessionsCompleted", $includes)) {
-                $response["data"]["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
-            }
-         }
-
-        return $this->respond(Response::HTTP_OK, $response);
+            return $this->respond(Response::HTTP_OK, $response);
+        } catch (AccessDeniedException $exception) {
+            return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
+        }
     }
 
     /**
      * Gets all matched requests count
      *
-     * @param $date request request payload
+     * @param $request
      * @return number
+     * @internal param Request $date request payload
      */
     private function getMatchedRequestsCount($request)
     {
