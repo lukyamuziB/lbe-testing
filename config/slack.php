@@ -15,9 +15,7 @@ return [
 
     "production" => [
         "new_request_channels" => [
-            "mentorship-requests",
-            "lagos-fellows",
-            "nairobi-fellows"
+            "mentorship-requests"
         ]
     ]
 ];
