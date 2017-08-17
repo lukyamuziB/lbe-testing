@@ -33,12 +33,18 @@
         "psr-4": {
             "App\\": "app/"
         },
+        "files": [
+            "app/Helpers/GoogleCalendarHelper.php"
+        ],
         "classmap": [ "./vendor/google/apiclient/src/Google" ]
     },
     "autoload-dev": {
         "classmap": [
             "tests/",
             "database/"
+        ],
+        "files": [
+            "app/Helpers/GoogleCalendarHelper.php"
         ],
         "psr-4": {
             "App\\": "app/",

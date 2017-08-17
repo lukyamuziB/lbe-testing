@@ -1,10 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Clients\GoogleCalendarClient;
 use App\Models\User;
 use App\Models\UserSkill;
 use App\Models\Status;
-use App\Models\Skill;
 use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Utility\SlackUtility as Slack;
@@ -15,10 +15,8 @@ use App\Exceptions\AccessDeniedException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
-use Lcobucci\JWT\Parser;
 use GuzzleHttp\Client;
 
 /**
@@ -293,8 +291,12 @@ class RequestController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * @throws AccessDeniedException
      */
-    public function updateMentor(Request $request,  Slack $slack_provider, $id)
-    {
+    public function updateMentor(
+        Request $request,
+        Slack $slack_provider,
+        GoogleCalendarClient $google_calendar,
+        $id
+    ) {
         $this->validate($request, MentorshipRequest::$mentor_update_rules);
 
         $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
@@ -330,8 +332,20 @@ class RequestController extends Controller
 
             // get mentor id and send email content
             $body = $this->getUserDetails($request, $request->mentor_id);
-            $to_address = $body["email"];
-            $this->sendEmail($content, $to_address);
+            $mentor_email = $body["email"];
+            $this->sendEmail($content, $mentor_email);
+
+            //Post event to Google Calendar
+            $mentee_email = $current_user->email;
+            $event_details = $this->getEventDetails(
+                $mentee_email,
+                $mentor_email,
+                $mentorship_request,
+                $google_calendar
+            );
+
+            //Post event to Google Calendar
+            $google_calendar->createEvent($event_details);
 
             // Send the mentor a slack message when notified
             $slack_handle = User::select('slack_id')
@@ -345,6 +359,13 @@ class RequestController extends Controller
 
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
+        } catch (\Google_Service_Exception $exception) {
+            $error = json_decode($exception->getMessage())->{"error"};
+
+            $message = $error->{"message"};
+            $status_code = $error->{"code"};
+
+            return $this->respond($status_code, ["message" => $message]);
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
@@ -633,4 +654,71 @@ class RequestController extends Controller
         User::firstOrCreate(["user_id" => $user_info["id"]], ["email" => $user_info["email"]]);
     }
 
+    /**
+     * Add request event to Google Calendar
+     *
+     * @param string $mentee_email       email address of the mentee
+     * @param string $mentor_email       email address of the mentor
+     * @param object $mentorship_request mentorship request made
+     * @param object $google_calendar    Google calendar client
+     *
+     * @return array $event_details formatted Event details for the google calendar
+     */
+    private function getEventDetails($mentee_email, $mentor_email, $mentorship_request)
+    {
+        $match_date = $mentorship_request->match_date;
+        $session_start_time = $mentorship_request->pairing["start_time"] . ":00";
+        $session_end_time = $mentorship_request->pairing["end_time"] . ":00";
+        $duration = $mentorship_request->duration;
+        $timezone = formatCalendarTimezone($mentorship_request->pairing["timezone"]);
+
+        //Format start date and end date to 'Y-m-sTH:m:s' format
+        $event_start_date = calculateEventStartDate(
+            $mentorship_request->pairing["days"],
+            $match_date
+        );
+
+        $daily_start_time = formatCalendarDate(
+            $event_start_date,
+            $session_start_time
+        );
+
+        $daily_end_time = formatCalendarDate(
+            $event_start_date,
+            $session_end_time
+        );
+
+        $event_end_date = formatCalendarDate(
+            $event_start_date,
+            $session_end_time,
+            $duration
+        );
+
+        $recursion_rule = getCalendarRecursionRule(
+            $mentorship_request->pairing["days"],
+            $event_end_date
+        );
+
+        //Prepare the event details
+        $event_details = [
+            "summary" => $mentorship_request->title,
+            "description" => $mentorship_request->description,
+            "start" => ["dateTime" => $daily_start_time, "timeZone" => $timezone,],
+            "end" => ["dateTime" => $daily_end_time, "timeZone" => $timezone,],
+            "recurrence" => [$recursion_rule],
+            "attendees" => [
+                ["email" => $mentor_email],
+                ["email" => $mentee_email],
+            ],
+            "reminders" => [
+                "useDefault" => false,
+                "overrides" => [
+                    ["method" => "email", "minutes" => 24 * 60],
+                    ["method" => "popup", "minutes" => 10],
+                ],
+            ]
+        ];
+
+        return $event_details;
+    }
 }
