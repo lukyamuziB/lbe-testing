@@ -45,7 +45,10 @@ class RequestController extends Controller
         if ($request->input('self')) {
             $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $request);
         } elseif ($request->input('mentor')) {
-            $mentorship_requests = $this->getMentorRequests($request->user()->uid);
+            $mentorship_requests = $request->input('status') === 'matched' ?
+                $this->getMentorRequestsByStatus($request->user()->uid, Status::MATCHED)
+                :
+                $this->getMentorRequests($request->user()->uid);
         } elseif ($request->input('q')) {
             $search_query = $request->input('q');
             $mentorship_requests = MentorshipRequest::whereHas(
@@ -595,6 +598,19 @@ class RequestController extends Controller
             ->orwhere('interested->', $user_id)
             ->get();
            return $mentorship_requests;
+    }
+
+    /**
+     * Get matched requests that this user indicated interest in
+     * @param $mentor_id
+     * @return mixed
+     */
+    private function getMentorRequestsByStatus($mentor_id, $status_id)
+    {
+        $mentorship_requests = MentorshipRequest::where("mentor_id", $mentor_id)
+            ->where("status_id", $status_id)
+            ->get();
+        return $mentorship_requests;
     }
 
     /**
