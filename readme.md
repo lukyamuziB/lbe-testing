@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/andela/lenken-server.svg?style=svg&circle-token=95f7933a124aa262d55c9f2b0915af7e8611b3eb)](https://circleci.com/gh/andela/lenken-server)
+[![Code Climate](https://codeclimate.com/repos/591c0d953d5c4f028600138f/badges/49de4583071e7bfcd99f/gpa.svg)](https://codeclimate.com/repos/591c0d953d5c4f028600138f/feed)
 [![Test Coverage](https://codeclimate.com/repos/591c0d953d5c4f028600138f/badges/49de4583071e7bfcd99f/coverage.svg)](https://codeclimate.com/repos/591c0d953d5c4f028600138f/coverage)
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/c83190839f8203b0a76b)
 
