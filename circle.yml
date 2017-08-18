@@ -24,6 +24,8 @@ dependencies:
 test:
   override:
     - composer test
+  post:
+    - CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN vendor/bin/test-reporter
 
 #deployment:
 #  staging:

@@ -1,3 +1,16 @@
+# V 1.3.0
+
+## Features
+- weekly notifications for unmatched Requests to fellows
+- Google Calendar integration for scheduled Sessions
+- remove Slack notifications from Lagos and Nairobi Fellows Channels
+
+## Fixed Bugs
+- fix User details response from AIS
+- fix error for Requests without secondary Skills
+- send emails when Mentor does not exist on Freckle when logging Sessions
+- filter Mentor Requests for Offer Mentorship page
+
 # V 1.2.0
 
 ## Features

@@ -27,7 +27,8 @@
         "laravel/homestead": "^5.2",
         "squizlabs/php_codesniffer": "^3.0",
         "phpmd/phpmd": "^2.6",
-        "phpunit/phpunit": "6.0.*"
+        "phpunit/phpunit": "6.0.*",
+        "codeclimate/php-test-reporter": "^0.4.4"
     },
     "autoload": {
         "psr-4": {
@@ -58,7 +59,7 @@
         "post-root-package-install": [
             "php -r \"copy('.env.example', '.env');\""
         ],
-        "test": "phpunit --debug --coverage-html ./coverage"
+        "test": "phpunit --debug --coverage-clover build/logs/clover.xml"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
