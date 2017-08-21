@@ -130,7 +130,7 @@ class UnmatchedRequestsFellowsCommand extends Command
                         "name" => $mentee["name"],
                         "email" => $mentee["email"],
                         "client" => $mentee["placement"]["client"] ?? "Not Placed",
-                        "request_url" => $this->base_url . "/" . $request["id"],
+                        "request_url" => $this->base_url . "/requests/" . $request["id"],
                         "request_skills"
                         => array_column($request["request_skills"], "skill")
                         ];
