@@ -85,3 +85,14 @@ $app->group(['prefix' => 'api/v1'], function ($app) {
     $app->post('ratings', 'RatingController@rateSession');
 });
 
+/**
+ * Routes for notification
+ */
+$app->group(['prefix' => 'api/v1'], function ($app) {
+    $app->get('notifications', 'NotificationController@all');
+    $app->post('notifications', 'NotificationController@add');
+    $app->put('notifications/{id}', 'NotificationController@put');
+    $app->delete('notifications/{id}', 'NotificationController@delete');
+    $app->get('user/{user_id}/settings', 'NotificationController@getNotificationsByUserId');
+    $app->put('user/{user_id}/settings/{id}', 'NotificationController@updateUserSettings');
+});

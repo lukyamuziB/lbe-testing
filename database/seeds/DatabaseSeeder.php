@@ -20,5 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call('RequestLogsTableSeeder');
         $this->call('SessionsTableSeeder');
         $this->call('RatingsTableSeeder');
+        $this->call('NotificationsTableSeeder');
+        $this->call('UserNotificationsTableSeeder');
     }
 }
