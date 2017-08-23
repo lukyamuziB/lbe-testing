@@ -70,4 +70,39 @@ class Session extends Model
 
         return $unapproved_sessions;
     }
+
+    /**
+     * Calculates the total logged mentorship hours of the user and
+     * returns the total hours
+     *
+     * @param string $userId the id of the user
+     *
+     * @return integer total number of logged mentorship hours
+     */
+    public static function getTotalLoggedHours($userId)
+    {
+        $totalHours = 0;
+
+        $sessions = Session::select("start_time", "end_time")
+                         ->where("mentor_approved", true)
+                         ->where("mentee_approved", true)
+                         ->whereIn(
+                             "request_id",
+                             Request::select("id")
+                             ->where("mentor_id", $userId)
+                                 ->get()->toArray()
+                         )->get();
+
+        foreach ($sessions as $session) {
+            $timeDifference = abs(
+                strtotime($session->start_time)
+                - strtotime($session->end_time)
+            )
+                / 3600;
+                        
+            $totalHours += $timeDifference;
+        }
+
+        return $totalHours;
+    }
 }

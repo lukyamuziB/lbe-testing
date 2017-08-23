@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Models\Request as MentorshipRequest;
 use App\Clients\AISClient;
 use App\Models\UserSkill;
 use App\Models\Skill;
+use App\Models\Session;
 
 use GuzzleHttp\Client;
 
 class UserController extends Controller
 { 
+    use RestActions;
+
     /**
      * Gets a user's infomation based on their user id.
      *
@@ -34,14 +38,25 @@ class UserController extends Controller
         }
 
         $request_count = $this->getMenteeRequests($id);
+        
+        $total_logged_hours = Session::getTotalLoggedHours($id);
 
-        $response = [
-            "data" => $user_details,
+        $response = (object) [
+            "id" => $user_details["id"],
+            "picture" => $user_details["picture"],
+            "first_name" => $user_details["first_name"],
+            "name" => $user_details["name"],
+            "cohort" => $user_details["cohort"],
+            "roles" => $user_details["roles"],
+            "placement" => $user_details["placement"],
+            "email" => $user_details["email"],
+            "level" => $user_details["level"],
             "skills" => $user_skills,
-            "request_count" => $request_count
+            "request_count" => $request_count,
+            "logged_hours" => $total_logged_hours
         ];
         
-        return $response;
+        return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
