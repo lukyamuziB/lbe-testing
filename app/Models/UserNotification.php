@@ -22,16 +22,27 @@ class UserNotification extends Model {
         "slack" => "required|boolean",
         "email" => "required|boolean"
     ];
+
     public function notification()
     {
         return $this->belongsTo('App\Models\Notification', 'id', 'id');
     }
+
     public function user()
     {
         return $this->belongsTo('App\Models\User', 'user_id', 'user_id');
     }
 
-    public static function getUserSettings($user_id) {
+    /**
+     * Get all a user's notification settings
+     * if no settings exist, it returns the defaults of all notifications
+     *
+     * @param string $user_id user's unique id
+     *
+     * @return array $user_settings all notification settings for user
+     */
+    public static function getUserSettings($user_id)
+    {
         $user_settings = UserNotification::where('user_id', $user_id)
         ->select('id', 'slack', 'email')
         ->get();
@@ -58,5 +69,33 @@ class UserNotification extends Model {
         return $user_settings;
     }
 
+    /**
+     * Get user notification setting by user_id and notification id
+     *
+     * @param integer $user_id         Unique ID used to identify the users
+     * @param integer $notification_id Unique ID used to identify the notification
+     *
+     * @return UserNotification $user_setting a user's setting for notification
+     */
+    public static function getUserSettingById($user_id, $notification_id)
+    {
+        $user_setting = UserNotification::where("user_id", $user_id)
+            ->where("id", $notification_id)
+            ->first();
+
+        if (!$user_setting) {
+            $default_setting = Notification::select("default")
+                ->where("id", $notification_id)
+                ->first();
+
+            $user_setting = [
+                "notification_id" => $notification_id,
+                "slack" => $default_setting["default"] === "slack",
+                "email" => $default_setting["default"] === "email"
+            ];
+        }
+
+        return $user_setting;
+    }
 
 }

@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\UserSkill;
 use App\Models\Status;
 use App\Models\RequestSkill;
+use App\Models\UserNotification;
+use App\Models\Notification;
 use App\Models\Request as MentorshipRequest;
 use App\Utility\SlackUtility as Slack;
 use App\Exceptions\Exception;
@@ -266,24 +268,39 @@ class RequestController extends Controller
                 You can view the details of the request here {$request_url}",
                 "title" => "Hello {$mentee_name}"
             ];
-            $this->sendEmail($email_content, $to_address);
 
-            // Send a slack notification to a mentee when a mentor shows interest in their request
-            $user = User::select('slack_id')
+            /* send notification on interested mentors to
+            users selected notification channels
+             */
+            $user_setting = UserNotification::getUserSettingById(
+                $mentee_id, Notification::INDICATES_INTEREST
+            );
+
+            if ($user_setting['email']) {
+                $this->sendEmail($email_content, $to_address);
+            }
+
+            if ($user_setting['slack']) { 
+                /* Send a slack notification to a mentee 
+                when a mentor shows interest in their request
+                */
+                $user = User::select('slack_id')
                         ->where('user_id', $mentee_id)
                         ->first();
-            $message = "*{$mentor_name}* has indicated interest in mentoring you.
-                You can view the details of the request <{$request_url}|here>";
-            $slack_provider->sendMessage($user->slack_id, $message);
+
+                $message = "*{$mentor_name}* has indicated interest in mentoring you.
+                    You can view the details of the request <{$request_url}|here>";
+                $slack_provider->sendMessage($user->slack_id, $message);
+            }
 
             return $this->respond(Response::HTTP_CREATED, $mentorship_request);
-
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
+
 
     /**
      * Edit a mentorship request mentor_id field
