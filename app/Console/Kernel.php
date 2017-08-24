@@ -17,7 +17,8 @@ class Kernel extends ConsoleKernel
         Commands\CacheSlackUsersCommand::class,
         Commands\UnapprovedSessionsReminderCommand::class,
         Commands\GenerateGoogleCredentials::class,
-        Commands\UnmatchedRequestsFellowsCommand::class
+        Commands\UnmatchedRequestsFellowsCommand::class,
+        Commands\EncryptGoogleCredentialsCommand::class
     ];
 
     /**
