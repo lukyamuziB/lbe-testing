@@ -14,7 +14,7 @@ use GuzzleHttp\Client;
 
 class UserController extends Controller
 { 
-    use RestActions;
+    use RESTActions;
 
     /**
      * Gets a user's infomation based on their user id.
