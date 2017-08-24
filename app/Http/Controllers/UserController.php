@@ -10,8 +10,6 @@ use App\Models\UserSkill;
 use App\Models\Skill;
 use App\Models\Session;
 
-use GuzzleHttp\Client;
-
 class UserController extends Controller
 { 
     use RESTActions;

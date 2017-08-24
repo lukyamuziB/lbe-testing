@@ -1,7 +1,20 @@
 <?php
 namespace App\Http\Controllers;
 
+use \Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Lcobucci\JWT\Parser;
+
+use App\Clients\AISClient;
 use App\Clients\GoogleCalendarClient;
+use App\Exceptions\NotFoundException;
+use App\Exceptions\UnauthorizedException;
+use App\Exceptions\AccessDeniedException;
 use App\Models\User;
 use App\Models\UserSkill;
 use App\Models\Status;
@@ -9,17 +22,8 @@ use App\Models\RequestSkill;
 use App\Models\UserNotification;
 use App\Models\Notification;
 use App\Models\Request as MentorshipRequest;
-use App\Utility\SlackUtility as Slack;
-use App\Exceptions\Exception;
-use App\Exceptions\NotFoundException;
-use App\Exceptions\UnauthorizedException;
-use App\Exceptions\AccessDeniedException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Mail;
-use GuzzleHttp\Client;
+use App\Repositories\SlackUsersRepository;
+use App\Utility\SlackUtility;
 
 /**
  * Class RequestController
@@ -32,6 +36,20 @@ class RequestController extends Controller
 
     use RESTActions;
 
+    protected $ais_client;
+    protected $slack_utility;
+    protected $slack_repository;
+
+    public function __construct(
+        AISClient $ais_client,
+        SlackUtility $slack_utility,
+        SlackUsersRepository $slack_repository
+    ) {
+            $this->ais_client = $ais_client;
+            $this->slack_utility = $slack_utility;
+            $this->slack_repository = $slack_repository;
+    }
+
     /**
      * Gets all Mentorship Requests
      *
@@ -40,6 +58,12 @@ class RequestController extends Controller
      */
     public function all(Request $request)
     {
+        // get the user
+        $user = $request->user();
+
+        //update or create users in the users table
+        $this->updateUserTable($user->uid, $user->email);
+
         // generic collection to hold requests to be sent as response
         $limit = $request->input('limit') ? $request->input('limit') : 20;
 
@@ -109,18 +133,15 @@ class RequestController extends Controller
      * Also saves the request skills in the request skills table
      *
      * @param Request $request - request object
-     * @param Slack $slack - slack class
      * @return object Response object of created request
      */
-    public function add(Request $request, Slack $slack)
+    public function add(Request $request)
     {
         $mentorship_request = self::MODEL;
 
         $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
 
-        // update the user table with the mentee details
-        $this->updateUserTable($request, $user->uid);
         $user_array = ["mentee_id" => $user->uid, "status_id" => Status::OPEN];
         $new_record = $this->filterRequest($request->all());
         $new_record = array_merge($new_record, $user_array);
@@ -156,12 +177,12 @@ class RequestController extends Controller
         $slack_channels_to_notify
             = Config::get("slack.{$app_environment}.new_request_channels");
 
-        $slack->sendMessageToMultipleChannels($slack_channels_to_notify, $slack_message);
+        $this->slack_utility->sendMessage($slack_channels_to_notify, $slack_message);
 
         try {
             // get email address of all the people to send the email to
             foreach ($mentor_ids as $mentor_id) {
-                $mentor_details = $this->getUserDetails($request, $mentor_id);
+                $mentor_details = $this->ais_client->getUserById($mentor_id);
                 array_push($bulk_email_addresses, $mentor_details["email"]);
             }
 
@@ -194,7 +215,7 @@ class RequestController extends Controller
     {
         $this->validate($request, MentorshipRequest::$rules);
 
-         try {
+        try {
             $mentorship_request = MentorshipRequest::findOrFail(intval($id));
             $current_user = $request->user();
 
@@ -202,11 +223,11 @@ class RequestController extends Controller
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
-         } catch (ModelNotFoundException $exception) {
-             throw new NotFoundException("The specified mentor request was not found");
-         }  catch (Exception $exception) {
-             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
-         }
+        } catch (ModelNotFoundException $exception) {
+            throw new NotFoundException("The specified mentor request was not found");
+        }  catch (Exception $exception) {
+            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        }
 
         $new_record = $this->filterRequest($request->all());
         $mentorship_request->fill($new_record)->save();
@@ -227,7 +248,7 @@ class RequestController extends Controller
      * @param  integer $id Unique ID of the mentorship request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function updateInterested(Request $request, Slack $slack_provider, $id)
+    public function updateInterested(Request $request, $id)
     {
         $this->validate($request, MentorshipRequest::$mentee_rules);
 
@@ -250,17 +271,12 @@ class RequestController extends Controller
             $mentorship_request->save();
 
             $mentor_name = $current_user->name;
-            $mentor_id = $current_user->uid;
-            $mentor_email=$current_user->email;
-
-            //update users table with mentor details if they don't exist
-             User::firstOrCreate(["user_id" => $mentor_id], ["email" => $mentor_email]);
 
             $mentee_id = $mentorship_request->mentee_id;
             $request_url = $this->getClientBaseUrl()."/requests/{$id}";
 
             // get user details from FIS and send email
-            $mentee_details = $this->getUserDetails($request, $mentee_id);
+            $mentee_details = $this->ais_client->getUserById($mentee_id);
             $mentee_name = $mentee_details["name"];
             $to_address = $mentee_details["email"];
             $email_content = [
@@ -287,10 +303,10 @@ class RequestController extends Controller
                 $user = User::select('slack_id')
                         ->where('user_id', $mentee_id)
                         ->first();
-
                 $message = "*{$mentor_name}* has indicated interest in mentoring you.
                     You can view the details of the request <{$request_url}|here>";
-                $slack_provider->sendMessage($user->slack_id, $message);
+
+                $this->slack_utility->sendMessage([$user->slack_id], $message);
             }
 
             return $this->respond(Response::HTTP_CREATED, $mentorship_request);
@@ -306,14 +322,12 @@ class RequestController extends Controller
      * Edit a mentorship request mentor_id field
      *
      * @param Request $request
-     * @param Slack $slack_provider
      * @param integer $id Unique ID of the mentorship request
      * @return \Illuminate\Http\JsonResponse
      * @throws AccessDeniedException
      */
     public function updateMentor(
         Request $request,
-        Slack $slack_provider,
         GoogleCalendarClient $google_calendar,
         $id
     ) {
@@ -351,7 +365,7 @@ class RequestController extends Controller
             ];
 
             // get mentor id and send email content
-            $body = $this->getUserDetails($request, $request->mentor_id);
+            $body = $this->ais_client->getUserById($request->mentor_id);
             $mentor_email = $body["email"];
             $this->sendEmail($content, $mentor_email);
 
@@ -368,12 +382,13 @@ class RequestController extends Controller
             $google_calendar->createEvent($event_details);
 
             // Send the mentor a slack message when notified
-            $slack_handle = User::select('slack_id')
-                ->where('user_id', $request->input('mentor_id'))
-                ->first();
+            $user = User::select('slack_id')
+                        ->where('user_id', $request->input('mentor_id'))
+                        ->first();
             $message = "{$mentee_name} selected you as a mentor
             You can view the details of the request here {$request_url}";
-            $slack_provider->sendMessage($slack_handle->slack_id, $message);
+
+            $this->slack_utility->sendMessage([$user->slack_id], $message);
 
             return $this->respond(Response::HTTP_OK, $mentorship_request);
 
@@ -467,9 +482,9 @@ class RequestController extends Controller
      */
     private function filterRequest($request)
     {
-        return array_filter($request, function ($value, $key) {
+        return array_filter($request, function ($key) {
             return $key !== 'primary' && $key !== 'secondary';
-        }, ARRAY_FILTER_USE_BOTH);
+        }, ARRAY_FILTER_USE_KEY);
     }
 
     /**
@@ -577,26 +592,6 @@ class RequestController extends Controller
     }
 
     /**
-     * get user details
-     *
-     * @param Request $request the request facade
-     * @param string $id the user id
-     * @return array of the json encoded response
-     */
-    private function getUserDetails(Request $request, $id)
-    {
-        $client = new Client();
-        $auth_header = $request->header("Authorization");
-        $api_url = getenv('AIS_API_URL');
-        $response = $client->request('GET', "{$api_url}/users/{$id}", [
-            "headers" => ["Authorization" => $auth_header],
-            "verify" => false
-        ]);
-
-        return json_decode($response->getBody(), true);
-    }
-
-    /**
      * Gets all the requests that match a mentor's skill
      * and all the requests a mentor has indicated
      * interest in
@@ -678,13 +673,21 @@ class RequestController extends Controller
      * @param string $user_id
      * @param Request $request
      */
-    public function updateUserTable(Request $request, $user_id)
+    public function updateUserTable($user_id, $user_email)
     {
-        // fetch the user's details from AIS
-        $user_info = $this->getUserDetails($request, $user_id);
+        // fetch the user's slack details from the repository
+        $slack_user = $this->slack_repository->getByEmail($user_email);
 
-        // if the user's user_id is not in the table, create a new user with id and email
-        User::firstOrCreate(["user_id" => $user_info["id"]], ["email" => $user_info["email"]]);
+        $user_details = [
+            "email" => $user_email,
+            "slack_id" => $slack_user ? $slack_user->id : null
+        ];
+
+        // if the user's user_id is not in the table, create a new user
+        User::updateOrCreate(
+            ["user_id" => $user_id],
+            $user_details
+        );
     }
 
     /**
@@ -695,7 +698,7 @@ class RequestController extends Controller
      * @param object $mentorship_request mentorship request made
      * @param object $google_calendar    Google calendar client
      *
-     * @return array $event_details formatted Event details for the google calendar
+     * @return array $event_details formatted Event details for google calendar
      */
     private function getEventDetails($mentee_email, $mentor_email, $mentorship_request)
     {

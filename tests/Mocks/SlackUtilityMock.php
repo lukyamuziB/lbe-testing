@@ -11,43 +11,32 @@ use App\Utility\SlackUtility;
  */
 class SlackUtilityMock extends SlackUtility
 {
-   /**
-     * sendMessage sends a slack message to a specified user Id, slackhandle
-     * or slack channel
-     *
-     * @param string $channel the slack user id, user handle or channel name
-     * @param string $text the message to be sent
-     * @return object containing the json response
-     * @throws NotFoundException if there was an error sending the message
-     */
-    public function sendMessage($channel, $text)
-    {
-        $channels = ["@amao", "@bayo", "wrong"];
-
-        $response = array_merge(
-            array("ok" => true, "channel" => $channel),
-            (in_array($channel, $channels) ? array("message" => ["text" => $text]) : array())
-        );
-
-        if (!isset($response["message"])) {
-            throw new NotFoundException("The Slack channel or user $channel, was not found");
-        }
-
-        return $response;
-    }
 
     /**
      * sendMessageToMultipleChannels - send a slack message to
      * multiple slack channels
-     * @param $channels - list of channels to send message to
+     * @param $recipients - list of channels to send message to
      * @param $message - message to send to multiple channels
      * @internal param string $messages_information - array of objects containing message text and
      * channel to send to in each object
      * @return array
      */
-    public function sendMessageToMultipleChannels($channels, $message)
+    public function sendMessage($recipients, $message)
     {
-        return ["message" => "mutiple channel sent"];
+        $valid_recipients = ["@amao", "@bayo", "wrong"];
+
+        if (count($recipients) > 1) {
+            $response = ["message" => "mutiple channel sent"];
+        } else {
+            $response = array_merge(
+                array("ok" => true, "channel" => $recipients[0]),
+                (in_array($recipients[0], $valid_recipients) ?
+                array("message" => ["text" => $message]) :
+                array("error" => "The Slack channel or user $recipients[0], was not found"))
+            );
+        }
+
+        return $response;
     }
 
     /**

@@ -32,13 +32,4 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         "slack_id" => "string",
         "email" => "required|string"
     ];
-
-    public static $slack_update_rules = [
-        "slack_handle" => "string|regex:/^@\w+.?\w+$/|required",
-    ];
-
-    public static $slack_send_rules = [
-        "channel" => "string|required",
-        "text" => "string|required",
-    ];
 }

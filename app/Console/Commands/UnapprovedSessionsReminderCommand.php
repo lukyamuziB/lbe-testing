@@ -68,42 +68,19 @@ class UnapprovedSessionsReminderCommand extends Command
         $unapproved_sessions = Session::getUnApprovedSessionsByTime(2)
             ->toArray();
 
-        $this->appendUserSlackHandles($unapproved_sessions);
-
         // send slack notifications to users
         foreach ($unapproved_sessions as $session) {
             $session_url = "{$lenken_base_url}/requests/{$session['request_id']}";
+            $user_key = $session["mentee_approved"] ? "mentor" : "user";
             $message
                 = "A Mentorship Session has been logged with you.".
                    "\nKindly approve: {$session_url}";
 
-            if (isset($session["request"]["user"]["slack_handle"])) {
+            if (isset($session["request"][$user_key]["slack_id"])) {
                 $this->slack_utility->sendMessage(
-                    $session["request"]["user"]["slack_handle"], $message
+                    [$session["request"][$user_key]["slack_id"]],
+                    $message
                 );
-            }
-        }
-    }
-
-    /**
-     * Append slack handles of all message recipients
-     * to unapproved sessions array
-     *
-     * @param array $unapproved_sessions unapproved sessions
-
-     * @return array
-     */
-    public function appendUserSlackHandles(&$unapproved_sessions)
-    {
-        foreach ($unapproved_sessions as $key => $session) {
-            $user_key = $session["mentee_approved"] ? "mentor" : "user";
-
-            $slack_user = $this->slack_repository
-                ->getByEmail($session["request"][$user_key]["email"]);
-
-            if ($slack_user) {
-                $unapproved_sessions[$key]["request"]["user"]["slack_handle"]
-                    = $slack_user->handle;
             }
         }
     }
