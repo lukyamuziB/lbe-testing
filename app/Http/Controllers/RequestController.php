@@ -360,14 +360,19 @@ class RequestController extends Controller
             $request_url = $this->getClientBaseUrl().'/requests/'.$id;
             $content = [
                 "content" => "{$mentee_name} selected you as a mentor
-                You can view the details of the request here {$request_url}",
+                You can view the details of the request here <{$request_url}|here>",
                 "title" => 'Mentorship interest accepted'
             ];
 
             // get mentor id and send email content
+            $user_setting = UserNotification::getUserSettingById(
+                $request->mentor_id, Notification::SELECTED_AS_MENTOR
+            );
             $body = $this->ais_client->getUserById($request->mentor_id);
             $mentor_email = $body["email"];
-            $this->sendEmail($content, $mentor_email);
+            if ($user_setting['email']) {
+                $this->sendEmail($content, $mentor_email);
+            }
 
             //Post event to Google Calendar
             $mentee_email = $current_user->email;
@@ -382,14 +387,15 @@ class RequestController extends Controller
             $google_calendar->createEvent($event_details);
 
             // Send the mentor a slack message when notified
-            $user = User::select('slack_id')
-                        ->where('user_id', $request->input('mentor_id'))
-                        ->first();
-            $message = "{$mentee_name} selected you as a mentor
-            You can view the details of the request here {$request_url}";
-
-            $this->slack_utility->sendMessage([$user->slack_id], $message);
-
+            if ($user_setting['slack']) {
+                $mentee_id = $request->input('mentor_id');
+                $user = User::select('slack_id')
+                    ->where('user_id', $mentee_id)
+                    ->first();
+                $message = "{$mentee_name} selected you as a mentor
+                You can view the details of the request here {$request_url}";
+                $this->slack_utility->sendMessage([$user->slack_id], $message);
+            }
             return $this->respond(Response::HTTP_OK, $mentorship_request);
 
         } catch (ModelNotFoundException $exception) {
