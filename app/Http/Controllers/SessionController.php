@@ -287,8 +287,8 @@ class SessionController extends Controller
                 $session->end_time
             );
             $mentor_email =$mentorship_request->mentor->email;
-            $freckle_user = $this->freckle_client->getUserByEmail($mentor_email);
             $response = ["data" => $session];
+            $freckle_user = $this->freckle_client->getUserByEmail($mentor_email);
 
             if ($freckle_user) {
                 $data = array(
