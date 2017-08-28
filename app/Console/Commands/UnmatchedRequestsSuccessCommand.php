@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Config;
 
 use App\Clients\AISClient as AISClient;
 use App\Models\Request as MentorshipRequest;
-use App\Mail\UnmatchedRequestsMail;
+use App\Mail\SuccessUnmatchedRequestsMail;
 
 class UnmatchedRequestsSuccessCommand extends Command
 {
@@ -76,7 +76,7 @@ class UnmatchedRequestsSuccessCommand extends Command
 
         // send the email
         Mail::to($recipient)->send(
-            new UnmatchedRequestsMail($unmatched_requests_details)
+            new SuccessUnmatchedRequestsMail($unmatched_requests_details)
         );
     }
 

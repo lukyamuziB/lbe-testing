@@ -1,3 +1,11 @@
+# V 1.4.0
+
+## Features
+- implement personalized notifications settings
+- show total logged hours on user's profile page
+- update all User's Slack ID's with cached data
+- remove sensitive data from weekly Fellows email
+
 # V 1.3.0
 
 ## Features

@@ -11,12 +11,13 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\FellowsUnmatchedRequestsMail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
 
 use App\Models\Request;
-use App\Mail\UnmatchedRequestsMail;
+use App\Mail\SuccessUnmatchedRequestsMail;
 use App\Clients\AISClient;
 
 /**
@@ -80,6 +81,8 @@ class UnmatchedRequestsFellowsCommand extends Command
                 $mentees["values"]
             );
 
+            $this->sortRequestsByPlacementStatus($requests);
+
             $app_environment = getenv("APP_ENV");
 
             $recipients = Config::get(
@@ -87,7 +90,7 @@ class UnmatchedRequestsFellowsCommand extends Command
             );
 
             Mail::to($recipients)->send(
-                new UnmatchedRequestsMail($requests)
+                new FellowsUnmatchedRequestsMail($requests)
             );
         }
     }
@@ -126,10 +129,7 @@ class UnmatchedRequestsFellowsCommand extends Command
                 if ($request["user"]["email"] === $mentee["email"]) {
                     $requests[$request["id"]]
                         = [
-                        "avatar" => $mentee["picture"],
-                        "name" => $mentee["name"],
-                        "email" => $mentee["email"],
-                        "client" => $mentee["placement"]["client"] ?? "Not Placed",
+                        "client" => $mentee["placement"]["client"],
                         "request_url" => $this->base_url . "/requests/" . $request["id"],
                         "request_skills"
                         => array_column($request["request_skills"], "skill")
@@ -140,5 +140,27 @@ class UnmatchedRequestsFellowsCommand extends Command
         }
 
         return $requests;
+    }
+
+    /**
+     * This sorts the array to ensure all placed fellows requests come up first
+     *
+     * @param array $requests unmatched requests
+     */
+    public function sortRequestsByPlacementStatus(&$requests)
+    {
+        $placed_fellow_requests= [];
+        $unplaced_fellow_requests = [];
+
+        foreach ($requests as $request) {
+            if ($request["client"] && trim($request["client"]) !== "") {
+                $placed_fellow_requests[] = $request;
+            } else {
+                $request["client"] = "Not Placed";
+                $unplaced_fellow_requests[] = $request;
+            }
+        }
+
+        $requests = array_merge($placed_fellow_requests, $unplaced_fellow_requests);
     }
 }

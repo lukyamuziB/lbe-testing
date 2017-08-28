@@ -15,12 +15,13 @@ namespace App\Mail;
 use Illuminate\Mail\Mailable;
 
 /**
- * Class UnmatchedRequestsMail
+ * Unmatched requests mail object for success department
+ * this contains sensitive information about the requests
  *
  * @category Mailable
  * @package  App\Mail
  */
-class UnmatchedRequestsMail extends Mailable
+class SuccessUnmatchedRequestsMail extends Mailable
 {
     public $unmatched_requests;
 
@@ -47,6 +48,6 @@ class UnmatchedRequestsMail extends Mailable
                 = implode(", ", $request_skills);
         }
 
-        return $this->view('unmatched_request');
+        return $this->view('success_unmatched_request');
     }
 }

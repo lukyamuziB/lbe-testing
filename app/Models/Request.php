@@ -139,6 +139,7 @@ class Request extends Model
         $unmatched_requests = Request::with("requestSkills.skill", "user")
             ->where('status_id', Status::OPEN)
             ->whereDate('created_at', '<=', $threshold_date)
+            ->orderBy('created_at', 'asc')
             ->get();
 
         return $unmatched_requests;
