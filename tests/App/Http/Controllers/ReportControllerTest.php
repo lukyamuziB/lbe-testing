@@ -7,17 +7,26 @@ use TestCase;
 
 /**
  * Test class for report controller
- *
  */
 class ReportControllerTest extends TestCase
 {
-    private $user = [
-        "name" => "Adebayo Adesanya",
-        "email" => "adebayo.adesanya@andela.com",
-        "slack_id" => "C63LPE124",
-        "firstname" => "Adebayo",
-        "lastname" => "Adesanya"
-    ];
+
+    public function setUp()
+    {
+        parent::setUp();
+        $this->be(
+            factory(User::class)->make(
+                [
+                    "name" => "Adebayo Adesanya",
+                    "email" => "adebayo.adesanya@andela.com",
+                    "slack_id" => "C63LPE124",
+                    "firstname" => "Adebayo",
+                    "lastname" => "Adesanya",
+                    "role" => "Admin"
+                ]
+            )
+        );
+    }
 
     /**
      * Test that a user that is an admin can get all reports
@@ -26,13 +35,6 @@ class ReportControllerTest extends TestCase
      */
     public function testAllSuccess()
     {
-        //Admin user
-        $this->be(
-            factory(User::class)->make(
-                array_merge($this->user, [ "role" => "Admin" ])
-            )
-        );
-
         $this->get("/api/v1/reports");
 
         $this->assertResponseOk();
@@ -40,8 +42,13 @@ class ReportControllerTest extends TestCase
         foreach ($response->data->skills_count as $skill) {
             $this->assertNotEmpty($skill->count);
         }
+    }
 
-        //Generate reports with all requests
+    /**
+     * Test to generate reports with all requests
+     */
+    public function testAllSuccessTotalRequests()
+    {
         $this->get("/api/v1/reports?include=totalRequests");
 
         $response = json_decode($this->response->getContent());
@@ -52,11 +59,15 @@ class ReportControllerTest extends TestCase
             $this->assertNotEmpty($skill->name);
         }
         $this->assertEquals(20, $response->data->totalRequests);
+    }
 
-
-        //Generate report with total request matched filter
+    /**
+     * test to generate report will all requests that are matched
+     */
+    public function testAllSuccessTotalRequestsMatched()
+    {
         $this->get("/api/v1/reports?include=totalRequestsMatched");
- 
+
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
         $this->assertCount(1, $response->data->skills_count);
@@ -65,22 +76,31 @@ class ReportControllerTest extends TestCase
             $this->assertNotEmpty($skill->name);
         }
         $this->assertEquals(10, $response->data->totalRequestsMatched);
+    }
 
-
-        //Generate report with average time to match filter
+    /**
+     * Test to generate report with average time to match
+     */
+    public function testAllSuccessAverageTimeToMatch()
+    {
         $this->get("/api/v1/reports?include=averageTimeToMatch");
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
         $this->assertCount(1, $response->data->skills_count);
-        
+
         foreach ($response->data->skills_count as $skill) {
             $this->assertNotEmpty($skill->name);
         }
         $this->assertEquals(0, $response->data->averageTimeToMatch);
+    }
 
 
-        //Generate report for session completed
+    /**
+     * Test to generate reports with all sessions completed
+     */
+    public function testAllSuccessSessionsCompleted()
+    {
         $this->get("/api/v1/reports?include=sessionsCompleted");
 
         $response = json_decode($this->response->getContent());
@@ -90,12 +110,18 @@ class ReportControllerTest extends TestCase
         foreach ($response->data->skills_count as $skill) {
             $this->assertNotEmpty($skill->name);
         }
-        $this->assertEquals(10, $response->data->sessionsCompleted);
 
+        $this->assertEquals(4, $response->data->sessionsCompleted);
+    }
 
-        //Generate all reports
+    /**
+     * Test to generate report with all query and filter included
+     */
+    public function testAllSuccessIncludeAll()
+    {
         $this->get(
-            "/api/v1/reports?include=totalRequests,totalRequestsMatched,averageTimeToMatch,sessionsCompleted"
+            "/api/v1/reports?include=".
+            "totalRequests,totalRequestsMatched,averageTimeToMatch,sessionsCompleted"
         );
 
         $response = json_decode($this->response->getContent());
@@ -113,12 +139,19 @@ class ReportControllerTest extends TestCase
      *
      * @return void
      */
-    public function testAllFailure()
+    public function testAllFailureNotAdmin()
     {
         //Non admin user
         $this->be(
             factory(User::class)->make(
-                array_merge($this->user, [ "role" => "Fellow" ])
+                [
+                    "name" => "Adebayo Adesanya",
+                    "email" => "adebayo.adesanya@andela.com",
+                    "slack_id" => "C63LPE124",
+                    "firstname" => "Adebayo",
+                    "lastname" => "Adesanya",
+                    "role" => "Fellow"
+                ]
             )
         );
 

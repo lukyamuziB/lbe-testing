@@ -1,11 +1,12 @@
 <?php
 namespace App\Http\Controllers;
+
+use App\Exceptions\AccessDeniedException;
 use App\Exceptions\NotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\Request as MentorshipRequest;
-use App\Models\User;
 use App\Clients\FreckleClient;
 use App\Models\Session;
 use Carbon\Carbon;
@@ -22,7 +23,7 @@ class SessionController extends Controller
 
     public function __construct(FreckleClient $freckle_client)
     {
-            $this->freckle_client = $freckle_client;
+        $this->freckle_client = $freckle_client;
     }
 
     /**
@@ -30,9 +31,10 @@ class SessionController extends Controller
      * including sessions logged by both mentee & mentor,
      * sessions pending to be logged.
      *
-     * @param Object $request - request payload
+     * @param Request|Object $request - request payload
      * @param String $id - id of the mentorship request
      * @return Response object containing session details
+     * @throws NotFoundException
      */
     public function getSessionsReport(Request $request, $id)
     {
@@ -70,11 +72,11 @@ class SessionController extends Controller
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
+
     /**
      * Get all existing logged sessions of a particular request
      *
-     * @param object $mentorship_request - request object whose
-     * sessions are to be logged
+     * @param $request_id
      * @return Array - array containing all sessions for a
      * particular request
      */
@@ -83,11 +85,12 @@ class SessionController extends Controller
         $request_sessions = Session::withCount('rating')->where('request_id', $request_id)->get();
         return $request_sessions;
     }
+
     /**
      * Get the total number of sessions a request can have
      *
-     * @param object $mentorship_request - request object whose
-     * sessions are to be logged
+     * @param $request_duration
+     * @param $request_days
      * @return Number - total sessions of a request which is a
      * multiple of the duration of the request and the number of
      * selected days in a week
@@ -97,60 +100,66 @@ class SessionController extends Controller
         $total_sessions = ($request_duration * 4) * $request_days;
         return $total_sessions;
     }
+
     /**
      * Get total number of sessions logged both by mentor and mentee
      *
-     * @param object $mentorship_request - request object whose
-     * sessions are to be logged
+     * @param $request_id
      * @return Number - sessions completed or sessions logged
      * both by mentor and mentee
      */
     public function getTotalSessionsLogged($request_id)
     {
         $sessions_logged = Session::where('request_id', $request_id)
-          ->where('mentee_approved', true)
-          ->where('mentor_approved', true)
-          ->count();
+            ->where('mentee_approved', true)
+            ->where('mentor_approved', true)
+            ->count();
         return $sessions_logged;
     }
+
     /**
      * Get total number of sessions logged by either mentor and mentee
      *
-     * @param object $mentorship_request - request object whose
-     * sessions are to be logged
+     * @param $request_id
      * @return Number - sessions pending to be logged by both mentor and mentee
      */
     public function getTotalSessionsPending($request_id)
     {
         $sessions_pending = Session::where('request_id', $request_id)
-          ->where(function ($query) {
-            $query->where('mentee_approved', true)->where('mentor_approved', null);
-          })->orWhere(function ($query) {
-            $query->where('mentee_approved', null)->where('mentor_approved', true);
-          })->count();
+            ->where(function ($query) {
+                $query->where('mentee_approved', true)->where('mentor_approved', null);
+            })->orWhere(function ($query) {
+                $query->where('mentee_approved', null)->where('mentor_approved', true);
+            })->count();
         return $sessions_pending;
     }
+
     /**
      * Get all the number of remaining unlogged sessions for a particular
      * request duration
      *
-     * @param object $mentorship_request - request object whose
-     * sessions are to be logged
+     * @param $request_id
+     * @param $request_duration
+     * @param $request_days
      * @return Number - a difference between the total number of sessionsCompleted
      * for a given request and its completed sessions
      */
     public function getTotalSessionsUnlogged($request_id, $request_duration, $request_days)
     {
         $total_sessions = $this->getTotalSessions($request_duration, $request_days);
+
         $total_sessions_logged = $this->getTotalSessionsLogged($request_id);
         $total_sessions_unlogged = $total_sessions - $total_sessions_logged;
+
         return $total_sessions_unlogged;
     }
+
     /**
      * Log completed sessions
      *
-     * @param object $request - request payload
+     * @param Request|object $request - request payload
      * @return object - session object that has just been logged
+     * @throws NotFoundException
      */
     public function logSession(Request $request)
     {
@@ -163,9 +172,11 @@ class SessionController extends Controller
             $request_id = $mentorship_request->id;
             $timezone = $mentorship_request->pairing['timezone'];
             $session_date = Carbon::createFromTimestamp($date, $timezone);
+
             $sessions_logged = $this->getSessionByRequestIdAndDate(
                 $request_id, $session_date
             );
+
             if (sizeof($sessions_logged)) {
                 return $this->respond(Response::HTTP_CONFLICT,
                     ["message" => "Session already logged"]);
@@ -174,18 +185,25 @@ class SessionController extends Controller
             if ($user_id === $mentorship_request->mentor_id) {
                 $approver["mentor_approved"] = true;
                 $approver["mentor_logged_at"] = Carbon::now($timezone);
-            } else {
+            } elseif ($user_id === $mentorship_request->mentee_id) {
                 $approver["mentee_approved"] = true;
                 $approver["mentee_logged_at"] = Carbon::now($timezone);
+            } else {
+                throw new AccessDeniedException(
+                    "You do not have permission to log a session for this request"
+                );
             }
-            $session_logged = Session::create(array_merge(
-                [
-                    "request_id" => $request_id,
-                    "date" => $session_date->format('Y-m-d'),
-                    "start_time" => $start_time,
-                    "end_time" => $end_time
-                ],
-                $approver)
+
+            $session_logged = Session::create(
+                array_merge(
+                    [
+                        "request_id" => $request_id,
+                        "date" => $session_date->format('Y-m-d'),
+                        "start_time" => $start_time,
+                        "end_time" => $end_time
+                    ],
+                    $approver
+                )
             );
             $response = ["data" => $session_logged];
             return $this->respond(Response::HTTP_CREATED, $response);
@@ -195,27 +213,30 @@ class SessionController extends Controller
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
     }
+
     /**
      * Check whether a session of a given request has already been logged
      * for a given date
      *
      * @param Number $request_id - id of request whose sessions are to be logged
-     * @param Carbon instance $date - date when session is logged
+     * @param $date
      * @return Array - containing the session object that was logged at that date
      */
     private function getSessionByRequestIdAndDate($request_id, $date)
     {
         return Session::where("request_id", $request_id)
-          ->whereDate('date', $date)
-          ->get();
+            ->whereDate('date', $date)
+            ->get();
     }
+
     /**
      * Update existing logged session for either the mentee or mentor
      * that logs to confirm a completed session
      *
-     * @param object $request - request payload
+     * @param Request|object $request - request payload
      * @param String | Number $id - id of the session to be updated
      * @return object - session object that has been updated
+     * @throws AccessDeniedException | NotFoundException
      */
     public function approveSession(Request $request, $id)
     {
@@ -230,6 +251,10 @@ class SessionController extends Controller
                 $approver = ["mentee_approved" => true, "mentee_logged_at" => $session_update_date];
             } elseif ($user_id === $mentorship_request->mentor_id) {
                 $approver = ["mentor_approved" => true, "mentor_logged_at" => $session_update_date];
+            } else {
+                throw new AccessDeniedException(
+                    "You do not have permission to approve this session"
+                );
             }
 
             //Send Sessions to Freckle
@@ -246,39 +271,37 @@ class SessionController extends Controller
     }
 
     /**
-      * Calculate the time difference and return result in minutes
-      *
-      * @param String $start_time - session start time
-      * @param String $end_time - session end time
-      *
-      * @return String $duration- the time difference in minutes
-      */
-    public function timeDifference($start_time, $end_time) 
+     * Calculate the time difference and return result in minutes
+     *
+     * @param String $start_time - session start time
+     * @param String $end_time - session end time
+     *
+     * @return String $duration- the time difference in minutes
+     */
+    public function timeDifference($start_time, $end_time)
     {
         $duration = abs(strtotime($start_time) - strtotime($end_time)) / 60;
         return $duration;
     }
 
     /**
-      * Get the Freckle Project ID to log hours from .env file 
-      *
-      * @return String - project id
-      */
+     * Get the Freckle Project ID to log hours from .env file
+     *
+     * @return String - project id
+     */
     private function getFreckleProjectID()
     {
         return getenv('FRECKLE_PROJECT_ID');
     }
 
     /**
-      * Log mentorship session to mentor's freckle account
-      *
-      * @param Object $session - session being logged
-      * @param Object $mentorship_request - request object whose sessions are
-      * being logged
-      * @param Object $freckle_client - instance of the Freckle Client class
-      *
-      * @return Object $response- response meessage
-      */
+     * Log mentorship session to mentor's freckle account
+     *
+     * @param Object $session - session being logged
+     * @param Object $mentorship_request - request object whose sessions are
+     * being logged
+     * @return Object $response- response meessage
+     */
     public function logSessionToFreckle($session, $mentorship_request)
     {
         try {

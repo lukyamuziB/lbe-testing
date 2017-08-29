@@ -12,23 +12,23 @@ class SessionsTableSeeder extends Seeder
      */
     public function run()
     {
-        $faker = Faker\Factory::create();
         $limit = 20;
 
         for ($i = 0; $i < $limit; $i++) {
 
-            $isSessionApproved = $i%2;
+            $isMentorApproved = $i % 3 === 0 ? true : null;
+            $isMenteeApproved = $i % 2 === 0 ? true : null;
 
             DB::table('sessions')->insert(
                 [
-                    'request_id' => $faker->numberBetween($min = 1, $max = 20),
+                    'request_id' => $i+1,
                     'date' => Carbon::today(),
                     'start_time' => Carbon::now()->addHour(12),
                     'end_time' => Carbon::now()->addHour(14),
-                    'mentee_approved' => $isSessionApproved,
-                    'mentor_approved' => $isSessionApproved,
-                    'mentee_logged_at' => $isSessionApproved ? Carbon::now() : null,
-                    'mentor_logged_at' => $isSessionApproved ? Carbon::now() : null
+                    'mentee_approved' => $isMenteeApproved,
+                    'mentor_approved' => $isMentorApproved,
+                    'mentee_logged_at' => Carbon::today(),
+                    'mentor_logged_at' => Carbon::now()
                 ]
             );
         }

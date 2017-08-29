@@ -105,12 +105,12 @@ class SkillControllerTest extends TestCase
 
         //Invalid skill input
         $this->post("/api/v1/skills", ["name" => ""]);
-        
+
         $this->assertResponseStatus(422);
         $response = json_decode($this->response->getContent());
         $this->assertEquals("The name field is required.", $response->name[0]);
     }
-    
+
     /**
      * Test that a skill can be deleted
      *
@@ -120,7 +120,7 @@ class SkillControllerTest extends TestCase
     {
         $this->post("/api/v1/skills", ["name" => "Fotran"]);
         $this->delete("/api/v1/skills/51");
-        
+
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Skill deleted", $response->data);
@@ -134,7 +134,7 @@ class SkillControllerTest extends TestCase
     public function testRemoveFailure()
     {
         $this->delete("/api/v1/skills/7");
-        
+
         $this->assertResponseStatus(403);
         $response = json_decode($this->response->getContent());
         $this->assertEquals(
@@ -151,7 +151,7 @@ class SkillControllerTest extends TestCase
     public function testPutSuccess()
     {
         $this->put("/api/v1/skills/50", ["name" => "Visual Basic"]);
-        
+
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("data", $response);
@@ -170,7 +170,7 @@ class SkillControllerTest extends TestCase
     public function testPutFailure()
     {
         $this->put("/api/v1/skills/4", ["name" => " "]);
-        
+
         $this->assertResponseStatus(422);
         $response = json_decode($this->response->getContent());
         $this->assertEquals("The name field is required.", $response->name[0]);
