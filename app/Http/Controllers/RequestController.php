@@ -303,8 +303,8 @@ class RequestController extends Controller
                 $user = User::select('slack_id')
                         ->where('user_id', $mentee_id)
                         ->first();
-                $message = "*{$mentor_name}* has indicated interest in mentoring you.
-                    You can view the details of the request <{$request_url}|here>";
+                $message = "*{$mentor_name}* has indicated interest in mentoring you.\n"
+                ."View details of the request: {$request_url}";
 
                 $this->slack_utility->sendMessage([$user->slack_id], $message);
             }
@@ -360,7 +360,7 @@ class RequestController extends Controller
             $request_url = $this->getClientBaseUrl().'/requests/'.$id;
             $content = [
                 "content" => "{$mentee_name} selected you as a mentor
-                You can view the details of the request here <{$request_url}|here>",
+                You can view the details of the request here {$request_url}",
                 "title" => 'Mentorship interest accepted'
             ];
 
@@ -393,7 +393,7 @@ class RequestController extends Controller
                     ->where('user_id', $mentee_id)
                     ->first();
                 $message = "{$mentee_name} selected you as a mentor
-                You can view the details of the request here {$request_url}";
+                \n"."View details of the request: {$request_url}";
                 $this->slack_utility->sendMessage([$user->slack_id], $message);
             }
             return $this->respond(Response::HTTP_OK, $mentorship_request);
