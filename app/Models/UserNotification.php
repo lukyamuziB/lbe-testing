@@ -45,12 +45,14 @@ class UserNotification extends Model {
     {
         $user_settings = UserNotification::where('user_id', $user_id)
         ->select('id', 'slack', 'email')
+        ->orderBy('id')
         ->get();
 
         if (Notification::count() > count($user_settings)) {
             $notifications = Notification::whereNotIn(
                 'id', $user_settings->pluck("id")
             )->select('id', 'default')
+            ->orderBy('id')
                 ->get();
 
             $default_settings = [];
