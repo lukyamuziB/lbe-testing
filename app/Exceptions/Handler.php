@@ -52,17 +52,26 @@ class Handler extends ExceptionHandler
         switch ($e) {
             case $e instanceof NotFoundException:
                 $response = $this->composeJsonResponse(
-                    Response::HTTP_NOT_FOUND, $e->getMessage()
+                    Response::HTTP_NOT_FOUND,
+                    $e->getMessage()
                 );
                 break;
             case $e instanceof UnauthorizedException:
                 $response = $this->composeJsonResponse(
-                    Response::HTTP_UNAUTHORIZED, $e->getMessage()
+                    Response::HTTP_UNAUTHORIZED,
+                    $e->getMessage()
                 );
                 break;
             case $e instanceof AccessDeniedException:
                 $response = $this->composeJsonResponse(
-                    Response::HTTP_FORBIDDEN, $e->getMessage()
+                    Response::HTTP_FORBIDDEN,
+                    $e->getMessage()
+                );
+                break;
+            case $e instanceof BadRequestException:
+                $response = $this->composeJsonResponse(
+                    Response::HTTP_BAD_REQUEST,
+                    $e->getMessage()
                 );
                 break;
             default:

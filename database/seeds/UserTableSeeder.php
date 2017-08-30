@@ -12,16 +12,16 @@ class UserTableSeeder extends Seeder
     public function run()
     {
         $faker = Faker\Factory::create();
-        $limit = 3;
+        $limit = 4;
 
-        $user_ids = ['-K_nkl19N6-EGNa0W8LF', '-KXGy1MT1oimjQgFim7u', '-KesEogCwjq6lkOzKmLI'];
+        $user_ids = ['-KXGy1MimjQgFim7u', '-K_nkl19N6-EGNa0W8LF', '-KXGy1MT1oimjQgFim7u', '-KesEogCwjq6lkOzKmLI'];
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('users')->insert([
                 'user_id' => $user_ids[$i],
-                'slack_id' => ($i + 1) * 2,
+                'slack_id' => "1En-kEn{($i + 1) * 2}",
                 'email' => $faker->unique()->email
             ]);
-        }    
+        }
     }
 }

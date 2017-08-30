@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Lcobucci\JWT\Parser;
-
 use App\Clients\AISClient;
 use App\Clients\GoogleCalendarClient;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\UnauthorizedException;
 use App\Exceptions\AccessDeniedException;
+use App\Exceptions\BadRequestException;
 use App\Models\User;
 use App\Models\UserSkill;
 use App\Models\Status;
@@ -113,19 +113,23 @@ class RequestController extends Controller
      */
     public function get($id)
     {
-        $result = MentorshipRequest::find($id);
-        $result->request_skills = $result->requestSkills;
+        try {
+            $result = MentorshipRequest::findOrFail(intval($id));
+            $result->request_skills = $result->requestSkills;
 
-        foreach ($result->request_skills as $skill) {
-            $skill = $skill->skill;
+            foreach ($result->request_skills as $skill) {
+                $skill = $skill->skill;
+            }
+
+            $result = $this->formatRequestData($result);
+            $response = [
+                "data" => $result
+            ];
+
+            return $this->respond(Response::HTTP_OK, $response);
+        } catch (ModelNotFoundException $exception) {
+            return $this->respond(Response::HTTP_NOT_FOUND, ["message" => "The request was not found"]);
         }
-
-        $result = $this->formatRequestData($result);
-        $response = [
-            "data" => $result
-        ];
-
-        return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
@@ -141,6 +145,9 @@ class RequestController extends Controller
 
         $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
+
+        // update the user table with the mentee details
+        $this->updateUserTable($user->uid, $user->email);
 
         $user_array = ["mentee_id" => $user->uid, "status_id" => Status::OPEN];
         $new_record = $this->filterRequest($request->all());
@@ -210,6 +217,7 @@ class RequestController extends Controller
      * @param Request $request - request object
      * @param  integer $id Unique ID of the mentorship request
      * @return \Illuminate\Http\JsonResponse
+     * @throws AccessDeniedException | NotFoundException
      */
     public function update(Request $request, $id)
     {
@@ -225,8 +233,6 @@ class RequestController extends Controller
 
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
-        }  catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
 
         $new_record = $this->filterRequest($request->all());
@@ -239,14 +245,16 @@ class RequestController extends Controller
             );
         }
 
-        return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+        return $this->respond(Response::HTTP_OK, $mentorship_request);
     }
 
     /**
      * Edit a mentorship request interested field
      *
+     * @param Request $request
      * @param  integer $id Unique ID of the mentorship request
      * @return \Illuminate\Http\JsonResponse
+     * @throws AccessDeniedException | BadRequestException | NotFoundException
      */
     public function updateInterested(Request $request, $id)
     {
@@ -258,6 +266,11 @@ class RequestController extends Controller
 
             if (!$current_user) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
+            }
+
+            // check that the mentee is not the one interested
+            if (in_array($mentorship_request->mentee_id, $request->interested)) {
+                throw new BadRequestException("You cannot indicate interest in your own mentorship request", 1);
             }
 
             // update the mentorship request model with new interested mentor
@@ -309,7 +322,7 @@ class RequestController extends Controller
                 $this->slack_utility->sendMessage([$user->slack_id], $message);
             }
 
-            return $this->respond(Response::HTTP_CREATED, $mentorship_request);
+            return $this->respond(Response::HTTP_OK, $mentorship_request);
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         } catch (Exception $exception) {
@@ -322,9 +335,10 @@ class RequestController extends Controller
      * Edit a mentorship request mentor_id field
      *
      * @param Request $request
+     * @param GoogleCalendarClient $google_calendar
      * @param integer $id Unique ID of the mentorship request
      * @return \Illuminate\Http\JsonResponse
-     * @throws AccessDeniedException
+     * @throws NotFoundException
      */
     public function updateMentor(
         Request $request,
@@ -369,6 +383,7 @@ class RequestController extends Controller
                 $request->mentor_id, Notification::SELECTED_AS_MENTOR
             );
             $body = $this->ais_client->getUserById($request->mentor_id);
+
             $mentor_email = $body["email"];
             if ($user_setting['email']) {
                 $this->sendEmail($content, $mentor_email);
@@ -418,7 +433,7 @@ class RequestController extends Controller
      * @param Request $request
      * @param integer $id Unique ID used to identify the request
      * @return \Illuminate\Http\JsonResponse
-     * @throws AccessDeniedException
+     * @throws NotFoundException
      */
     public function cancelRequest(Request $request, $id)
     {
@@ -677,7 +692,6 @@ class RequestController extends Controller
      * to allow program flow without any errors
      *
      * @param string $user_id
-     * @param Request $request
      */
     public function updateUserTable($user_id, $user_email)
     {
@@ -699,19 +713,19 @@ class RequestController extends Controller
     /**
      * Add request event to Google Calendar
      *
-     * @param string $mentee_email       email address of the mentee
-     * @param string $mentor_email       email address of the mentor
+     * @param string $mentee_email email address of the mentee
+     * @param string $mentor_email email address of the mentor
      * @param object $mentorship_request mentorship request made
-     * @param object $google_calendar    Google calendar client
-     *
      * @return array $event_details formatted Event details for google calendar
      */
+
     private function getEventDetails($mentee_email, $mentor_email, $mentorship_request)
     {
         $match_date = $mentorship_request->match_date;
         $session_start_time = $mentorship_request->pairing["start_time"] . ":00";
         $session_end_time = $mentorship_request->pairing["end_time"] . ":00";
         $duration = $mentorship_request->duration;
+
         $timezone = formatCalendarTimezone($mentorship_request->pairing["timezone"]);
 
         //Format start date and end date to 'Y-m-sTH:m:s' format

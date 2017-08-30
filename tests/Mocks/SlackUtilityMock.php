@@ -11,7 +11,6 @@ use App\Utility\SlackUtility;
  */
 class SlackUtilityMock extends SlackUtility
 {
-
     /**
      * sendMessageToMultipleChannels - send a slack message to
      * multiple slack channels
