@@ -44,6 +44,7 @@ class UserController extends Controller
             "picture" => $user_details["picture"],
             "first_name" => $user_details["first_name"],
             "name" => $user_details["name"],
+            "location" => $user_details['location']['name'],
             "cohort" => $user_details["cohort"],
             "roles" => $user_details["roles"],
             "placement" => $user_details["placement"],

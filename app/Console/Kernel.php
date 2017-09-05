@@ -19,6 +19,7 @@ class Kernel extends ConsoleKernel
         Commands\GenerateGoogleCredentials::class,
         Commands\UnmatchedRequestsFellowsCommand::class,
         Commands\EncryptGoogleCredentialsCommand::class,
+        Commands\UpdateLocationCommand::class
     ];
 
     /**
