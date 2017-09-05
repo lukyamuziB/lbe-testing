@@ -27,8 +27,8 @@ class RequestsTableSeeder extends Seeder
                     'duration' => $faker->numberBetween($min = 1, $max = 12),
                     'pairing' => json_encode(
                         [
-                        'start_time' => '2017-04-27T18:17:10+00:00',
-                        'end_time' => '2017-05-27T18:17:10+00:00',
+                        'start_time' => '01:00',
+                        'end_time' => '02:00',
                         'days' => ['monday'],
                         'timezone' => 'EAT']
                     ),
