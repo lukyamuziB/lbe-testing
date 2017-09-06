@@ -11,7 +11,7 @@ use App\Models\Skill;
 use App\Models\Session;
 
 class UserController extends Controller
-{ 
+{
     use RESTActions;
 
     /**
@@ -36,7 +36,7 @@ class UserController extends Controller
         }
 
         $request_count = $this->getMenteeRequests($id);
-        
+
         $total_logged_hours = Session::getTotalLoggedHours($id);
 
         $response = (object) [
@@ -45,7 +45,7 @@ class UserController extends Controller
             "first_name" => $user_details["first_name"],
             "name" => $user_details["name"],
             "location" => $user_details['location']['name'],
-            "cohort" => $user_details["cohort"],
+            "cohort" => $user_details["cohort"] ?? "",
             "roles" => $user_details["roles"],
             "placement" => $user_details["placement"],
             "email" => $user_details["email"],
@@ -54,7 +54,6 @@ class UserController extends Controller
             "request_count" => $request_count,
             "logged_hours" => $total_logged_hours
         ];
-        
         return $this->respond(Response::HTTP_OK, $response);
     }
 
