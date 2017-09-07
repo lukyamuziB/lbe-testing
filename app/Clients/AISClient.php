@@ -3,6 +3,8 @@
 namespace App\Clients;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use App\Exceptions\NotFoundException;
 
 /**
  * Class AISClient makes API calls to AIS service
@@ -35,17 +37,19 @@ class AISClient
      */
     public function getUserById($id)
     {
-        $response = $this->client->request(
-            'GET', $this->api_url.'/users/'.$id,
-            [
+        try {
+            $response = $this->client->request(
+                'GET', $this->api_url.'/users/'.$id,
+                [
                 "headers" => ["api-token" => $this->authorization_token],
                 "verify" => false
-            ]
-        );
-
-        $user = json_decode($response->getbody(), true);
-
-        return $user;
+                ]
+            );
+            $user = json_decode($response->getbody(), true);
+            return $user;
+        } catch (ClientException $exception) {
+                throw new NotFoundException("user not found");
+        }
     }
 
     /**

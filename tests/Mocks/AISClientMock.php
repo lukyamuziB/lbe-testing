@@ -1,9 +1,10 @@
 <?php
-
 namespace Test\Mocks;
 
 use App\Clients\AISClient;
+
 use PHPUnit\Runner\Exception;
+use App\Exceptions\NotFoundException;
 
 /**
  * Class AISClientMock makes mock API calls to AIS service
@@ -29,37 +30,87 @@ class AISClientMock extends AISClient
             [
                 "id" => "-K_nkl19N6-EGNa0W8LF",
                 "email" => "adebayo.adesanya@andela.com",
-                "name" => "Adebayo Adesanya"
+                "name" => "Adebayo Adesanya",
+                "location" => "Lagos",
+                "picture" => "picture",
+                "first_name" => "adebayo",
+                "cohort" => null,
+                "roles" => "staff",
+                "placement" => "placement",
+                "level" => null
             ],
             [
                 "id" => "-KXGy1MimjQgFim7u",
                 "email" => "inumidun.amao@andela.com",
-                "name" => "Inumidun Amao"
+                "name" => "Inumidun Amao",
+                "location" => "Lagos",
+                "picture" => "picture",
+                "first_name" => "adebayo",
+                "cohort" => "cohort15",
+                "roles" => "fellow",
+                "placement" => "placement",
+                "level" => "D1"
+
             ],
             [
                 "id" => "-KXGyddsds2imjQgFim7u",
                 "email" => "ichiato.ikkin@andela.com",
-                "name" => "Ichiato Ikkin"
+                "name" => "Ichiato Ikkin",
+                "location" => "Lagos",
+                "picture" => "picture",
+                "first_name" => "adebayo",
+                "cohort" => "cohort15",
+                "roles" => "fellow",
+                "placement" => "placement",
+                "level" => "D1"
             ],
             [
                 "id" => "-KXGy1MTiQgFim7",
                 "email" => "felistas.ngunmi@andela.com",
-                "name" => "Felistas Ngunmi"
+                "name" => "Felistas Ngunmi",
+                "location" => "Nairobi",
+                "picture" => "picture",
+                "first_name" => "first_name",
+                "cohort" => "cohort15",
+                "roles" => "fellow",
+                "placement" => "placement",
+                "level" => "D1"
             ],
             [
                 "id" => "-K1MTimjQgFim7u",
                 "email" => "faith.omakaro@andela.com",
-                "name" => "Faith Omokaro"
+                "name" => "Faith Omokaro",
+                "location" => "Lagos",
+                "picture" => "picture",
+                "first_name" => "first_name",
+                "cohort" => "cohort15",
+                "roles" => "fellow",
+                "placement" => "placement",
+                "level" => "D1"
             ],
             [
                 "id" => "-KXGywq1ew-eTimjQgFim7u",
                 "email" => "chinazor.allen@andela.com",
-                "name" => "Chinazor Allen"
+                "name" => "Chinazor Allen",
+                "location" => "Lagos",
+                "picture" => "picture",
+                "first_name" => "first_name",
+                "cohort" => "cohort15",
+                "roles" => "fellow",
+                "placement" => "placement",
+                "level" => "D1"
             ],
             [
                 "id" => "-KXGy1MTimjQgFim7u",
                 "email" => "daisy.wanjiru@andela.com",
-                "name" => "Daisy Wanjiru"
+                "name" => "Daisy Wanjiru",
+                "location" => "Nairobi",
+                "picture" => "picture",
+                "first_name" => "first_name",
+                "cohort" => "cohort15",
+                "roles" => "fellow",
+                "placement" => "placement",
+                "level" => "D1"
             ]
         ];
     }
@@ -74,10 +125,12 @@ class AISClientMock extends AISClient
     public function getUserById($id)
     {
         $user = array_values(array_filter($this->model, function ($user) use ($id) {
-            return $user["id"] === $id;
-        }))[0];
-
-        return $user;
+                return $user["id"] === $id;
+        }));
+        if (count($user)>0) {
+            return $user[0];
+        }
+        throw new NotFoundException("user not found");
     }
 
     /**

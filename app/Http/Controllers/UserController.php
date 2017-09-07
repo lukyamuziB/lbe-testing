@@ -13,15 +13,21 @@ use App\Models\Session;
 class UserController extends Controller
 {
     use RESTActions;
+    private $ais_client;
+
+    public function __construct(AISClient $ais_client)
+    {
+        $this->ais_client = $ais_client;
+    }
 
     /**
      * Gets a user's infomation based on their user id.
      *
      * @return Response object
      */
-    public function get(Request $request, AISClient $ais_client, $id)
+    public function get($id)
     {
-        $user_details = $ais_client->getUserById($id);
+        $user_details = $this->ais_client->getUserById($id);
 
         $user_skill_objects = UserSkill::with('skill')->where('user_id', $id)->get();
 
@@ -38,13 +44,13 @@ class UserController extends Controller
         $request_count = $this->getMenteeRequests($id);
 
         $total_logged_hours = Session::getTotalLoggedHours($id);
-
+    
         $response = (object) [
             "id" => $user_details["id"],
             "picture" => $user_details["picture"],
             "first_name" => $user_details["first_name"],
             "name" => $user_details["name"],
-            "location" => $user_details['location']['name'],
+            "location" => $user_details["location"]["name"] ?? "",
             "cohort" => $user_details["cohort"] ?? "",
             "roles" => $user_details["roles"],
             "placement" => $user_details["placement"],
@@ -54,6 +60,7 @@ class UserController extends Controller
             "request_count" => $request_count,
             "logged_hours" => $total_logged_hours
         ];
+        
         return $this->respond(Response::HTTP_OK, $response);
     }
 
