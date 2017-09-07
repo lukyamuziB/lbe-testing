@@ -42,7 +42,7 @@ function getCalendarRecursionRule($session_days, $end_date)
     }
     
     if ($end_date === "") {
-        throw new InvalidArgumentException("Missing end date");
+        throw new InvalidArgumentException("Missing date value");
     }
     
     $until = preg_replace("/:|-/", "", $end_date) . "Z";
@@ -116,7 +116,7 @@ function formatCalendarDate($date = "", $time = "", $duration = 0)
     
     //Time in H:m:s
     if (!preg_match("/^(?:([01]?\d|2[0-3]):([0-5]?\d):)?([0-5]?\d)$/", $time)) {
-        throw new InvalidArgumentException("Invalid time format $time");
+        throw new InvalidArgumentException("Invalid time format");
     }
     
     if (!is_numeric($duration)) {
