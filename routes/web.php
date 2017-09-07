@@ -75,6 +75,7 @@ $app->group(['prefix' => 'api/v1'], function ($app) {
     $app->get('sessions/{id}', 'SessionController@getSessionsReport');
     $app->post('sessions', 'SessionController@logSession');
     $app->patch('sessions/{id}/approve', 'SessionController@approveSession');
+    $app->patch('sessions/{id}/reject', 'SessionController@rejectSession');
 });
 
 /**

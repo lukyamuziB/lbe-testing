@@ -145,6 +145,55 @@ class SessionControllerTest extends TestCase
         $this->assertTrue($response->data->mentor_approved);
     }
 
+
+    /**
+     * Test that a user can reject a logged session
+     *
+     * @return Object - response containing session data
+     */
+    public function testRejectSessionSuccessForMenteeReject()
+    {
+        // Mentee may reject a logged session
+        $this->patch(
+            "/api/v1/sessions/4/reject",
+            [
+            "user_id" => "-K_nkl19N6-EGNa0W8LF",
+            ]
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+
+        $this->assertTrue($response->mentee_approved === false);
+        
+        $this->assertNotEmpty($response->mentee_logged_at);
+    }
+
+    /**
+     * Test that a user can reject a logged session
+     *
+     * @return Object - response containing session data
+     */
+    public function testRejectSessionSuccessForMentorReject()
+    {
+         // Mentor may reject a logged session
+         $this->patch(
+             "/api/v1/sessions/20/reject",
+             [
+             "user_id" => "-KesEogCwjq6lkOzKmLI",
+             ]
+         );
+ 
+         $response = json_decode($this->response->getContent());
+ 
+         $this->assertResponseStatus(200);
+ 
+         $this->assertTrue($response->mentor_approved === false);
+         
+         $this->assertNotEmpty($response->mentor_logged_at);
+    }
+
     /*
      * Test that a user cannot log a session that has already been logged
      */
@@ -203,6 +252,53 @@ class SessionControllerTest extends TestCase
 
         $this->assertEquals(
             "You do not have permission to approve this session",
+            $response->message
+        );
+    }
+
+    /**
+     * Test that user cannot reject a session on a request they are not a party of
+     *
+     * @return Object - response containing the error message
+     */
+    public function testRejectSessionFailureUnauthorizedReject()
+    {
+         $this->patch(
+             "/api/v1/sessions/2/reject",
+             [
+             "user_id" => 'ussjssjsjjdjdjdjdj',
+             ]
+         );
+
+         $this->assertResponseStatus(403);
+
+         $response = json_decode($this->response->getContent());
+
+         $this->assertEquals(
+             "You do not have permission to reject this session",
+             $response->message
+         );
+    }
+
+    /**
+     * Test that a user cannot reject a session that does not exist
+     *
+     * @return Object - response containing the error message
+     */
+    public function testRejectSessionFailureNonExistentSession()
+    {
+        $this->patch(
+            "/api/v1/sessions/80/reject",
+            [
+            "user_id" => "-KesEogCwjq6lkOzKmLI"
+            ]
+        );
+        $this->assertResponseStatus(404);
+ 
+        $response = json_decode($this->response->getContent());
+ 
+        $this->assertEquals(
+            "Session does not exist",
             $response->message
         );
     }

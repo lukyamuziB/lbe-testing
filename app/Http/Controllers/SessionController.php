@@ -271,6 +271,41 @@ class SessionController extends Controller
     }
 
     /**
+     * Update existing logged session for either the mentee or mentor
+     * that logs to reject a session
+     *
+     * @param object          $request - request payload
+     * @param String | Number $id      - id of the session to be updated
+     *
+     * @return object - session object that has been updated
+     * @throws AccessDeniedException | NotFoundException
+     */
+    public function rejectSession(Request $request, $id)
+    {
+        $session = Session::find(intval($id));
+        if ($session == null) {
+            throw new NotFoundException("Session does not exist");
+        }
+        $mentorship_request = $session->request;
+        $user_id = $request->input('user_id');
+        $timezone = $mentorship_request->pairing['timezone'];
+        $session_update_date = Carbon::now($timezone);
+
+        if ($user_id === $mentorship_request->mentee_id) {
+            $values = ["mentee_approved" => false, "mentee_logged_at" => $session_update_date];
+        } elseif ($user_id === $mentorship_request->mentor_id) {
+            $values = ["mentor_approved" => false, "mentor_logged_at" => $session_update_date];
+        } else {
+                throw new AccessDeniedException(
+                    "You do not have permission to reject this session"
+                );
+        }
+        
+        $session->fill($values)->save();
+        return $this->respond(Response::HTTP_OK, $session);
+    }
+ 
+    /**
      * Calculate the time difference and return result in minutes
      *
      * @param String $start_time - session start time

@@ -1,3 +1,19 @@
+# V 1.4.1
+
+## Features
+- implement reject Sessions endpoint
+
+## Fixed Bugs
+- fix Request link in Slack notifications
+- fix Request Report' total number misalignment\
+
+## Tech Debt
+- add tests for Sessions endpoints
+- add tests for Requests endpoints
+- implement validations for Google Calendar Helper
+- add tests for Users endpoints
+- add tests for Google Calendar Helper functions
+
 # V 1.4.0
 
 ## Features

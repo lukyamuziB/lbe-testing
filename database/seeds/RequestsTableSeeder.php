@@ -17,7 +17,10 @@ class RequestsTableSeeder extends Seeder
             DB::table('requests')->insert(
                 [
                     'mentee_id' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
-                    'mentor_id' => $faker->randomElement(['-KesEogCwjq6lkOzKmLI', '-KXGy1MT1oimjQgFim7u']),
+                    'mentor_id' => $i === 19 ? '-KesEogCwjq6lkOzKmLI' :
+                    $faker->randomElement(
+                        ['-KesEogCwjq6lkOzKmLI', '-KXGy1MT1oimjQgFim7u']
+                    ),
                     'title' => $faker->sentence($nbWords = 6, $variableNbWords = true),
                     'description' => $faker->text($maxNbChars = 300),
                     'status_id' => ($i%2 === 0 ? 1 : 2),
