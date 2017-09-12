@@ -83,8 +83,9 @@ class AISClient
      *
      * @return json $users JSON object containing all targeted users
      */
-    public function getUsersByEmail($emails, $limit = 10)
+    public function getUsersByEmail($emails)
     {
+        $limit = count($emails);
         $response = $this->client->request(
             'GET', $this->api_url.'/users?emails='.join(",", $emails).'&limit='.$limit,
             [

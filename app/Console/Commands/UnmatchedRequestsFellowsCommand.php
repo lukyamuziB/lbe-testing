@@ -15,9 +15,9 @@ use App\Mail\FellowsUnmatchedRequestsMail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
+use Exception;
 
 use App\Models\Request;
-use App\Mail\SuccessUnmatchedRequestsMail;
 use App\Clients\AISClient;
 
 /**
@@ -66,32 +66,45 @@ class UnmatchedRequestsFellowsCommand extends Command
      */
     public function handle()
     {
-        $unmatched_requests = Request::getUnmatchedRequests()->toArray();
+        try {
+            $unmatched_requests = Request::getUnmatchedRequests()->toArray();
 
-        if ($unmatched_requests) {
-            $mentee_emails = $this->getMenteeEmails($unmatched_requests);
+            if ($unmatched_requests) {
+                $mentee_emails = $this->getMenteeEmails($unmatched_requests);
 
-            $mentees = $this->ais_client
-                ->getUsersByEmail($mentee_emails, count($mentee_emails));
+                $mentees = $this->ais_client
+                    ->getUsersByEmail($mentee_emails);
 
-            // Build the $requests array that will
-            // contain only the info we need to send to the template
-            $requests = $this->getRequestAndMenteeDetails(
-                $unmatched_requests,
-                $mentees["values"]
-            );
+                // Build the $requests array that will
+                // contain only the info we need to send to the template
+                $requests = $this->getRequestAndMenteeDetails(
+                    $unmatched_requests,
+                    $mentees["values"]
+                );
 
-            $this->sortRequestsByPlacementStatus($requests);
+                $this->sortRequestsByPlacementStatus($requests);
 
-            $app_environment = getenv("APP_ENV");
+                $app_environment = getenv("APP_ENV");
 
-            $recipients = Config::get(
-                "notifications.{$app_environment}.all_fellows_notification_email"
-            );
+                $recipients = Config::get(
+                    "notifications.{$app_environment}.all_fellows_notification_email"
+                );
 
-            Mail::to($recipients)->send(
-                new FellowsUnmatchedRequestsMail($requests)
-            );
+                Mail::to($recipients)->send(
+                    new FellowsUnmatchedRequestsMail($requests)
+                );
+            }
+            $count = count($unmatched_requests);
+
+            if ($count) {
+                $message = "A notification about $count unmatched" .
+                    " requests has been sent to all fellows";
+            } else {
+                $message = "There are no unmatched requests";
+            }
+            $this->info($message);
+        } catch (Exception $e) {
+            $this->error("An error occurred - emails were not sent");
         }
     }
 
@@ -129,8 +142,9 @@ class UnmatchedRequestsFellowsCommand extends Command
                 if ($request["user"]["email"] === $mentee["email"]) {
                     $requests[$request["id"]]
                         = [
-                        "client" => $mentee["placement"]["client"],
-                        "request_url" => $this->base_url . "/requests/" . $request["id"],
+                        "client" => $mentee["placement"]["client"] ?? "",
+                        "request_url"
+                        => $this->base_url . "/requests/" . $request["id"],
                         "request_skills"
                         => array_column($request["request_skills"], "skill")
                         ];

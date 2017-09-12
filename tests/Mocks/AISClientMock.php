@@ -157,18 +157,22 @@ class AISClientMock extends AISClient
      *
      * @return json $users JSON object containing all targeted users
      */
-    public function getUsersByEmail($emails, $limit = 10)
+    public function getUsersByEmail($emails)
     {
         $users = [];
 
-        $count = count($emails) > $limit ? $limit : count($emails);
-        for ($i = 0; $i < $count; $i++) {
-            array_push($users, array_values(array_filter($this->model, function ($user) use ($emails, $i) {
-                return $user["email"] === $emails[$i];
-            }))[0]);
+        foreach ($emails as $email) {
+            foreach ($this->model as $user) {
+                if ($user["email"] === $email) {
+                    $users[] = $user;
+                }
+            }
         }
 
-        return $users;
+        return [
+            "values" => count($users) ? $users : null,
+            "total" => count($users)
+        ];
     }
 
     /**

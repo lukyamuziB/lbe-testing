@@ -1,5 +1,6 @@
 <?php
 use \Laravel\Lumen\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\Mail;
 
 use Test\Mocks\FreckleClientMock;
 use Test\Mocks\SlackUtilityMock;
@@ -40,5 +41,7 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
         $this->app->instance("App\Utility\SlackUtility", $slack_utility_mock);
 
         $this->app->instance("App\Clients\AISClient", $ais_client_mock);
+
+        Mail::fake();
     }
 }

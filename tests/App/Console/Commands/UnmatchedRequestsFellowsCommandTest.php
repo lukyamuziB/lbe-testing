@@ -1,0 +1,158 @@
+<?php
+/**
+ * File defines class for UnmatchedRequestsFellowsCommand tests
+ *
+ * PHP version >= 7.0
+ *
+ * @category Tests
+ * @package  Tests\App\Console\Commands
+ */
+
+namespace Tests\App\Console\Commands;
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
+
+use TestCase;
+use App\console\Commands\UnmatchedRequestsFellowsCommand;
+use App\Models\Request;
+use App\Models\User;
+use App\Models\RequestSkill;
+use App\Models\Session;
+use App\Models\Rating;
+
+/**
+ * Class TestUnmatchedRequestsFellowsCommand
+ *
+ * @category Tests
+ * @package  Tests\App\Console\Commands
+ */
+class TestUnmatchedRequestsFellowsCommand extends TestCase
+{
+    private $application;
+
+    /**
+     * Setup test dependencies
+     */
+    public function setUp()
+    {
+        parent::setUp();
+
+        $this->application = new Application();
+    }
+
+    /**
+     * Configure and execute the command
+     *
+     * @param Application $application console application
+     *
+     * @return object $command_tester
+     */
+    private function executeCommmand(Application $application)
+    {
+        $command = $this->app->make(UnmatchedRequestsFellowsCommand::class);
+
+        $command->setLaravel(app());
+
+        $application->add($command);
+
+        $command_signature = $application->find("notify:unmatched-requests:fellows");
+
+        $command_tester = new CommandTester($command_signature);
+
+        $command_tester->execute(
+            [ "command" => "notify:unmatched-requests:fellows"]
+        );
+
+        return $command_tester;
+    }
+
+    /**
+     * Delete data from tables
+     */
+    private function clearTables()
+    {
+        User::where("user_id", "not", 0)->forceDelete();
+        RequestSkill::where("id", ">", 0)->forceDelete();
+        Rating::where("session_id", ">", 0)->forceDelete();
+        Session::where("id", ">", 0)->forceDelete();
+        Request::where("id", ">", 0)->forceDelete();
+    }
+
+    /**
+     * Test if handle works correctly when there are
+     * unmatched requests
+     */
+    public function testHandleSuccessWithUnmatchedRequests()
+    {
+        $command_tester = $this->executeCommmand($this->application);
+
+        $message = "A notification about 10 unmatched " .
+            "requests has been sent to all fellows\n";
+
+        $this->assertEquals($command_tester->getDisplay(), $message);
+    }
+
+    /**
+     * Test if handle works correctly when there
+     * are no unmatched requests
+     */
+    public function testHandleSuccessWithNoUnmatchedRequests()
+    {
+        // delete all requests
+        $this->clearTables();
+
+        $command_tester = $this->executeCommmand($this->application);
+
+        $message = "There are no unmatched requests\n";
+
+        $this->assertEquals($command_tester->getDisplay(), $message);
+    }
+
+    /**
+     * Test handle failure given invalid data
+     */
+    public function testHandleFailure()
+    {
+        // delete all valid data
+        $this->clearTables();
+
+        // create user with invalid data
+        User::create(
+            [
+                "user_id" => "fake_id",
+                "email" => "fake.email@andela.com",
+                "slack_id" => "fake_slack_id"
+            ]
+        );
+
+        // create request with invalid data
+        Request::create(
+            [
+                'mentee_id' => "fake_id",
+                'mentor_id' => "another_fake_id",
+                'title' => "Javascript",
+                'description' => "Learn Javascript",
+                'status_id' => 1,
+                'match_date' => null,
+                'duration' => 2,
+                'pairing' => json_encode(
+                    [
+                        'start_time' => '01:00',
+                        'end_time' => '02:00',
+                        'days' => ['monday'],
+                        'timezone' => 'EAT'
+                    ]
+                ),
+                'location' => "Nairobi"
+            ]
+        );
+
+        $command_tester = $this->executeCommmand($this->application);
+
+        $this->assertEquals(
+            "An error occurred - emails were not sent\n",
+            $command_tester->getDisplay()
+        );
+    }
+}
