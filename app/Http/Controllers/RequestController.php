@@ -74,7 +74,12 @@ class RequestController extends Controller
             $mentorship_requests = $request->input('status') === 'matched' ?
                 $this->getMentorRequestsByStatus($request->user()->uid, Status::MATCHED)
                 :
-                $this->getMentorRequests($request->user()->uid);
+                $this->getMentorRequests($request->user()->uid, $limit);
+                
+                $response["pagination"] = [
+                    "totalCount" => $mentorship_requests->total(),
+                    "pageSize" => $mentorship_requests->perPage()
+                ];
         } elseif ($request->input('q')) {
             $search_query = $request->input('q');
             $mentorship_requests = MentorshipRequest::whereHas(
@@ -620,7 +625,7 @@ class RequestController extends Controller
      * @param string $user_id
      * @return array $mentorship_requests
      */
-    private function getMentorRequests($user_id)
+    private function getMentorRequests($user_id, $limit)
     {
         $mentorship_requests = MentorshipRequest::with('requestSkills')
             ->whereExists(function ($query) use ($user_id) {
@@ -629,7 +634,9 @@ class RequestController extends Controller
                     ->where('user_skills.user_id', $user_id);
             })
             ->orwhere('interested->', $user_id)
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate($limit);
+
            return $mentorship_requests;
     }
 
