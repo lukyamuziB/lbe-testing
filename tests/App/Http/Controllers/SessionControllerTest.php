@@ -123,11 +123,11 @@ class SessionControllerTest extends TestCase
             "start_time" => Carbon::now()->subHour(22),
             "end_time" => Carbon::now()->subHour(24)
         ]);
-
+        
         $this->assertResponseStatus(201);
 
         $response = json_decode($this->response->getContent());
-
+         
         $this->assertTrue($response->data->mentee_approved);
 
         // Mentor should approve a logged session
@@ -200,8 +200,8 @@ class SessionControllerTest extends TestCase
     public function testLogSessionFailureAlreadyLogged()
     {
         $this->post("/api/v1/sessions", [
-            "request_id" => 2,
-            "user_id" => "-Xjsjs87d9djdsjdijd7u",
+            "request_id" => 19,
+            "user_id" => "-K_nkl19N6-EGNa0W8LF",
             "date" => Carbon::now()->timestamp,
             "start_time" => Carbon::now()->addHour(10),
             "end_time" => Carbon::now()->addHour(12)
@@ -220,7 +220,7 @@ class SessionControllerTest extends TestCase
     public function testApproveSessionFailureUnauthorizedLog()
     {
         $this->post("/api/v1/sessions", [
-            "request_id" => 2,
+            "request_id" => 20,
             "user_id" => "-Xjsjs87d9djdsjdijd7u",
             "date" => Carbon::now()->subHour(24)->timestamp,
             "start_time" => Carbon::now()->subHour(22),
