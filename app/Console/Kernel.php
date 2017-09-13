@@ -18,8 +18,7 @@ class Kernel extends ConsoleKernel
         Commands\UnapprovedSessionsReminderCommand::class,
         Commands\GenerateGoogleCredentials::class,
         Commands\UnmatchedRequestsFellowsCommand::class,
-        Commands\EncryptGoogleCredentialsCommand::class,
-        Commands\UpdateLocationCommand::class
+        Commands\EncryptGoogleCredentialsCommand::class
     ];
 
     /**
