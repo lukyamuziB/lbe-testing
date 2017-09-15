@@ -100,4 +100,39 @@ class UserNotification extends Model {
         return $user_setting;
     }
 
+    /**
+     * Get notification settings for multiple users
+     *
+     * @param array  $user_ids        user IDs
+     * @param string $notification_id the notification ID
+     *
+     * @return array
+     */
+    public static function getUsersSettingById($user_ids, $notification_id)
+    {
+        $users_setting =  UserNotification::select('user_id', 'email', 'slack')
+            ->whereIn('user_id', $user_ids)
+            ->where('id', $notification_id)
+            ->get()
+            ->toArray();
+
+        $fetched_ids = array_column($users_setting, "user_id");
+        $unfetched_ids = array_diff($user_ids, $fetched_ids);
+
+        if ($unfetched_ids) {
+            $default_setting = Notification::select('default')
+                ->where('id', $notification_id)
+                ->first();
+
+            foreach ($unfetched_ids as $user_id) {
+                $users_setting[] = [
+                    'user_id' => $user_id,
+                    'email' => $default_setting['default'] === 'email',
+                    'slack' => $default_setting['default'] === 'slack'
+                ];
+            }
+        }
+
+        return $users_setting;
+    }
 }

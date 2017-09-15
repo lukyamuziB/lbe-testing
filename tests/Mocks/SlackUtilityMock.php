@@ -20,12 +20,14 @@ class SlackUtilityMock extends SlackUtility
      * channel to send to in each object
      * @return array
      */
-    public function sendMessage($recipients, $message)
+    public function sendMessage($recipients, $message, $attachments = "")
     {
         $valid_recipients = ["@amao", "@bayo", "wrong"];
 
         if (count($recipients) > 1) {
-            $response = ["message" => "mutiple channel sent"];
+            $response
+                = $attachments ? ["message" => "mutiple channel sent with attachments"] :
+                ["message" => "mutiple channel sent"];
         } else {
             $response = array_merge(
                 array("ok" => true, "channel" => $recipients[0]),

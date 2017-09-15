@@ -36,11 +36,12 @@ class SlackUtility
      * one or more slack channels
      * @param array $recipients - list of channels to send message to
      * @param string $message - message to send to multiple channels
+     * @param string $attachments optional attachments to send
      * @internal param string $messages_information - array of objects containing message text and
      * channel to send to in each object
      * @return array
      */
-    public function sendMessage($recipients, $message)
+    public function sendMessage($recipients, $message, $attachments = "")
     {
         $slack_api_url = $this->base_url."/chat.postMessage";
 
@@ -56,6 +57,7 @@ class SlackUtility
                         "icon_url" => getenv("SLACK_ICON"),
                         "channel" => $recipient,
                         "text" => $message,
+                        "attachments" => $attachments
                     ],
                     "verify" => false
                 ]
@@ -91,5 +93,4 @@ class SlackUtility
 
         return $response["ok"] ? $response["members"] : [];
     }
-
 }

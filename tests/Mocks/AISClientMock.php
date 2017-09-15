@@ -153,8 +153,6 @@ class AISClientMock extends AISClient
      *
      * @param array $emails - list of user's emails
      *
-     * @param integer $limit - limit of results returned
-     *
      * @return json $users JSON object containing all targeted users
      */
     public function getUsersByEmail($emails)
