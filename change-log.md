@@ -1,3 +1,13 @@
+# V 1.4.2
+
+## Features
+- paginate User's "My Interests" response
+- implement User preferences for unapproved Sessions reminder
+
+## Tech Debt
+- add tests for weekly email Report command
+- remove command to update User's location
+
 # V 1.4.1
 
 ## Features
@@ -5,7 +15,7 @@
 
 ## Fixed Bugs
 - fix Request link in Slack notifications
-- fix Request Report' total number misalignment\
+- fix Request Report' total number misalignment
 
 ## Tech Debt
 - add tests for Sessions endpoints

@@ -111,33 +111,37 @@ class SessionControllerTest extends TestCase
      */
     public function testLogSessionSuccess()
     {
-        $this->get('/api/v1/requests/3');
-
-        $existing_request = json_decode($this->response->getContent());
-
         // Mentee should log a session
-        $this->post("/api/v1/sessions", [
-            "request_id" => 3,
-            "user_id" => $existing_request->data->mentee_id,
-            "date" => Carbon::now()->subHour(24)->timestamp,
-            "start_time" => Carbon::now()->subHour(22),
-            "end_time" => Carbon::now()->subHour(24)
-        ]);
-        
-        $this->assertResponseStatus(201);
+        $this->post(
+            "/api/v1/sessions",
+            [
+                "request_id" => 20,
+                "user_id" => "-K_nkl19N6-EGNa0W8LF",
+                "date" => Carbon::now()
+                ->timezone('Africa/Nairobi')->subHour(24)->timestamp,
+                "start_time" => Carbon::now()
+                ->timezone('Africa/Nairobi')->subHour(22),
+                "end_time" => Carbon::now()->timezone('Africa/Nairobi')->subHour(24)
+            ]
+        );
 
+        $this->assertResponseStatus(201);
+        
         $response = json_decode($this->response->getContent());
-         
+
         $this->assertTrue($response->data->mentee_approved);
 
         // Mentor should approve a logged session
 
         $session_id = $response->data->id;
 
-        $this->patch("/api/v1/sessions/{$session_id}/approve", [
-            "user_id" => $existing_request->data->mentor_id,
-        ]);
-
+        $this->patch(
+            "/api/v1/sessions/{$session_id}/approve",
+            [
+                "user_id" => "-KesEogCwjq6lkOzKmLI",
+            ]
+        );
+        
         $this->assertResponseStatus(200);
 
         $response = json_decode($this->response->getContent());

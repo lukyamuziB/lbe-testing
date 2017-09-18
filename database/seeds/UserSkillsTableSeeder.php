@@ -25,7 +25,7 @@ class UserSkillsTableSeeder extends Seeder
         for ($i = 0; $i < $limit; $i++) {
             DB::table('user_skills')->insert([
                 'user_id' => $users[$faker->numberBetween(0, 5)],
-                'skill_id' => $faker->randomElement($array = range(1, 50)),
+                'skill_id' => $i === 99 ? 7 : $faker->randomElement(range(1, 50)),
                 'created_at' => $faker->date($format = 'Y-m-d H:i:s', $max = 'now'),
                 'updated_at' => null
             ]);
