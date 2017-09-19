@@ -92,7 +92,7 @@ class ReportControllerTest extends TestCase
         foreach ($response->data->skills_count as $skill) {
             $this->assertNotEmpty($skill->name);
         }
-        $this->assertEquals(0, $response->data->averageTimeToMatch);
+        $this->assertLessThanOrEqual(7, $response->data->averageTimeToMatch);
     }
 
 

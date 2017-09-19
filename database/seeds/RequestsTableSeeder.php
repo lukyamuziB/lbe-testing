@@ -14,6 +14,7 @@ class RequestsTableSeeder extends Seeder
         $faker = Faker\Factory::create();
         $limit = 20;
         for ($i = 0; $i < $limit; $i++) {
+            $created_at = $faker->dateTimeBetween($startDate='-3 years', $endDate = 'now', $timezone = date_default_timezone_get(), $format = 'Y-m-d H:i:s');
             DB::table('requests')->insert(
                 [
                     'mentee_id' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
@@ -24,9 +25,9 @@ class RequestsTableSeeder extends Seeder
                     'title' => $faker->sentence($nbWords = 6, $variableNbWords = true),
                     'description' => $faker->text($maxNbChars = 300),
                     'status_id' => ($i%2 === 0 ? 1 : 2),
-                    'created_at' => $faker->date($format = 'Y-m-d H:i:s', $max = 'now'),
+                    'created_at' => $created_at,
                     'updated_at' => null,
-                    'match_date' => null,
+                    'match_date' => $faker->dateTimeBetween($created_at, $created_at->format('Y-m-d H:i:s').' +7 days'),
                     'duration' => $faker->numberBetween($min = 1, $max = 12),
                     'pairing' => json_encode(
                         [
