@@ -11,10 +11,11 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Notification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
+use Exception;
 
+use App\Models\Notification;
 use App\Models\Session;
 use App\Utility\SlackUtility;
 use App\Repositories\SlackUsersRepository;
@@ -72,78 +73,86 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     public function handle()
     {
-        $unapproved_sessions = Session::getUnApprovedSessionsByTime(2)
-            ->toArray();
+        try {
+            $unapproved_sessions = Session::getUnApprovedSessionsByTime(2)
+                ->toArray();
 
-        if (!$unapproved_sessions) {
-            return;
-        }
+            if ($unapproved_sessions) {
+                $session_details = $this->groupSessionsByRecipient($unapproved_sessions);
 
-        $session_details = $this->groupSessionsByRecipient($unapproved_sessions);
+                $emails = $this->getUserEmails($session_details);
 
-        $emails = $this->getUserEmails($session_details);
+                // get details of people who logged the sessions
+                $users = $this->ais_client->getUsersByEmail($emails);
 
-        // get details of people who logged the sessions
-        $users = $this->ais_client->getUsersByEmail($emails);
+                $this->appendUserDetails($session_details, $users["values"]);
 
-        $this->appendUserDetails($session_details, $users["values"]);
+                $user_ids = array_keys($session_details);
 
-        $user_ids = array_keys($session_details);
-
-        // get settings of message recipients
-        // (those who have not logged their sessions)
-        $settings = UserNotification::getUsersSettingById(
-            $user_ids,
-            Notification::LOG_SESSIONS_REMINDER
-        );
-
-        $this->appendUserSettings($session_details, $settings);
-
-        $lenken_base_url = getenv("LENKEN_FRONTEND_BASE_URL");
-
-        // send notifications to users
-        foreach ($session_details as $recipient) {
-            $user = $this->getRecipient(current($recipient["requests"])[0]);
-
-            $slack_id = $user["slack_id"] ?? "";
-            $email = $user["email"];
-
-            if ($recipient["notification"]["slack"] && $slack_id) {
-                $slack_message = $this->buildSlackMessage(
-                    $recipient["requests"],
-                    $lenken_base_url
+                // get settings of message recipients
+                // (those who have not logged their sessions)
+                $settings = UserNotification::getUsersSettingById(
+                    $user_ids,
+                    Notification::LOG_SESSIONS_REMINDER
                 );
 
-                $this->slack_utility->sendMessage(
-                    [$slack_id],
-                    $slack_message["title"],
-                    json_encode($slack_message["attachments"])
-                );
-            }
+                $this->appendUserSettings($session_details, $settings);
 
-            // Send email message as well if email setting is true
-            if ($recipient["notification"]["email"]) {
-                $session_info = [];
+                $lenken_base_url = getenv("LENKEN_FRONTEND_BASE_URL");
 
-                foreach ($recipient["requests"] as $request_id => $request) {
-                    $request_url = "$lenken_base_url/requests/$request_id";
-                    $session_logger
-                        = $this->getLogger($request[0]);
+                // send notifications to users
+                foreach ($session_details as $recipient) {
+                    $user = $this->getRecipient(current($recipient["requests"])[0]);
 
-                    $session_info[] = [
-                        "title" => $request[0]["request"]["title"],
-                        "sessions_count" => count($request),
-                        "url" => $request_url,
-                        "name" => $session_logger["name"],
-                        "avatar"
-                        => $session_logger["avatar"]
-                    ];
+                    $slack_id = $user["slack_id"] ?? "";
+                    $email = $user["email"];
+
+                    if ($recipient["notification"]["slack"] && $slack_id) {
+                        $slack_message = $this->buildSlackMessage(
+                            $recipient["requests"],
+                            $lenken_base_url
+                        );
+
+                        $this->slack_utility->sendMessage(
+                            [$slack_id],
+                            $slack_message["title"],
+                            json_encode($slack_message["attachments"])
+                        );
+                    }
+
+                    // Send email message as well if email setting is true
+                    if ($recipient["notification"]["email"]) {
+                        $session_info = [];
+
+                        foreach ($recipient["requests"] as $request_id => $request) {
+                            $request_url = "$lenken_base_url/requests/$request_id";
+                            $session_logger
+                                = $this->getLogger($request[0]);
+
+                            $session_info[] = [
+                                "title" => $request[0]["request"]["title"],
+                                "sessions_count" => count($request),
+                                "url" => $request_url,
+                                "name" => $session_logger["name"],
+                                "avatar"
+                                => $session_logger["avatar"]
+                            ];
+                        }
+
+                        Mail::to($email)->send(
+                            new UnapprovedSessionsMail($session_info)
+                        );
+                    }
                 }
-
-                Mail::to($email)->send(
-                    new UnapprovedSessionsMail($session_info)
+                $number_of_recipients = count($session_details);
+                $this->info(
+                    "Notifications have been sent to $number_of_recipients recipients"
                 );
+            } else {
+                $this->info("There are no unapproved sessions");
             }
+        } catch (Exception $e) {
+            $this->error("An error occurred - notifications were not sent");
         }
     }
 

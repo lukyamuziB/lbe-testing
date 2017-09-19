@@ -1,6 +1,8 @@
 <?php
 use \Laravel\Lumen\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
 
 use Test\Mocks\FreckleClientMock;
 use Test\Mocks\SlackUtilityMock;
@@ -43,5 +45,36 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
         $this->app->instance("App\Clients\AISClient", $ais_client_mock);
 
         Mail::fake();
+    }
+
+    /**
+     * Configure and execute the command
+     *
+     * @param Application $application console application
+     * @param string      $signature   the command signature
+     * @param string      $class_name  the command class name
+     *
+     * @return object $command_tester
+     */
+    protected function executeCommand(
+        Application $application,
+        $signature,
+        $class_name
+    ) {
+        $command = $this->app->make($class_name);
+
+        $command->setLaravel(app());
+
+        $application->add($command);
+
+        $command_signature = $application->find($signature);
+
+        $command_tester = new CommandTester($command_signature);
+
+        $command_tester->execute(
+            [ "command" => $signature]
+        );
+
+        return $command_tester;
     }
 }
