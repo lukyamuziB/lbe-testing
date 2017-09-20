@@ -1,4 +1,6 @@
-<?php namespace App\Models;
+<?php
+
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -6,7 +8,7 @@ use Carbon\Carbon;
 class Request extends Model
 {
 
-    protected $table = 'requests';
+    protected $table = "requests";
 
     protected $fillable = [
         "mentee_id",
@@ -24,7 +26,7 @@ class Request extends Model
 
     protected $casts = [
         "interested" => "array",
-        "pairing" => 'array',
+        "pairing" => "array",
     ];
 
     public static $rules = [
@@ -57,22 +59,38 @@ class Request extends Model
         "mentee_name" => "required|string",
         "match_date" => "numeric|required"
     ];
-
+    /**
+     * Defines Foreign Key Relationship to the user model
+     *
+     * @return Object
+     */
     public function user()
     {
-        return $this->belongsTo('App\Models\User', 'mentee_id');
+        return $this->belongsTo("App\Models\User", "mentee_id");
     }
-
+    /**
+     * Defines Foreign Key Relationship to the user model
+     *
+     * @return Object
+     */
     public function mentor()
     {
-        return $this->belongsTo('App\Models\User', 'mentor_id');
+        return $this->belongsTo("App\Models\User", "mentor_id");
     }
-    
+    /**
+     * Defines Foreign Key Relationship to the skill model
+     *
+     * @return Object
+     */
     public function requestSkills()
     {
         return $this->hasMany("App\Models\RequestSkill");
     }
-
+    /**
+     * Defines Foreign Key Relationship to the status model
+     *
+     * @return Object
+     */
     public function status()
     {
         return $this->belongsTo("App\Models\Status");
@@ -81,48 +99,118 @@ class Request extends Model
     /**
      * Gets the timestamp of how many weeks ago request was made
      *
-     * @param string $location
+     * @param string $period - the period od days
+     *
      * @return mixed string|null
      */
     public static function getTimeStamp($period)
     {
         $date = (int)$period;
-
+        
         return ($date) ? Carbon::now()->subWeeks($date)->__toString() : null;
     }
 
     /**
      * Sets the location to be returned in the where clause
      *
-     * @param string $location
+     * @param string $location - the request location
+     *
      * @return mixed string|null
      */
     public static function getLocation($location)
     {
-        return ($location === 'ALL') ? null : $location;
+        return ($location === "ALL") ? null : $location;
     }
 
     /**
-    * Returns an array of the location from which request was made
-    * and period when requests were made
-    *
-    * @return array of location and period of requests
-    */
-    public static function buildWhereClause($request)
+     * Returns the mentorship request based on the param
+     *
+     * @param string $params - request parameters
+     *
+     * @return array of request based on the param
+     */
+    public static function buildQuery($params)
     {
-        $selected_date = Request::getTimeStamp($request->input('period'));
-        $selected_location = Request::getLocation($request->input('location'));
-
-        return Request::when($selected_date, function($query) use ($selected_date) {
-            if ($selected_date) {
-                return $query->where('created_at', '>=', $selected_date);
+        $mentorship_requests = Request::when(
+            isset($params["search_query"]),
+            function ($query) use ($params) {
+                $search_query = $params["search_query"];
+                return $query->whereHas(
+                    "mentor",
+                    function ($query) use ($search_query) {
+                        $query-> where("email", "iLIKE", "%".$search_query."%");
+                    }
+                )->orWhereHas(
+                    "user",
+                    function ($query) use ($search_query) {
+                        $query -> where("email", "iLIKE", "%".$search_query."%");
+                    }
+                );
             }
-        })
-        ->when($selected_location, function($query) use ($selected_location) {
-            if($selected_location) {
-                return $query->where('location', $selected_location);
+        )
+        ->when(
+            isset($params["status"]),
+            function ($query) use ($params) {
+                return $query->whereIn("status_id", $params["status"]);
             }
-        });
+        )
+        ->when(
+            isset($params["skills"]),
+            function ($query) use ($params) {
+                return $query->whereHas(
+                    "requestSkills",
+                    function ($query) use ($params) {
+                                $query->whereIn("skill_id", $params["skills"]);
+                    }
+                );
+            }
+        )
+        ->when(
+            isset($params["date"]),
+            function ($query) use ($params) {
+                $date = Request::getTimeStamp($params["date"]);
+                if ($params["date"]) {
+                    return $query
+                            ->where("created_at", ">=", $date);
+                }
+                return $query;
+            }
+        )
+        ->when(
+            isset($params["mentee_id"]),
+            function ($query) use ($params) {
+                return $query->where("mentee_id", $params["mentee_id"]);
+            }
+        )
+        ->when(
+            isset($params["mentor_id"]),
+            function ($query) use ($params) {
+                $user_id = $params["mentor_id"];
+                return $query->with('requestSkills')->whereExists(
+                    function ($query) use ($user_id) {
+                        $query
+                            ->from('user_skills')
+                            ->where(
+                                'user_skills.user_id',
+                                $user_id
+                            );
+                    }
+                )
+                ->orwhere(
+                    'interested->',
+                    $user_id
+                )
+                ->orderBy('created_at', 'desc');
+            }
+        )
+        ->when(
+            isset($params["location"]),
+            function ($query) use ($params) {
+                return $query->where("location", $params["location"]);
+            }
+        );
+        
+        return $mentorship_requests;
     }
 
     /**
@@ -137,11 +225,11 @@ class Request extends Model
     {
         $threshold_date = Carbon::now()->subHours($duration);
         $unmatched_requests = Request::with("requestSkills.skill", "user")
-            ->where('status_id', Status::OPEN)
-            ->whereDate('created_at', '<=', $threshold_date)
-            ->orderBy('created_at', 'asc')
+            ->where("status_id", Status::OPEN)
+            ->whereDate("created_at", "<=", $threshold_date)
+            ->orderBy("created_at", "asc")
             ->get();
-
+        
         return $unmatched_requests;
     }
 }

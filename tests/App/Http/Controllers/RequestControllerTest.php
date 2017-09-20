@@ -157,9 +157,9 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals(20, $response->pagination->pageSize);
 
-        $this->assertNotEmpty($response->data);
+        $this->assertNotEmpty($response->requests);
 
-        $this->assertCount(20, $response->data);
+        $this->assertCount(20, $response->requests);
     }
 
     /**
@@ -179,9 +179,9 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals(10, $response->pagination->pageSize);
 
-        $this->assertNotEmpty($response->data);
+        $this->assertNotEmpty($response->requests);
 
-        $this->assertCount(10, $response->data);
+        $this->assertCount(10, $response->requests);
     }
 
     /*

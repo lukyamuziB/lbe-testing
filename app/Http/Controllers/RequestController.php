@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use \Exception;
@@ -6,9 +7,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Lcobucci\JWT\Parser;
 use App\Clients\AISClient;
 use App\Clients\GoogleCalendarClient;
 use App\Exceptions\NotFoundException;
@@ -27,8 +26,10 @@ use App\Utility\SlackUtility;
 
 /**
  * Class RequestController
+ *
  * @package App\Http\Controllers
  */
+
 class RequestController extends Controller
 {
     const MODEL = "App\Models\Request";
@@ -45,75 +46,70 @@ class RequestController extends Controller
         SlackUtility $slack_utility,
         SlackUsersRepository $slack_repository
     ) {
-            $this->ais_client = $ais_client;
-            $this->slack_utility = $slack_utility;
-            $this->slack_repository = $slack_repository;
+        $this->ais_client = $ais_client;
+        $this->slack_utility = $slack_utility;
+        $this->slack_repository = $slack_repository;
     }
 
     /**
      * Gets all Mentorship Requests
      *
      * @param Request $request - request  object
+     *
      * @return Response Object
      */
     public function all(Request $request)
     {
-        // get the user
+        // Get all request params
+        $params = [];
         $user = $request->user();
+        $user_id = $request->user()->uid;
+        $limit = intval($request->input("limit")) ?
+            intval($request->input("limit")) : 20;
+        $search_query = $this->getRequestParams($request, "q");
 
+        // Add request params to the params array
+        if (trim($search_query)) {
+            $params["search_query"] = $search_query;
+        }
+        if ($this->getRequestParams($request, "mentee")) {
+            $params["mentee_id"] = $user_id;
+        }
+        if ($this->getRequestParams($request, "mentor")) {
+            $params["mentor_id"] = $user_id;
+        }
+        if ($status = $this->getRequestParams($request, "status")) {
+            $params["status"] = explode(",", $status);
+        }
+        if ($period = $this->getRequestParams($request, "period")) {
+            $params["date"] = $period;
+        }
+        if ($location = $this->getRequestParams($request, "location")) {
+            $params["location"] = $location;
+        }
+        if ($skills = $this->getRequestParams($request, "skills")) {
+            $params["skills"] = explode(",", $skills);
+        }
         //update or create users in the users table
         $this->updateUserTable($user->uid, $user->email);
-
-        // generic collection to hold requests to be sent as response
-        $limit = $request->input('limit') ? $request->input('limit') : 20;
-
-        // build all where clauses based off of query params (location & time)
-        if ($request->input('self')) {
-            $mentorship_requests = $this->getMenteeRequests($request->user()->uid, $request);
-        } elseif ($request->input('mentor')) {
-            $mentorship_requests = $request->input('status') === 'matched' ?
-                $this->getMentorRequestsByStatus($request->user()->uid, Status::MATCHED)
-                :
-                $this->getMentorRequests($request->user()->uid, $limit);
-                
-                $response["pagination"] = [
-                    "totalCount" => $mentorship_requests->total(),
-                    "pageSize" => $mentorship_requests->perPage()
-                ];
-        } elseif ($request->input('q')) {
-            $search_query = $request->input('q');
-            $mentorship_requests = MentorshipRequest::whereHas(
-                'mentor', function ($query) use ($search_query) {
-                    $query -> where('email', 'iLIKE', '%'.$search_query.'%');
-                }
-            )->orWhereHas(
-                'user', function ($query) use ($search_query) {
-                    $query -> where('email', 'iLIKE', '%'.$search_query.'%');
-                    }
-            )-> get();
-        } else {
-            $mentorship_requests = MentorshipRequest::buildWhereClause($request)
-                ->orderBy('created_at', 'desc')
+        $mentorship_requests  = MentorshipRequest::buildQuery($params)
+                ->orderBy("created_at", "desc")
                 ->paginate($limit);
-
             $response["pagination"] = [
                 "totalCount" => $mentorship_requests->total(),
                 "pageSize" => $mentorship_requests->perPage()
             ];
-        }
-
-        // transform the result objects into API ready responses
-        $transformed_requests = $this->transformRequestData($mentorship_requests);
-
-        $response["data"] = $transformed_requests;
-
-        return $this->respond(Response::HTTP_OK, $response);
+            // transform the result objects into API ready responses
+            $transformed_requests = $this->transformRequestData($mentorship_requests);
+            $response["requests"] = $transformed_requests;
+            return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
      * Gets a mentorship request by the request id
      *
-     * @param integer $id
+     * @param integer id - $id - the request id
+     *
      * @return Response object
      */
     public function get($id)
@@ -142,6 +138,7 @@ class RequestController extends Controller
      * Also saves the request skills in the request skills table
      *
      * @param Request $request - request object
+     *
      * @return object Response object of created request
      */
     public function add(Request $request)
@@ -170,9 +167,12 @@ class RequestController extends Controller
         $mentor_ids = [];
 
         if ($user_info) {
-            $mentor_ids = array_map(function ($user) {
-                return $user["user_id"];
-            }, $user_info);
+            $mentor_ids = array_map(
+                function ($user) {
+                    return $user["user_id"];
+                },
+                $user_info
+            );
         }
 
         /* we have a list of userids to send emails to, some of the user ids are duplicated
@@ -186,10 +186,9 @@ class RequestController extends Controller
             "\n*Title:* {$created_request->title}".
             "\n*Link:* {$request_url}";
 
-        $slack_channels_to_notify
-            = Config::get("slack.{$app_environment}.new_request_channels");
+        $slack_channel = Config::get("slack.{$app_environment}.new_request_channels");
 
-        $this->slack_utility->sendMessage($slack_channels_to_notify, $slack_message);
+        $this->slack_utility->sendMessage($slack_channel, $slack_message);
 
         try {
             // get email address of all the people to send the email to
@@ -206,8 +205,11 @@ class RequestController extends Controller
 
             // send the email to the first person and bcc everyone else
             if (sizeof($bulk_email_addresses) > 0) {
-                $this->sendEmail($email_content, $bulk_email_addresses[0],
-                    array_slice($bulk_email_addresses, 1));
+                $this->sendEmail(
+                    $email_content,
+                    $bulk_email_addresses[0],
+                    array_slice($bulk_email_addresses, 1)
+                );
             }
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
@@ -220,7 +222,8 @@ class RequestController extends Controller
      * Edit a mentorship request
      *
      * @param Request $request - request object
-     * @param  integer $id Unique ID of the mentorship request
+     * @param integer $id      - Unique ID of the mentorship request
+     *
      * @return \Illuminate\Http\JsonResponse
      * @throws AccessDeniedException | NotFoundException
      */
@@ -235,7 +238,6 @@ class RequestController extends Controller
             if ($current_user->uid !== $mentorship_request->mentee_id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
-
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         }
@@ -244,7 +246,8 @@ class RequestController extends Controller
         $mentorship_request->fill($new_record)->save();
 
         if ($request->primary || $request->secondary) {
-            $this->mapRequestToSkill($id,
+            $this->mapRequestToSkill(
+                $id,
                 $request->primary,
                 $request->secondary
             );
@@ -256,8 +259,11 @@ class RequestController extends Controller
     /**
      * Edit a mentorship request interested field
      *
-     * @param Request $request
-     * @param  integer $id Unique ID of the mentorship request
+     *   Request $request
+     *
+     * @param Request $request - the request object
+     * @param integer $id      - Unique ID of the mentorship request
+     *
      * @return \Illuminate\Http\JsonResponse
      * @throws AccessDeniedException | BadRequestException | NotFoundException
      */
@@ -307,22 +313,23 @@ class RequestController extends Controller
             users selected notification channels
              */
             $user_setting = UserNotification::getUserSettingById(
-                $mentee_id, Notification::INDICATES_INTEREST
+                $mentee_id,
+                Notification::INDICATES_INTEREST
             );
 
             if ($user_setting['email']) {
                 $this->sendEmail($email_content, $to_address);
             }
 
-            if ($user_setting['slack']) { 
-                /* Send a slack notification to a mentee 
+            if ($user_setting['slack']) {
+                /* Send a slack notification to a mentee
                 when a mentor shows interest in their request
                 */
                 $user = User::select('slack_id')
-                        ->where('user_id', $mentee_id)
-                        ->first();
+                    ->where('user_id', $mentee_id)
+                    ->first();
                 $message = "*{$mentor_name}* has indicated interest in mentoring you.\n"
-                ."View details of the request: {$request_url}";
+                    ."View details of the request: {$request_url}";
 
                 $this->slack_utility->sendMessage([$user->slack_id], $message);
             }
@@ -358,7 +365,7 @@ class RequestController extends Controller
             $mentorship_request = MentorshipRequest::with('requestSkills')->findOrFail(intval($id));
             $current_user = $request->user();
             $requestSkills = $mentorship_request->requestSkills()->get();
-            foreach($requestSkills as $skill) {
+            foreach ($requestSkills as $skill) {
                 UserSkill::firstOrCreate(
                     ["skill_id" => $skill->skill_id, "user_id" => $request->mentor_id]
                 );
@@ -385,7 +392,8 @@ class RequestController extends Controller
 
             // get mentor id and send email content
             $user_setting = UserNotification::getUserSettingById(
-                $request->mentor_id, Notification::SELECTED_AS_MENTOR
+                $request->mentor_id,
+                Notification::SELECTED_AS_MENTOR
             );
             $body = $this->ais_client->getUserById($request->mentor_id);
 
@@ -399,8 +407,7 @@ class RequestController extends Controller
             $event_details = $this->getEventDetails(
                 $mentee_email,
                 $mentor_email,
-                $mentorship_request,
-                $google_calendar
+                $mentorship_request
             );
 
             //Post event to Google Calendar
@@ -416,8 +423,8 @@ class RequestController extends Controller
                 \n"."View details of the request: {$request_url}";
                 $this->slack_utility->sendMessage([$user->slack_id], $message);
             }
+            
             return $this->respond(Response::HTTP_OK, $mentorship_request);
-
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         } catch (\Google_Service_Exception $exception) {
@@ -436,7 +443,7 @@ class RequestController extends Controller
      * Set a request status to cancelled
      *
      * @param Request $request
-     * @param integer $id Unique ID used to identify the request
+     * @param  integer $id Unique ID used to identify the request
      * @return \Illuminate\Http\JsonResponse
      * @throws NotFoundException
      */
@@ -480,21 +487,25 @@ class RequestController extends Controller
 
         if ($primary) {
             foreach ($primary as $skill) {
-                RequestSkill::create([
+                RequestSkill::create(
+                    [
                     "request_id" => $request_id,
                     "skill_id" => $skill,
                     "type" => "primary"
-                ]);
+                    ]
+                );
             }
         }
 
         if ($secondary) {
             foreach ($secondary as $skill) {
-                RequestSkill::create([
+                RequestSkill::create(
+                    [
                     "request_id" => $request_id,
                     "skill_id" => $skill,
                     "type" => "secondary"
-                ]);
+                    ]
+                );
             }
         }
     }
@@ -503,21 +514,26 @@ class RequestController extends Controller
      * Filter incoming request body to remove object property
      * containing primary and secondary skills
      *
-     * @param object $request
-     * @return object
+     * @param  object $request
+     * @return  object
      */
     private function filterRequest($request)
     {
-        return array_filter($request, function ($key) {
-            return $key !== 'primary' && $key !== 'secondary';
-        }, ARRAY_FILTER_USE_KEY);
+        return array_filter(
+            $request,
+            function ($key) {
+                return $key !== 'primary' && $key !== 'secondary';
+            },
+            ARRAY_FILTER_USE_KEY
+        );
     }
 
     /**
      * Format request data
      * extracts returned request queries to match data on client side
      *
-     * @param object $result
+     * @param object $result - the result object
+     *
      * @return object
      */
     private function formatRequestData($result)
@@ -547,7 +563,8 @@ class RequestController extends Controller
      * Format Request Skills
      * Filter the result from skills table and add to the skills array
      *
-     * @param array $request_skills
+     * @param array $request_skills - the request skills
+     *
      * @return array $skills
      */
     private function formatRequestSkills($request_skills)
@@ -567,7 +584,7 @@ class RequestController extends Controller
     }
 
     /**
-     * format time
+     * Format time
      * checks if the given time is null and returns null else it returns the time in the date format
      *
      * @param string $time
@@ -579,24 +596,10 @@ class RequestController extends Controller
     }
 
     /**
-     * Returns the requests for a particular mentee
-     *
-     * @param string $user_id
-     * @param Request $request request payload
-     * @return Response Object
-     */
-    private function getMenteeRequests($user_id, $request)
-    {
-        return MentorshipRequest::buildWhereClause($request)
-            ->where('mentee_id', $user_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-    }
-
-    /**
      * Method that transforms the mentorship requests into a response object
      *
-     * @param array $mentorship_requests
+     * @param array $mentorship_requests - the request object
+     *
      * @return array
      */
     public function transformRequestData($mentorship_requests)
@@ -609,48 +612,11 @@ class RequestController extends Controller
             foreach ($mentorship_request->request_skills as $skill) {
                 $skill = $skill->skill;
             }
-
             $transformed_request = $this->formatRequestData($mentorship_request);
             array_push($transformed_requests, $transformed_request);
         }
 
         return $transformed_requests;
-    }
-
-    /**
-     * Gets all the requests that match a mentor's skill
-     * and all the requests a mentor has indicated
-     * interest in
-     *
-     * @param string $user_id
-     * @return array $mentorship_requests
-     */
-    private function getMentorRequests($user_id, $limit)
-    {
-        $mentorship_requests = MentorshipRequest::with('requestSkills')
-            ->whereExists(function ($query) use ($user_id) {
-                $query
-                    ->from('user_skills')
-                    ->where('user_skills.user_id', $user_id);
-            })
-            ->orwhere('interested->', $user_id)
-            ->orderBy('created_at', 'desc')
-            ->paginate($limit);
-
-           return $mentorship_requests;
-    }
-
-    /**
-     * Get matched requests that this user indicated interest in
-     * @param $mentor_id
-     * @return mixed
-     */
-    private function getMentorRequestsByStatus($mentor_id, $status_id)
-    {
-        $mentorship_requests = MentorshipRequest::where("mentor_id", $mentor_id)
-            ->where("status_id", $status_id)
-            ->get();
-        return $mentorship_requests;
     }
 
     /**
@@ -660,21 +626,23 @@ class RequestController extends Controller
      * @param string $to_address email address the email is supposed to go to
      * @param boolean $bcc optional argument, recipients of the email
      * @param string $blade_template email template to be used
-    */
+     */
     private function sendEmail($email_content, $to_address, $bcc = false, $blade_template = 'email')
     {
         try {
-            Mail::send(['html' => $blade_template], $email_content, function ($msg) use ($to_address, $bcc)
-            {
-                $msg->subject('Lenken Notification');
-                $msg->to([$to_address]);
-                $msg->from(['lenken-tech@andela.com']);
+            Mail::send(
+                ['html' => $blade_template],
+                $email_content,
+                function ($msg) use ($to_address, $bcc) {
+                    $msg->subject('Lenken Notification');
+                    $msg->to([$to_address]);
+                    $msg->from(['lenken-tech@andela.com']);
 
-                if ($bcc) {
-                    $msg->bcc($bcc);
+                    if ($bcc) {
+                        $msg->bcc($bcc);
+                    }
                 }
-
-            });
+            );
         } catch (Exception $e) {
             /*
              * we might not want to do anything as the request was successful,
@@ -684,14 +652,14 @@ class RequestController extends Controller
     }
 
     /**
-    * Returns the client base url which we use to give redirect links in the emails
-    * @return string the base url
-    */
+     * Returns the client base url which we use to give redirect links in the emails
+     * @return string the base url
+     */
     private function getClientBaseUrl()
     {
         return getenv('LENKEN_FRONTEND_BASE_URL');
     }
-
+    
     /**
      * Updates the users table with unique user details
      * each time a new request is made. In the case when
@@ -699,6 +667,7 @@ class RequestController extends Controller
      * to allow program flow without any errors
      *
      * @param string $user_id
+     * @param        $user_email
      */
     public function updateUserTable($user_id, $user_email)
     {
@@ -783,5 +752,10 @@ class RequestController extends Controller
         ];
 
         return $event_details;
+    }
+    
+    private function getRequestParams($request, $key)
+    {
+        return $request->input($key) ?? null;
     }
 }
