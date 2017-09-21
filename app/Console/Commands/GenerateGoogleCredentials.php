@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Exception;
 
 /**
  * Class GenerateGoogleCredentials
@@ -29,11 +30,20 @@ class GenerateGoogleCredentials extends Command
      * Execute console command
      */
     public function handle()
-    {
-        $encoded_credentials = getenv("GOOGLE_SERVICE_KEY");
+    {   
+        try {
+            $encoded_credentials = getenv("GOOGLE_SERVICE_KEY");
+            if (empty($encoded_credentials)) {
+                throw new Exception('Google service key was not provided');
+            }
+            
+            $write_file = fopen("./credentials.json", "w");
+            fwrite($write_file, base64_decode($encoded_credentials));
+            fclose($write_file); 
 
-        $write_file = fopen("./credentials.json", "w");
-        fwrite($write_file, base64_decode($encoded_credentials));
-        fclose($write_file);
+        }catch (Exception $e) {
+            $this->error('Google service key was not provided');
+
+        }   
     }
 }
