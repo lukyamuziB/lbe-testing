@@ -186,21 +186,9 @@ class Request extends Model
             isset($params["mentor_id"]),
             function ($query) use ($params) {
                 $user_id = $params["mentor_id"];
-                return $query->with('requestSkills')->whereExists(
-                    function ($query) use ($user_id) {
-                        $query
-                            ->from('user_skills')
-                            ->where(
-                                'user_skills.user_id',
-                                $user_id
-                            );
-                    }
-                )
-                ->orwhere(
-                    'interested->',
-                    $user_id
-                )
-                ->orderBy('created_at', 'desc');
+                return $query->with('requestSkills')
+                    ->whereRaw("interested::jsonb @> to_jsonb('$user_id'::TEXT)")
+                    ->orderBy('created_at', 'desc');
             }
         )
         ->when(
