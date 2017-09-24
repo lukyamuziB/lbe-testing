@@ -36,7 +36,7 @@ class AISClientMock extends AISClient
                 "first_name" => "adebayo",
                 "cohort" => null,
                 "roles" => "staff",
-                "placement" => "placement",
+                "placement" =>  ["client" => "Available", "status" =>"Available"],
                 "level" => null
             ],
             [
@@ -48,7 +48,7 @@ class AISClientMock extends AISClient
                 "first_name" => "adebayo",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
-                "placement" => "placement",
+                "placement" => ["client" => "google", "status" => "External Engagements - Standard"],
                 "level" => "D1"
 
             ],
@@ -61,7 +61,7 @@ class AISClientMock extends AISClient
                 "first_name" => "adebayo",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
-                "placement" => "placement",
+                "placement" =>  ["client" => "Available", "status" =>"Available"],
                 "level" => "D1"
             ],
             [
@@ -73,7 +73,7 @@ class AISClientMock extends AISClient
                 "first_name" => "first_name",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
-                "placement" => "placement",
+                "placement" => ["client" => "google", "status" => "External Engagements - Standard"],
                 "level" => "D1"
             ],
             [
@@ -85,7 +85,7 @@ class AISClientMock extends AISClient
                 "first_name" => "first_name",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
-                "placement" => "placement",
+                "placement" => ["client" => "google", "status" => "External Engagements - Standard"],
                 "level" => "D1"
             ],
             [
@@ -97,7 +97,7 @@ class AISClientMock extends AISClient
                 "first_name" => "first_name",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
-                "placement" => "placement",
+                "placement" => ["client" => "google", "status" =>"External Engagements - Standard"],
                 "level" => "D1"
             ],
             [
@@ -109,7 +109,7 @@ class AISClientMock extends AISClient
                 "first_name" => "first_name",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
-                "placement" => "placement",
+                "placement" => ["client" => "Available", "status" =>"Available"],
                 "level" => "D1"
             ]
         ];

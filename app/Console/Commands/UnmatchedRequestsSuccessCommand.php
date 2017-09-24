@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
+use Exception;
 
 use App\Clients\AISClient as AISClient;
 use App\Models\Request as MentorshipRequest;
@@ -50,34 +51,39 @@ class UnmatchedRequestsSuccessCommand extends Command
      */
     public function handle()
     {
-        // get all unmatched requests
-        $unmatched_requests = MentorshipRequest::getUnmatchedRequests(24)->toArray();
+        try {
+            // get all unmatched requests
+            $unmatched_requests = MentorshipRequest::getUnmatchedRequests(24)->toArray();
 
-        // get all unique emails from the unmatched requests
-        $unmatched_requests_emails = $this->getUniqueEmails($unmatched_requests);
+            // get all unique emails from the unmatched requests
+            $unmatched_requests_emails = $this->getUniqueEmails($unmatched_requests);
+            
+            // get placement info from AIS for placed fellows only
+            $placed_mentee_info
+                = $this->getPlacedMenteeInfoByEmails($unmatched_requests_emails);
 
-        // get placement info from AIS for placed fellows only
-        $placed_mentee_info
-            = $this->getPlacedMenteeInfoByEmails($unmatched_requests_emails);
+            if (empty($placed_mentee_info)) {
+                return $this->info("There are no unmatched requests for placed fellows");
+            }
+                // append unmatched request details to mentee's details
+                    $unmatched_requests_details
+                        = $this->appendPlacementInfo($unmatched_requests, $placed_mentee_info);
+                    
+                    $app_environment = getenv('APP_ENV');
 
-        if (empty($placed_mentee_info)) {
-            return; //no placed mentees
+                    $recipient = Config::get(
+                        "notifications.{$app_environment}.placed_unmatched_fellows_notification_email"
+                    );
+
+                    // send the email
+                    Mail::to($recipient)->send(
+                        new SuccessUnmatchedRequestsMail($unmatched_requests_details)
+                    );
+                    $number_of_recipients = count($unmatched_requests);
+                    $this->info("Notifications have been sent for $number_of_recipients placed fellows");
+        } catch (Exception $e) {
+            $this->error("An error occurred - notifications were not sent");
         }
-
-        // append unmatched request details to mentee's details
-        $unmatched_requests_details
-            = $this->appendPlacementInfo($unmatched_requests, $placed_mentee_info);
-
-        $app_environment = getenv('APP_ENV');
-
-        $recipient = Config::get(
-            "notifications.{$app_environment}.placed_unmatched_fellows_notification_email"
-        );
-
-        // send the email
-        Mail::to($recipient)->send(
-            new SuccessUnmatchedRequestsMail($unmatched_requests_details)
-        );
     }
 
     /**
@@ -94,8 +100,10 @@ class UnmatchedRequestsSuccessCommand extends Command
 
         $response = $this->ais_client->getUsersByEmail($emails);
 
+        $placed_status = ["External Engagements - Standard", "External Engagements - Awaiting Onboarding"];
+
         foreach ($response["values"] as $info) {
-            if ($info["placement"]) {
+            if ($info["placement"]["status"] !== null && in_array($info["placement"]["status"], $placed_status)) {
                 $placed_mentee_info[$info["email"]] = [
                     "placement" => $info["placement"]["status"],
                     "client" => $info["placement"]["client"],

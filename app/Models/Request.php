@@ -19,7 +19,8 @@ class Request extends Model
         "match_date",
         "pairing",
         "duration",
-        "location"
+        "location",
+        "created_at"
     ];
 
     protected $dates = [];
