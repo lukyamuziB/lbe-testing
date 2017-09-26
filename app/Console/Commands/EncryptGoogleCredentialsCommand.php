@@ -51,8 +51,11 @@ class EncryptGoogleCredentialsCommand extends Command
      */
     private function encrypt()
     {
-        $file = file_get_contents("credentials.json");
-
-        return base64_encode($file);
+        if (file_exists("credentials.json")) {
+            $fileContents = file_get_contents("credentials.json");
+            return base64_encode($fileContents);
+        } else {
+            $this->error('credentials.json file not found');
+        }       
     }
 }
