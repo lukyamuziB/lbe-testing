@@ -7,6 +7,7 @@ use App\Utility\SlackUtility;
 
 /**
  * Class SlackUtilityMock
+ *
  * @package Test\Mocks
  */
 class SlackUtilityMock extends SlackUtility
@@ -14,11 +15,12 @@ class SlackUtilityMock extends SlackUtility
     /**
      * sendMessageToMultipleChannels - send a slack message to
      * multiple slack channels
-     * @param $recipients - list of channels to send message to
-     * @param $message - message to send to multiple channels
+     *
+     * @param    $recipients - list of channels to send message to
+     * @param    $message - message to send to multiple channels
      * @internal param string $messages_information - array of objects containing message text and
      * channel to send to in each object
-     * @return array
+     * @return   array
      */
     public function sendMessage($recipients, $message, $attachments = "")
     {
@@ -50,7 +52,20 @@ class SlackUtilityMock extends SlackUtility
         $response = [
             "ok" => true,
             "members"=> [
-                ["id" => "C1AOPLE39"]
+                ["id" => "C1AOPLE39",
+                "real_name" => "slackbot",
+                "name" => "slackbot",
+                "color"=> "4d5e26",
+                "profile" =>
+                    ["email" => "slackbot@andela.com"]
+                ],
+                ["id" => "U02UJLWUQ",
+                "real_name" => "sombor",
+                "name" => "sombo",
+                "color"=> "4d8e20",
+                "profile" =>
+                    ["email" => "sombor@andela.com"]
+                ]
             ]
         ];
 

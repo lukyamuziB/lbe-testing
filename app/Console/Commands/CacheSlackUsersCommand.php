@@ -1,11 +1,26 @@
 <?php
+/**
+ * File defines class for a console command to retrieve
+ * all slack users
+ *
+ * PHP version >= 7.0
+ *
+ * @category Console_Command
+ * @package  App\Console\Commands
+ */
 
 namespace App\Console\Commands;
 
-use App\Utility\SlackUtility;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
+use App\Utility\SlackUtility;
+
+ /**
+  * Class CacheSlackUsersCommand
+  *
+  * @package App\Console\Commands
+  */
 class CacheSlackUsersCommand extends Command
 {
     /**
@@ -25,9 +40,9 @@ class CacheSlackUsersCommand extends Command
     protected $slackUtility;
 
     /**
-     * Create a new command instance.
+     * CacheSlackUsersCommand constructor.
      *
-     * @param  SlackUtility $slackUtility
+     * @param SlackUtility $slackUtility SlackUtility for API calls
      */
     public function __construct(SlackUtility $slackUtility)
     {
@@ -43,11 +58,20 @@ class CacheSlackUsersCommand extends Command
      */
     public function handle()
     {
-        $slack_users = $this->slackUtility->getAllUsers();
+        try {
+            $slackUsers = $this->slackUtility->getAllUsers();
+            $transformedUsers = $this->transform($slackUsers);
 
-        $transformed_users = $this->transform($slack_users);
+            $response = Redis::set("slack:allUsers", json_encode($transformedUsers));
 
-        Redis::set("slack:allUsers", json_encode($transformed_users));
+            if ($response->getPayload() !== "OK") {
+                $this->error("Slack users not cached.");
+            }
+
+            $this->info("Slack users cached successfully.");
+        } catch (Exception $e) {
+            $this->error("An error occurred, unable to cache slack users.");
+        }
     }
 
     /**
@@ -59,19 +83,20 @@ class CacheSlackUsersCommand extends Command
      */
     public function transform($slackUsers)
     {
-        $transformed_users = [];
+        $transformedUsers = [];
 
         foreach ($slackUsers as $user) {
-            $transformed_user = new \stdClass();
+            $transformedUser = new \stdClass();
 
-            $transformed_user->id = $user["id"];
-            $transformed_user->fullname = $user["real_name"] ?? "";
-            $transformed_user->email = $user["profile"]["email"] ?? "";
-            $transformed_user->handle = "@" . $user["name"] ?? "";
+            $transformedUser->id = $user["id"];
+            $transformedUser->fullname = $user["real_name"] ?? "";
+            $transformedUser->email = $user["profile"]["email"] ?? "";
+            $transformedUser->handle = "@" . $user["name"] ?? "";
 
-            $transformed_users[$transformed_user->id] = $transformed_user;
+            $transformedUsers[$transformedUser->id] = $transformedUser;
         };
 
-        return $transformed_users;
+        return $transformedUsers;
     }
+
 }
