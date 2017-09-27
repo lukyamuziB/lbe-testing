@@ -42,7 +42,7 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
     public function testHandleSuccess()
     {
         $serviceKey = getenv("GOOGLE_SERVICE_KEY");
-        if (empty($serviceKey)) {
+        if (empty(trim($serviceKey))) {
             putenv("GOOGLE_SERVICE_KEY=ThisIsARandomServiceKeyForTestingOnly");
         }
         

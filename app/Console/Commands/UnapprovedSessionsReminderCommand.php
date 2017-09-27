@@ -189,7 +189,7 @@ class UnapprovedSessionsReminderCommand extends Command
 
         foreach ($unapproved_sessions as $recipient_id => $recipient) {
             foreach ($recipient["requests"] as $request_id => $request) {
-                $user_key = $request[0]["mentee_approved"] ? "user" : "mentor";
+                $user_key = $request[0]["mentee_approved"] ? "mentee" : "mentor";
 
                 $unapproved_sessions[$recipient_id]["requests"][$request_id]
                 [0]["request"][$user_key]["avatar"]
@@ -253,7 +253,7 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     private function getRecipient($session)
     {
-        $user_key = $session["mentee_approved"] ? "mentor" : "user";
+        $user_key = $session["mentee_approved"] ? "mentor" : "mentee";
 
         return $session["request"][$user_key];
     }
@@ -319,7 +319,7 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     private function getLogger($session)
     {
-        $user_key = $session["mentee_approved"] ? "user" : "mentor";
+        $user_key = $session["mentee_approved"] ? "mentee" : "mentor";
 
         return $session["request"][$user_key];
     }

@@ -541,7 +541,7 @@ class RequestController extends Controller
         $formatted_result = (object) [
             "id" => $result->id,
             "mentee_id" => $result->mentee_id,
-            "mentee_email" => $result->user->email ?? '',
+            "mentee_email" => $result->mentee->email ?? '',
             "mentor_id" => $result->mentor_id,
             "mentor_email" => $result->mentor->email ?? '',
             "title" => $result->title,

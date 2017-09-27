@@ -65,7 +65,7 @@ class Request extends Model
      *
      * @return Object
      */
-    public function user()
+    public function mentee()
     {
         return $this->belongsTo("App\Models\User", "mentee_id");
     }
@@ -142,7 +142,7 @@ class Request extends Model
                         $query-> where("email", "iLIKE", "%".$search_query."%");
                     }
                 )->orWhereHas(
-                    "user",
+                    "mentee",
                     function ($query) use ($search_query) {
                         $query -> where("email", "iLIKE", "%".$search_query."%");
                     }
@@ -213,7 +213,7 @@ class Request extends Model
     public static function getUnmatchedRequests($duration = 0)
     {
         $threshold_date = Carbon::now()->subHours($duration);
-        $unmatched_requests = Request::with("requestSkills.skill", "user")
+        $unmatched_requests = Request::with("requestSkills.skill", "mentee")
             ->where("status_id", Status::OPEN)
             ->whereDate("created_at", "<=", $threshold_date)
             ->orderBy("created_at", "asc")

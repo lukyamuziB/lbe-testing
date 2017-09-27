@@ -129,7 +129,7 @@ class UnmatchedRequestsSuccessCommand extends Command
         $emails = [];
 
         foreach ($requests as $request) {
-            $emails[] = $request["user"]["email"];
+            $emails[] = $request["mentee"]["email"];
         }
 
         return array_unique($emails);
@@ -149,7 +149,7 @@ class UnmatchedRequestsSuccessCommand extends Command
 
         foreach ($placed_mentee_info as $fellow) {
             foreach ($unmatched_requests as $request) {
-                if ($request["user"]["email"] === $fellow["email"]) {
+                if ($request["mentee"]["email"] === $fellow["email"]) {
                     $mentee_request_data[$request["id"]] = [
                         "name" => $fellow["name"],
                         "placement" => $fellow["placement"],

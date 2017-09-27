@@ -119,7 +119,7 @@ class UnmatchedRequestsFellowsCommand extends Command
     {
         $mentee_emails = [];
         foreach ($unmatched_requests as $request) {
-            $mentee_emails[] = $request["user"]["email"];
+            $mentee_emails[] = $request["mentee"]["email"];
         }
 
         return $mentee_emails;
@@ -139,7 +139,7 @@ class UnmatchedRequestsFellowsCommand extends Command
         $requests = [];
         foreach ($unmatched_requests as $request) {
             foreach ($mentees as $mentee) {
-                if ($request["user"]["email"] === $mentee["email"]) {
+                if ($request["mentee"]["email"] === $mentee["email"]) {
                     $requests[$request["id"]]
                         = [
                         "client" => $mentee["placement"]["client"] ?? "",
