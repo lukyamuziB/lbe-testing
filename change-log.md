@@ -1,3 +1,15 @@
+# V 1.4.3
+
+## Features
+- restrict primary and secondary skills to 3 each
+
+## Tech Debt
+- add tests for unapproved Sessions command
+- add tests for generate google credentials command
+- add tests for unmatched Requests for Success
+- update Session Ratings User to be the recipient of the rating
+- add tests for cache slack User's command
+
 # V 1.4.2
 
 ## Features
