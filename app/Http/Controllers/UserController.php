@@ -9,15 +9,16 @@ use App\Clients\AISClient;
 use App\Models\UserSkill;
 use App\Models\Skill;
 use App\Models\Session;
+use App\Models\Rating;
 
 class UserController extends Controller
 {
     use RESTActions;
-    private $ais_client;
+    private $aisClient;
 
-    public function __construct(AISClient $ais_client)
+    public function __construct(AISClient $aisClient)
     {
-        $this->ais_client = $ais_client;
+        $this->aisClient = $aisClient;
     }
 
     /**
@@ -27,38 +28,41 @@ class UserController extends Controller
      */
     public function get($id)
     {
-        $user_details = $this->ais_client->getUserById($id);
+        $userDetails = $this->aisClient->getUserById($id);
 
-        $user_skill_objects = UserSkill::with('skill')->where('user_id', $id)->get();
+        $userSkillObjects = UserSkill::with('skill')->where('user_id', $id)->get();
 
-        $user_skills = [];
+        $userSkills = [];
 
-        foreach ($user_skill_objects as $skill) {
-            $extracted_skills = (object) [
+        foreach ($userSkillObjects as $skill) {
+            $extractedSkills = (object) [
                 "id" => $skill->skill_id,
                 "name"=> $skill->skill->name
             ];
-            array_push($user_skills, $extracted_skills);
+            array_push($userSkills, $extractedSkills);
         }
 
-        $request_count = $this->getMenteeRequests($id);
+        $requestCount = $this->getMenteeRequests($id);
 
-        $total_logged_hours = Session::getTotalLoggedHours($id);
+        $totalLoggedHours = Session::getTotalLoggedHours($id);
+
+        $averageRating = Rating::getAverageRatings($id);
     
         $response = (object) [
-            "id" => $user_details["id"],
-            "picture" => $user_details["picture"],
-            "first_name" => $user_details["first_name"],
-            "name" => $user_details["name"],
-            "location" => $user_details["location"]["name"] ?? "",
-            "cohort" => $user_details["cohort"] ?? "",
-            "roles" => $user_details["roles"],
-            "placement" => $user_details["placement"],
-            "email" => $user_details["email"],
-            "level" => $user_details["level"],
-            "skills" => $user_skills,
-            "request_count" => $request_count,
-            "logged_hours" => $total_logged_hours
+            "id" => $userDetails["id"],
+            "picture" => $userDetails["picture"],
+            "first_name" => $userDetails["first_name"],
+            "name" => $userDetails["name"],
+            "location" => $userDetails["location"]["name"] ?? "",
+            "cohort" => $userDetails["cohort"] ?? "",
+            "roles" => $userDetails["roles"],
+            "placement" => $userDetails["placement"] ?? "",
+            "email" => $userDetails["email"],
+            "level" => $userDetails["level"] ?? "",
+            "skills" => $userSkills,
+            "request_count" => $requestCount,
+            "logged_hours" => $totalLoggedHours,
+            "rating" => $averageRating
         ];
         
         return $this->respond(Response::HTTP_OK, $response);
@@ -70,9 +74,9 @@ class UserController extends Controller
      * @param string $user_id
      * @return integer total number of mentorship request made
      */
-    private function getMenteeRequests($user_id)
+    private function getMenteeRequests($userId)
     {
-        return MentorshipRequest::where('mentee_id', $user_id)
+        return MentorshipRequest::where('mentee_id', $userId)
             ->count();
     }
 }

@@ -33,5 +33,25 @@ class Rating extends Model {
     {
         return $this->belongsTo("App\Models\User", "user_id", "user_id");
     }
+    
 
+    public static function getAverageRatings($userId)
+    {
+        $ratingValues = [];
+        $averageRating = 0;
+        $ratingName = '';
+        
+        $ratings = Rating::select("values")
+                    ->where("user_id", $userId)
+                    ->get();
+
+        foreach ($ratings as $rating) {
+            $userRatings = json_decode($rating->values);
+            foreach (get_object_vars($userRatings) as $ratingName => $ratingValue) {
+                array_push($ratingValues, $ratingValue);
+                $averageRating = array_sum($ratingValues) / count($ratingValues);
+            }
+        }
+        return $averageRating;
+    }
 }
