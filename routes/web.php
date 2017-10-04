@@ -27,6 +27,9 @@ $app->group(['prefix' => 'api/v1'], function ($app) {
     $app->patch('requests/{id}/update-mentor', 'RequestController@updateMentor');
     $app->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
     $app->delete('requests/{id}', 'RequestController@remove');
+    $app->put("requests/{id}/extend-mentorship", "RequestController@requestExtension");
+    $app->patch("requests/{id}/approve-extension", "RequestController@approveExtensionRequest");
+    $app->patch("requests/{id}/reject-extension", "RequestController@rejectExtensionRequest");
 });
 
 /**

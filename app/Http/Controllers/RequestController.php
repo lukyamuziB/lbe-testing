@@ -23,6 +23,7 @@ use App\Models\Notification;
 use App\Models\Request as MentorshipRequest;
 use App\Repositories\SlackUsersRepository;
 use App\Utility\SlackUtility;
+use App\Models\RequestExtension;
 
 /**
  * Class RequestController
@@ -37,18 +38,18 @@ class RequestController extends Controller
 
     use RESTActions;
 
-    protected $ais_client;
-    protected $slack_utility;
-    protected $slack_repository;
+    protected $aisClient;
+    protected $slackUtility;
+    protected $slackRepository;
 
     public function __construct(
-        AISClient $ais_client,
-        SlackUtility $slack_utility,
-        SlackUsersRepository $slack_repository
+        AISClient $aisClient,
+        SlackUtility $slackUtility,
+        SlackUsersRepository $slackRepository
     ) {
-        $this->ais_client = $ais_client;
-        $this->slack_utility = $slack_utility;
-        $this->slack_repository = $slack_repository;
+        $this->aisClient = $aisClient;
+        $this->slackUtility = $slackUtility;
+        $this->slackRepository = $slackRepository;
     }
 
     /**
@@ -63,20 +64,20 @@ class RequestController extends Controller
         // Get all request params
         $params = [];
         $user = $request->user();
-        $user_id = $request->user()->uid;
+        $userId = $request->user()->uid;
         $limit = intval($request->input("limit")) ?
             intval($request->input("limit")) : 20;
-        $search_query = $this->getRequestParams($request, "q");
+        $searchQuery = $this->getRequestParams($request, "q");
 
         // Add request params to the params array
-        if (trim($search_query)) {
-            $params["search_query"] = $search_query;
+        if (trim($searchQuery)) {
+            $params["search_query"] = $searchQuery;
         }
         if ($this->getRequestParams($request, "mentee")) {
-            $params["mentee_id"] = $user_id;
+            $params["mentee_id"] = $userId;
         }
         if ($this->getRequestParams($request, "mentor")) {
-            $params["mentor_id"] = $user_id;
+            $params["mentor_id"] = $userId;
         }
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
@@ -92,16 +93,16 @@ class RequestController extends Controller
         }
         //update or create users in the users table
         $this->updateUserTable($user->uid, $user->email);
-        $mentorship_requests  = MentorshipRequest::buildQuery($params)
+        $mentorshipRequests  = MentorshipRequest::buildQuery($params)
                 ->orderBy("created_at", "desc")
                 ->paginate($limit);
             $response["pagination"] = [
-                "totalCount" => $mentorship_requests->total(),
-                "pageSize" => $mentorship_requests->perPage()
+                "totalCount" => $mentorshipRequests->total(),
+                "pageSize" => $mentorshipRequests->perPage()
             ];
             // transform the result objects into API ready responses
-            $transformed_requests = $this->transformRequestData($mentorship_requests);
-            $response["requests"] = $transformed_requests;
+            $transformedRequests = $this->transformRequestData($mentorshipRequests);
+            $response["requests"] = $transformedRequests;
             return $this->respond(Response::HTTP_OK, $response);
     }
 
@@ -122,7 +123,13 @@ class RequestController extends Controller
                 $skill = $skill->skill;
             }
 
+            $extension = RequestExtension::where("request_id", intval($id))
+                ->first();
+
+            $result->extension = $extension;
+
             $result = $this->formatRequestData($result);
+
             $response = [
                 "data" => $result
             ];
@@ -143,7 +150,7 @@ class RequestController extends Controller
      */
     public function add(Request $request)
     {
-        $mentorship_request = self::MODEL;
+        $mentorshipRequest = self::MODEL;
 
         $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
@@ -151,71 +158,71 @@ class RequestController extends Controller
         // update the user table with the mentee details
         $this->updateUserTable($user->uid, $user->email);
 
-        $user_array = ["mentee_id" => $user->uid, "status_id" => Status::OPEN];
-        $new_record = $this->filterRequest($request->all());
-        $new_record = array_merge($new_record, $user_array);
-        $created_request = $mentorship_request::create($new_record);
+        $userArray = ["mentee_id" => $user->uid, "status_id" => Status::OPEN];
+        $newRecord = $this->filterRequest($request->all());
+        $newRecord = array_merge($newRecord, $userArray);
+        $createdRequest = $mentorshipRequest::create($newRecord);
 
         $primary = $request->all()["primary"];
         $secondary = $request->all()["secondary"];
-        $this->mapRequestToSkill($created_request->id, $primary, $secondary);
+        $this->mapRequestToSkill($createdRequest->id, $primary, $secondary);
 
         /* find all mentors matching request we need to send them emails. however the
         the secondary field can sometimes be empty so no need to merge */
-        $all_skills = $secondary ? array_merge($primary, $secondary) : $primary;
-        $user_info = UserSkill::wherein('skill_id', $all_skills)->select('user_id')->get()->toArray();
-        $mentor_ids = [];
+        $allSkills = $secondary ? array_merge($primary, $secondary) : $primary;
+        $userInfo = UserSkill::wherein('skill_id', $allSkills)->select('user_id')->get()->toArray();
+        $mentorIds = [];
 
-        if ($user_info) {
-            $mentor_ids = array_map(
+        if ($userInfo) {
+            $mentorIds = array_map(
                 function ($user) {
                     return $user["user_id"];
                 },
-                $user_info
+                $userInfo
             );
         }
 
         /* we have a list of userids to send emails to, some of the user ids are duplicated
         because one person might have more than one skill matched */
-        $mentor_ids = array_unique($mentor_ids);
-        $request_url = $this->getClientBaseUrl().'/requests/'.$created_request->id;
-        $bulk_email_addresses = [];
-        $app_environment = getenv('APP_ENV');
+        $mentorIds = array_unique($mentorIds);
+        $requestUrl = $this->getClientBaseUrl().'/requests/'.$createdRequest->id;
+        $bulkEmailAddresses = [];
+        $appEnvironment = getenv('APP_ENV');
 
-        $slack_message = "*New Mentorship Request*".
-            "\n*Title:* {$created_request->title}".
-            "\n*Link:* {$request_url}";
+        $slackMessage = "*New Mentorship Request*".
+            "\n*Title:* {$createdRequest->title}".
+            "\n*Link:* {$requestUrl}";
 
-        $slack_channel = Config::get("slack.{$app_environment}.new_request_channels");
+        $slackChannel = Config::get("slack.{$appEnvironment}.new_request_channels");
 
-        $this->slack_utility->sendMessage($slack_channel, $slack_message);
+        $this->slackUtility->sendMessage($slackChannel, $slackMessage);
 
         try {
             // get email address of all the people to send the email to
-            foreach ($mentor_ids as $mentor_id) {
-                $mentor_details = $this->ais_client->getUserById($mentor_id);
-                array_push($bulk_email_addresses, $mentor_details["email"]);
+            foreach ($mentorIds as $mentorId) {
+                $mentorDetails = $this->aisClient->getUserById($mentorId);
+                array_push($bulkEmailAddresses, $mentorDetails["email"]);
             }
 
-            $email_content = [
+            $emailContent = [
                 "content" => "You might be interested in this mentorship request.
-                You can view the details of the request here {$request_url}",
+                You can view the details of the request here {$requestUrl}",
                 "title" => "Matching mentorship request"
             ];
 
             // send the email to the first person and bcc everyone else
-            if (sizeof($bulk_email_addresses) > 0) {
+            if (sizeof($bulkEmailAddresses) > 0) {
                 $this->sendEmail(
-                    $email_content,
-                    $bulk_email_addresses[0],
-                    array_slice($bulk_email_addresses, 1)
+                    $emailContent,
+                    $bulkEmailAddresses[0],
+                    array_slice($bulkEmailAddresses, 1)
                 );
             }
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
 
-        return $this->respond(Response::HTTP_CREATED, $created_request);
+        return $this->respond(Response::HTTP_CREATED, $createdRequest);
     }
 
     /**
@@ -232,18 +239,18 @@ class RequestController extends Controller
         $this->validate($request, MentorshipRequest::$rules);
 
         try {
-            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
-            $current_user = $request->user();
+            $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
+            $currentUser = $request->user();
 
-            if ($current_user->uid !== $mentorship_request->mentee_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         }
 
-        $new_record = $this->filterRequest($request->all());
-        $mentorship_request->fill($new_record)->save();
+        $newRecord = $this->filterRequest($request->all());
+        $mentorshipRequest->fill($newRecord)->save();
 
         if ($request->primary || $request->secondary) {
             $this->mapRequestToSkill(
@@ -253,7 +260,7 @@ class RequestController extends Controller
             );
         }
 
-        return $this->respond(Response::HTTP_OK, $mentorship_request);
+        return $this->respond(Response::HTTP_OK, $mentorshipRequest);
     }
 
     /**
@@ -272,69 +279,69 @@ class RequestController extends Controller
         $this->validate($request, MentorshipRequest::$mentee_rules);
 
         try {
-            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
-            $current_user = $request->user();
+            $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
+            $currentUser = $request->user();
 
-            if (!$current_user) {
+            if (!$currentUser) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
             // check that the mentee is not the one interested
-            if (in_array($mentorship_request->mentee_id, $request->interested)) {
+            if (in_array($mentorshipRequest->mentee_id, $request->interested)) {
                 throw new BadRequestException("You cannot indicate interest in your own mentorship request", 1);
             }
 
             // update the mentorship request model with new interested mentor
-            $interested = $mentorship_request->interested;
+            $interested = $mentorshipRequest->interested;
             if ($interested === null) {
                 $interested = [];
             }
 
             $request->interested = array_unique(array_merge($interested, $request->interested));
-            $mentorship_request->interested = $request->interested;
-            $mentorship_request->save();
+            $mentorshipRequest->interested = $request->interested;
+            $mentorshipRequest->save();
 
-            $mentor_name = $current_user->name;
+            $mentorName = $currentUser->name;
 
-            $mentee_id = $mentorship_request->mentee_id;
-            $request_url = $this->getClientBaseUrl()."/requests/{$id}";
+            $menteeId = $mentorshipRequest->mentee_id;
+            $requestUrl = $this->getClientBaseUrl()."/requests/{$id}";
 
             // get user details from FIS and send email
-            $mentee_details = $this->ais_client->getUserById($mentee_id);
-            $mentee_name = $mentee_details["name"];
-            $to_address = $mentee_details["email"];
-            $email_content = [
-                "content" => "{$mentor_name} has indicated interest in mentoring you.
-                You can view the details of the request here {$request_url}",
-                "title" => "Hello {$mentee_name}"
+            $menteeDetails = $this->aisClient->getUserById($menteeId);
+            $menteeName = $menteeDetails["name"];
+            $toAddress = $menteeDetails["email"];
+            $emailContent = [
+                "content" => "{$mentorName} has indicated interest in mentoring you.
+                You can view the details of the request here {$requestUrl}",
+                "title" => "Hello {$menteeName}"
             ];
 
             /* send notification on interested mentors to
             users selected notification channels
              */
-            $user_setting = UserNotification::getUserSettingById(
-                $mentee_id,
+            $userSetting = UserNotification::getUserSettingById(
+                $menteeId,
                 Notification::INDICATES_INTEREST
             );
 
-            if ($user_setting['email']) {
-                $this->sendEmail($email_content, $to_address);
+            if ($userSetting['email']) {
+                $this->sendEmail($emailContent, $toAddress);
             }
 
-            if ($user_setting['slack']) {
+            if ($userSetting['slack']) {
                 /* Send a slack notification to a mentee
                 when a mentor shows interest in their request
                 */
                 $user = User::select('slack_id')
-                    ->where('user_id', $mentee_id)
+                    ->where('user_id', $menteeId)
                     ->first();
-                $message = "*{$mentor_name}* has indicated interest in mentoring you.\n"
-                    ."View details of the request: {$request_url}";
+                $message = "*{$mentorName}* has indicated interest in mentoring you.\n"
+                    ."View details of the request: {$requestUrl}";
 
-                $this->slack_utility->sendMessage([$user->slack_id], $message);
+                $this->slackUtility->sendMessage([$user->slack_id], $message);
             }
 
-            return $this->respond(Response::HTTP_OK, $mentorship_request);
+            return $this->respond(Response::HTTP_OK, $mentorshipRequest);
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         } catch (Exception $exception) {
@@ -347,14 +354,14 @@ class RequestController extends Controller
      * Edit a mentorship request mentor_id field
      *
      * @param Request $request
-     * @param GoogleCalendarClient $google_calendar
+     * @param GoogleCalendarClient $googleCalendar
      * @param integer $id Unique ID of the mentorship request
      * @return \Illuminate\Http\JsonResponse
      * @throws NotFoundException
      */
     public function updateMentor(
         Request $request,
-        GoogleCalendarClient $google_calendar,
+        GoogleCalendarClient $googleCalendar,
         $id
     ) {
         $this->validate($request, MentorshipRequest::$mentor_update_rules);
@@ -362,78 +369,78 @@ class RequestController extends Controller
         $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
 
         try {
-            $mentorship_request = MentorshipRequest::with('requestSkills')->findOrFail(intval($id));
-            $current_user = $request->user();
-            $requestSkills = $mentorship_request->requestSkills()->get();
+            $mentorshipRequest = MentorshipRequest::with('requestSkills')->findOrFail(intval($id));
+            $currentUser = $request->user();
+            $requestSkills = $mentorshipRequest->requestSkills()->get();
             foreach ($requestSkills as $skill) {
                 UserSkill::firstOrCreate(
                     ["skill_id" => $skill->skill_id, "user_id" => $request->mentor_id]
                 );
             }
 
-            if ($current_user->uid !== $mentorship_request->mentee_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
             // update mentor for mentorship request
-            $mentorship_request->mentor_id = $request->mentor_id;
-            $mentorship_request->match_date = $request->match_date;
-            $mentorship_request->status_id = Status::MATCHED;
-            $mentorship_request->save();
+            $mentorshipRequest->mentor_id = $request->mentor_id;
+            $mentorshipRequest->match_date = $request->match_date;
+            $mentorshipRequest->status_id = Status::MATCHED;
+            $mentorshipRequest->save();
 
             // get mentee name and request url and add to email content
-            $mentee_name = $request->mentee_name;
-            $request_url = $this->getClientBaseUrl().'/requests/'.$id;
+            $menteeName = $request->mentee_name;
+            $requestUrl = $this->getClientBaseUrl().'/requests/'.$id;
             $content = [
-                "content" => "{$mentee_name} selected you as a mentor
-                You can view the details of the request here {$request_url}",
+                "content" => "{$menteeName} selected you as a mentor
+                You can view the details of the request here {$requestUrl}",
                 "title" => 'Mentorship interest accepted'
             ];
 
             // get mentor id and send email content
-            $user_setting = UserNotification::getUserSettingById(
+            $userSetting = UserNotification::getUserSettingById(
                 $request->mentor_id,
                 Notification::SELECTED_AS_MENTOR
             );
-            $body = $this->ais_client->getUserById($request->mentor_id);
+            $body = $this->aisClient->getUserById($request->mentor_id);
 
-            $mentor_email = $body["email"];
-            if ($user_setting['email']) {
-                $this->sendEmail($content, $mentor_email);
+            $mentorEmail = $body["email"];
+            if ($userSetting['email']) {
+                $this->sendEmail($content, $mentorEmail);
             }
 
             //Post event to Google Calendar
-            $mentee_email = $current_user->email;
-            $event_details = $this->getEventDetails(
-                $mentee_email,
-                $mentor_email,
-                $mentorship_request
+            $menteeEmail = $currentUser->email;
+            $eventDetails = $this->getEventDetails(
+                $menteeEmail,
+                $mentorEmail,
+                $mentorshipRequest
             );
 
             //Post event to Google Calendar
-            $google_calendar->createEvent($event_details);
+            $googleCalendar->createEvent($eventDetails);
 
             // Send the mentor a slack message when notified
-            if ($user_setting['slack']) {
-                $mentee_id = $request->input('mentor_id');
+            if ($userSetting['slack']) {
+                $menteeId = $request->input('mentor_id');
                 $user = User::select('slack_id')
-                    ->where('user_id', $mentee_id)
+                    ->where('user_id', $menteeId)
                     ->first();
-                $message = "{$mentee_name} selected you as a mentor
-                \n"."View details of the request: {$request_url}";
-                $this->slack_utility->sendMessage([$user->slack_id], $message);
+                $message = "{$menteeName} selected you as a mentor
+                \n"."View details of the request: {$requestUrl}";
+                $this->slackUtility->sendMessage([$user->slack_id], $message);
             }
             
-            return $this->respond(Response::HTTP_OK, $mentorship_request);
+            return $this->respond(Response::HTTP_OK, $mentorshipRequest);
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         } catch (\Google_Service_Exception $exception) {
             $error = json_decode($exception->getMessage())->{"error"};
 
             $message = $error->{"message"};
-            $status_code = $error->{"code"};
+            $statusCode = $error->{"code"};
 
-            return $this->respond($status_code, ["message" => $message]);
+            return $this->respond($statusCode, ["message" => $message]);
         } catch (Exception $exception) {
             return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
         }
@@ -450,15 +457,15 @@ class RequestController extends Controller
     public function cancelRequest(Request $request, $id)
     {
         try {
-            $mentorship_request = MentorshipRequest::findOrFail(intval($id));
-            $current_user = $request->user();
+            $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
+            $currentUser = $request->user();
 
-            if ($current_user->uid !== $mentorship_request->mentee_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
                 throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
 
-            $mentorship_request->status_id = Status::CANCELLED;
-            $mentorship_request->save();
+            $mentorshipRequest->status_id = Status::CANCELLED;
+            $mentorshipRequest->save();
 
             $this->respond(Response::HTTP_OK, ["message" => "Request Cancelled"]);
         } catch (ModelNotFoundException $exception) {
@@ -467,29 +474,29 @@ class RequestController extends Controller
             return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
         }
 
-        return $this->respond(Response::HTTP_OK, $mentorship_request);
+        return $this->respond(Response::HTTP_OK, $mentorshipRequest);
     }
 
     /**
      * Maps the skills in the request body by type and
      * saves them in the request_skills table
      *
-     * @param integer $request_id the id of the request
+     * @param integer $requestId the id of the request
      * @param string $primary type of skill to map
      * @param string $secondary type of skill to map
      * @return void
      */
-    private function mapRequestToSkill($request_id, $primary, $secondary)
+    private function mapRequestToSkill($requestId, $primary, $secondary)
     {
         // Delete all skills from the request_skills table that match the given
-        // $request_id before performing another insert
-        RequestSkill::where('request_id', $request_id)->delete();
+        // $requestId before performing another insert
+        RequestSkill::where('request_id', $requestId)->delete();
 
         if ($primary) {
             foreach ($primary as $skill) {
                 RequestSkill::create(
                     [
-                    "request_id" => $request_id,
+                    "request_id" => $requestId,
                     "skill_id" => $skill,
                     "type" => "primary"
                     ]
@@ -501,7 +508,7 @@ class RequestController extends Controller
             foreach ($secondary as $skill) {
                 RequestSkill::create(
                     [
-                    "request_id" => $request_id,
+                    "request_id" => $requestId,
                     "skill_id" => $skill,
                     "type" => "secondary"
                     ]
@@ -533,12 +540,13 @@ class RequestController extends Controller
      * extracts returned request queries to match data on client side
      *
      * @param object $result - the result object
+     * @param object $extensionRequest the request extension object
      *
      * @return object
      */
     private function formatRequestData($result)
     {
-        $formatted_result = (object) [
+        $formattedResult = (object) [
             "id" => $result->id,
             "mentee_id" => $result->mentee_id,
             "mentee_email" => $result->mentee->email ?? '',
@@ -556,22 +564,26 @@ class RequestController extends Controller
             "created_at" => $this->formatTime($result->created_at),
             "updated_at" => $this->formatTime($result->updated_at)
         ];
-        return $formatted_result;
+        if ($result->extension) {
+            $formattedResult->extension = $result->extension;
+        }
+
+        return $formattedResult;
     }
 
     /**
      * Format Request Skills
      * Filter the result from skills table and add to the skills array
      *
-     * @param array $request_skills - the request skills
+     * @param array $requestSkills - the request skills
      *
      * @return array $skills
      */
-    private function formatRequestSkills($request_skills)
+    private function formatRequestSkills($requestSkills)
     {
         $skills = [];
 
-        foreach ($request_skills as $request) {
+        foreach ($requestSkills as $request) {
             $result = (object) [
                 "id" => $request->skill_id,
                 "type" => $request->type,
@@ -598,44 +610,44 @@ class RequestController extends Controller
     /**
      * Method that transforms the mentorship requests into a response object
      *
-     * @param array $mentorship_requests - the request object
+     * @param array $mentorshipRequests - the request object
      *
      * @return array
      */
-    public function transformRequestData($mentorship_requests)
+    public function transformRequestData($mentorshipRequests)
     {
-        $transformed_requests = [];
+        $transformedRequests = [];
 
-        foreach ($mentorship_requests as $mentorship_request) {
-            $mentorship_request->request_skills = $mentorship_request->requestSkills;
+        foreach ($mentorshipRequests as $mentorshipRequest) {
+            $mentorshipRequest->request_skills = $mentorshipRequest->requestSkills;
 
-            foreach ($mentorship_request->request_skills as $skill) {
+            foreach ($mentorshipRequest->request_skills as $skill) {
                 $skill = $skill->skill;
             }
-            $transformed_request = $this->formatRequestData($mentorship_request);
-            array_push($transformed_requests, $transformed_request);
+            $transformedRequest = $this->formatRequestData($mentorshipRequest);
+            array_push($transformedRequests, $transformedRequest);
         }
 
-        return $transformed_requests;
+        return $transformedRequests;
     }
 
     /**
      * Generic send email method
      *
-     * @param array $email_content the email content to be sent
-     * @param string $to_address email address the email is supposed to go to
+     * @param array $emailContent the email content to be sent
+     * @param string $toAddress email address the email is supposed to go to
      * @param boolean $bcc optional argument, recipients of the email
-     * @param string $blade_template email template to be used
+     * @param string $bladeTemplate email template to be used
      */
-    private function sendEmail($email_content, $to_address, $bcc = false, $blade_template = 'email')
+    private function sendEmail($emailContent, $toAddress, $bcc = false, $bladeTemplate = 'email')
     {
         try {
             Mail::send(
-                ['html' => $blade_template],
-                $email_content,
-                function ($msg) use ($to_address, $bcc) {
+                ['html' => $bladeTemplate],
+                $emailContent,
+                function ($msg) use ($toAddress, $bcc) {
                     $msg->subject('Lenken Notification');
-                    $msg->to([$to_address]);
+                    $msg->to([$toAddress]);
                     $msg->from(['lenken-tech@andela.com']);
 
                     if ($bcc) {
@@ -666,81 +678,81 @@ class RequestController extends Controller
      * user details are already there the method terminates
      * to allow program flow without any errors
      *
-     * @param string $user_id
-     * @param        $user_email
+     * @param string $userId
+     * @param        $userEmail
      */
-    public function updateUserTable($user_id, $user_email)
+    public function updateUserTable($userId, $userEmail)
     {
         // fetch the user's slack details from the repository
-        $slack_user = $this->slack_repository->getByEmail($user_email);
+        $slackUser = $this->slackRepository->getByEmail($userEmail);
 
-        $user_details = [
-            "email" => $user_email,
-            "slack_id" => $slack_user ? $slack_user->id : null
+        $userDetails = [
+            "email" => $userEmail,
+            "slack_id" => $slackUser ? $slackUser->id : null
         ];
 
-        // if the user's user_id is not in the table, create a new user
+        // if the user's userId is not in the table, create a new user
         User::updateOrCreate(
-            ["user_id" => $user_id],
-            $user_details
+            ["user_id" => $userId],
+            $userDetails
         );
     }
 
     /**
      * Add request event to Google Calendar
      *
-     * @param string $mentee_email email address of the mentee
-     * @param string $mentor_email email address of the mentor
-     * @param object $mentorship_request mentorship request made
-     * @return array $event_details formatted Event details for google calendar
+     * @param string $menteeEmail email address of the mentee
+     * @param string $mentorEmail email address of the mentor
+     * @param object $mentorshipRequest mentorship request made
+     * @return array $eventDetails formatted Event details for google calendar
      */
 
-    private function getEventDetails($mentee_email, $mentor_email, $mentorship_request)
+    private function getEventDetails($menteeEmail, $mentorEmail, $mentorshipRequest)
     {
-        $match_date = $mentorship_request->match_date;
-        $session_start_time = $mentorship_request->pairing["start_time"] . ":00";
-        $session_end_time = $mentorship_request->pairing["end_time"] . ":00";
-        $duration = $mentorship_request->duration;
+        $matchDate = $mentorshipRequest->match_date;
+        $sessionStartTime = $mentorshipRequest->pairing["start_time"] . ":00";
+        $sessionEndTime = $mentorshipRequest->pairing["end_time"] . ":00";
+        $duration = $mentorshipRequest->duration;
 
-        $timezone = formatCalendarTimezone($mentorship_request->pairing["timezone"]);
+        $timezone = formatCalendarTimezone($mentorshipRequest->pairing["timezone"]);
 
         //Format start date and end date to 'Y-m-sTH:m:s' format
-        $event_start_date = calculateEventStartDate(
-            $mentorship_request->pairing["days"],
-            $match_date
+        $eventStartDate = calculateEventStartDate(
+            $mentorshipRequest->pairing["days"],
+            $matchDate
         );
 
-        $daily_start_time = formatCalendarDate(
-            $event_start_date,
-            $session_start_time
+        $dailyStartTime = formatCalendarDate(
+            $eventStartDate,
+            $sessionStartTime
         );
 
-        $daily_end_time = formatCalendarDate(
-            $event_start_date,
-            $session_end_time
+        $dailyEndTime = formatCalendarDate(
+            $eventStartDate,
+            $sessionEndTime
         );
 
-        $event_end_date = formatCalendarDate(
-            $event_start_date,
-            $session_end_time,
+        $eventEndDate = formatCalendarDate(
+            $eventStartDate,
+            $sessionEndTime,
             $duration
         );
 
-        $recursion_rule = getCalendarRecursionRule(
-            $mentorship_request->pairing["days"],
-            $event_end_date
+        $recursionRule = getCalendarRecursionRule(
+            $mentorshipRequest->pairing["days"],
+            $eventEndDate
         );
 
         //Prepare the event details
-        $event_details = [
-            "summary" => $mentorship_request->title,
-            "description" => $mentorship_request->description,
-            "start" => ["dateTime" => $daily_start_time, "timeZone" => $timezone,],
-            "end" => ["dateTime" => $daily_end_time, "timeZone" => $timezone,],
-            "recurrence" => [$recursion_rule],
+        $eventDetails = [
+            "summary" => $mentorshipRequest->title,
+            "description" => $mentorshipRequest->description,
+            "start" => ["dateTime" => $dailyStartTime, "timeZone" => $timezone,],
+            "end" => ["dateTime" => $dailyEndTime, "timeZone" => $timezone,],
+            "recurrence" => [$recursionRule],
             "attendees" => [
-                ["email" => $mentor_email],
-                ["email" => $mentee_email],
+                ["email" => $mentorEmail],
+                ["email" => $menteeEmail],
             ],
             "reminders" => [
                 "useDefault" => false,
@@ -751,11 +763,175 @@ class RequestController extends Controller
             ]
         ];
 
-        return $event_details;
+        return $eventDetails;
     }
     
     private function getRequestParams($request, $key)
     {
         return $request->input($key) ?? null;
+    }
+
+    /**
+     * Create a request to extend the mentorship period
+     *
+     * @param Request $request the request object
+     * @param integer $id      the request id
+     *
+     * @return mixed the http response
+     */
+    public function requestExtension(Request $request, $id)
+    {
+        try {
+            $mentorshipRequest = MentorshipRequest::find($id);
+            if (!$mentorshipRequest) {
+                throw new NotFoundException(
+                    "Request not found"
+                );
+            }
+
+            $currentUser = $request->user();
+
+            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
+                throw new AccessDeniedException(
+                    "You don't have permission to request an extension for this mentorship"
+                );
+            }
+            RequestExtension::updateOrCreate(
+                ["request_id" => $id],
+                [
+                    "approved" => null
+                ]
+            );
+            $message = "A request for extension of a mentorship period " .
+                "has been made by your mentee, Please review it here";
+            $slackId = $mentorshipRequest->mentor->slack_id;
+
+            if ($slackId) {
+                $baseUrl = $this->getClientBaseUrl();
+                $this->slackUtility->sendMessage(
+                    [$slackId],
+                    "$message $baseUrl/requests/$id"
+                );
+            }
+
+            return $this->respond(
+                Response::HTTP_CREATED,
+                ["message" => "Your request was submitted successfully"]
+            );
+        } catch (Exception $e) {
+            return ["message" => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Extend mentorship request period
+     *
+     * @param Request $request the request object
+     * @param integer $id      the request id
+     *
+     * @return mixed the http response
+     */
+    public function approveExtensionRequest(Request $request, $id)
+    {
+        try {
+            $mentorshipRequest = MentorshipRequest::find($id);
+
+            if (!$mentorshipRequest) {
+                throw new NotFoundException(
+                    "Request not found"
+                );
+            }
+            $currentUser = $request->user();
+
+            if ($currentUser->uid !== $mentorshipRequest->mentor_id) {
+                throw new AccessDeniedException(
+                    "You don't have permission to approve an extension of this mentorship"
+                );
+            }
+            $extension = RequestExtension::where("request_id", $id)
+                ->first();
+
+            if ($extension) {
+                $mentorshipRequest->duration += 0.5;
+                $mentorshipRequest->save();
+
+                $extension->approved = true;
+                $extension->save();
+
+                $message = "Your request for extension of a mentorship period " .
+                    "has been approved, Please review it here";
+
+                $slackId = $mentorshipRequest->mentee->slack_id;
+                if ($slackId) {
+                    $baseUrl = $this->getClientBaseUrl();
+                    $this->slackUtility->sendMessage(
+                        [$slackId],
+                        "$message $baseUrl/requests/$id"
+                    );
+                }
+
+                return $this->respond(
+                    Response::HTTP_OK,
+                    ["message" => "Mentorship period was extended successfully"]
+                );
+            }
+        } catch (Exception $e) {
+            return ["message" => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Reject mentorship extension request
+     *
+     * @param Request $request the request object
+     * @param integer $id      the request id
+     *
+     * @return mixed the http response
+     */
+    public function rejectExtensionRequest(Request $request, $id)
+    {
+        try {
+            $mentorshipRequest = MentorshipRequest::find($id);
+
+            if (!$mentorshipRequest) {
+                throw new NotFoundException(
+                    "Request not found"
+                );
+            }
+            $currentUser = $request->user();
+
+            if ($currentUser->uid !== $mentorshipRequest->mentor_id) {
+                throw new AccessDeniedException(
+                    "You don't have permission to reject an extension of this mentorship"
+                );
+            }
+            $extension = RequestExtension::where("request_id", $id)
+                ->first();
+
+            if ($extension) {
+                $extension->approved = false;
+                $extension->save();
+
+                $message = "Your request for extension of a mentorship period " .
+                    "has been rejected, Please review it here";
+                $slackId = $mentorshipRequest->mentee->slack_id;
+                if ($slackId) {
+                    $baseUrl = $this->getClientBaseUrl();
+                    $this->slackUtility->sendMessage(
+                        [$slackId],
+                        "$message $baseUrl/requests/$id"
+                    );
+                }
+
+                return $this->respond(
+                    Response::HTTP_OK,
+                    ["message"
+                    => "Mentorship extension request was rejected successfully"
+                    ]
+                );
+            }
+        } catch (Exception $e) {
+            return ["message" => $e->getMessage()];
+        }
     }
 }

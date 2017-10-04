@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\RequestSkill;
 use App\Models\Session;
 use App\Models\Rating;
+use App\Models\RequestExtension;
 
 /**
  * Class TestUnmatchedRequestsFellowsCommand
@@ -49,6 +50,7 @@ class TestUnmatchedRequestsFellowsCommand extends TestCase
         RequestSkill::where("id", ">", 0)->forceDelete();
         Rating::where("session_id", ">", 0)->forceDelete();
         Session::where("id", ">", 0)->forceDelete();
+        RequestExtension::where("request_id", ">", 0)->forceDelete();
         Request::where("id", ">", 0)->forceDelete();
     }
 

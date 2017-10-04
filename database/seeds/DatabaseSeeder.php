@@ -22,5 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call('RatingsTableSeeder');
         $this->call('NotificationsTableSeeder');
         $this->call('UserNotificationsTableSeeder');
+        $this->call("RequestExtensionsTableSeeder");
     }
 }

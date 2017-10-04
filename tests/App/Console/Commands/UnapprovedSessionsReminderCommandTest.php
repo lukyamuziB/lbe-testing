@@ -10,6 +10,7 @@
 
 namespace Tests\App\Console\Commands;
 
+use App\Models\RequestExtension;
 use Symfony\Component\Console\Application;
 
 use TestCase;
@@ -49,6 +50,7 @@ class TestUnapprovedSessionsReminderCommand extends TestCase
         RequestSkill::where("id", ">", 0)->forceDelete();
         Rating::where("session_id", ">", 0)->forceDelete();
         Session::where("id", ">", 0)->forceDelete();
+        RequestExtension::where("request_id", ">", 0)->forceDelete();
         Request::where("id", ">", 0)->forceDelete();
     }
 

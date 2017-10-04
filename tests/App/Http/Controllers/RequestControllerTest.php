@@ -566,4 +566,102 @@ class RequestControllerTest extends TestCase
             $response->message
         );
     }
+
+    /*
+     * Test that a mentee can request extension of a mentorship
+     * period
+     */
+    public function testRequestExtensionSuccess()
+    {
+        $this->put("/api/v1/requests/1/extend-mentorship");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(201);
+
+        $this->assertEquals(
+            "Your request was submitted successfully",
+            $response->message
+        );
+    }
+
+    /*
+     * Test that a mentor can approve extension of a mentorship
+     * period
+     */
+    public function testApproveExtensionSuccess()
+    {
+        $this->put("/api/v1/requests/20/extend-mentorship");
+
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+
+        $this->patch("/api/v1/requests/20/approve-extension");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(
+            "Mentorship period was extended successfully",
+            $response->message
+        );
+    }
+
+    /*
+     * Test that a mentor can reject extension of a mentorship
+     * period
+     */
+    public function testRejectExtensionSuccess()
+    {
+        $this->put("/api/v1/requests/20/extend-mentorship");
+
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+
+        $this->patch("/api/v1/requests/20/reject-extension");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(
+            "Mentorship extension request was rejected successfully",
+            $response->message
+        );
+    }
+
+    /**
+     * Test approve extension failure when the logged in
+     * user is not the mentor for that request
+     */
+    public function testApproveExtensionFailureForNotOwner()
+    {
+        $this->put("/api/v1/requests/20/extend-mentorship");
+
+        $this->patch("/api/v1/requests/20/approve-extension");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(
+            "You don't have permission to approve an extension of this mentorship",
+            $response->message
+        );
+    }
+
+    /**
+     * Test reject extension failure when the logged in
+     * user is not the mentor for that request
+     */
+    public function testRejectExtensionFailureForNotOwner()
+    {
+        $this->put("/api/v1/requests/20/extend-mentorship");
+
+        $this->patch("/api/v1/requests/20/reject-extension");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(
+            "You don't have permission to reject an extension of this mentorship",
+            $response->message
+        );
+    }
 }
