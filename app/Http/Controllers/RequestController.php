@@ -191,7 +191,7 @@ class RequestController extends Controller
 
         $slackMessage = "*New Mentorship Request*".
             "\n*Title:* {$createdRequest->title}".
-            "\n*Link:* {$requestUrl}";
+            "\n*Link:* {$requestUrl}?referrer=slack";
 
         $slackChannel = Config::get("slack.{$appEnvironment}.new_request_channels");
 
@@ -206,7 +206,7 @@ class RequestController extends Controller
 
             $emailContent = [
                 "content" => "You might be interested in this mentorship request.
-                You can view the details of the request here {$requestUrl}",
+                You can view the details of the request here {$requestUrl}?referrer=email",
                 "title" => "Matching mentorship request"
             ];
 
@@ -430,7 +430,7 @@ class RequestController extends Controller
                 \n"."View details of the request: {$requestUrl}";
                 $this->slackUtility->sendMessage([$user->slack_id], $message);
             }
-            
+
             return $this->respond(Response::HTTP_OK, $mentorshipRequest);
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
@@ -522,7 +522,7 @@ class RequestController extends Controller
      * containing primary and secondary skills
      *
      * @param  object $request
-     * @return  object
+     * @return object
      */
     private function filterRequest($request)
     {
@@ -599,7 +599,7 @@ class RequestController extends Controller
      * Format time
      * checks if the given time is null and returns null else it returns the time in the date format
      *
-     * @param string $time
+     * @param  string $time
      * @return mixed null|string
      */
     private function formatTime($time)
@@ -665,13 +665,14 @@ class RequestController extends Controller
 
     /**
      * Returns the client base url which we use to give redirect links in the emails
+     *
      * @return string the base url
      */
     private function getClientBaseUrl()
     {
         return getenv('LENKEN_FRONTEND_BASE_URL');
     }
-    
+
     /**
      * Updates the users table with unique user details
      * each time a new request is made. In the case when
@@ -765,7 +766,7 @@ class RequestController extends Controller
 
         return $eventDetails;
     }
-    
+
     private function getRequestParams($request, $key)
     {
         return $request->input($key) ?? null;
