@@ -32,8 +32,12 @@ class ReportController extends Controller
             $response = ["data"=> []];
             // initialize params object
             $params = [];
-            $params["date"] = $request->input('period');
-            $params["location"] = $request->input('location');
+            if ($period = $this->getRequestParams($request, "period")) {
+                $params["date"] = $period;
+            }
+            if ($location = $this->getRequestParams($request, "location")) {
+                $params["location"] = $location;
+            }
             // build all where clauses based off of query params (location & time)
             $mentorship_requests = MentorshipRequest::buildQuery($params)
                 ->get();
@@ -78,10 +82,20 @@ class ReportController extends Controller
     private function getMatchedRequestsCount($request)
     {
         $params = [];
-        $params["date"] = $request->input('period');
-        $params["location"] = $request->input('location');
+        if ($period = $this->getRequestParams($request, "period")) {
+            $params["date"] = $period;
+        }
+        if ($location = $this->getRequestParams($request, "location")) {
+            $params["location"] = $location;
+        }
+        $params["status"] = array(
+            Status::MATCHED
+        );
+
+        if ($status = $this->getRequestParams($request, "status")) {
+            $params["status"] = explode(",", $status);
+        }
         return MentorshipRequest::buildQuery($params)
-            ->where('status_id', Status::MATCHED)
             ->count();
     }
 
@@ -123,23 +137,38 @@ class ReportController extends Controller
     private function getAverageTimeToMatch($request)
     {
         $params = [];
-        $params["date"] = $request->input('period');
-        $params["location"] = $request->input('location');
+        if ($period = $this->getRequestParams($request, "period")) {
+            $params["date"] = $period;
+        }
+        if ($location = $this->getRequestParams($request, "location")) {
+            $params["location"] = $location;
+        }
+
+        $params["status"] = array(
+            Status::MATCHED
+        );
+
+        if ($status = $this->getRequestParams($request, "status")) {
+            $params["status"] = explode(",", $status);
+        }
         $average_time = MentorshipRequest::buildQuery($params)
             ->groupBy('status_id')
-            ->having('status_id', Status::MATCHED)
             ->select(
                 'status_id',
                 DB::raw('(SELECT AVG(match_date - created_at) as average_time)')
-            )
-            ->first();
-        /*
-        1970-01-01 is added to get only the number of seconds contained in ($average_time->average_time) and
-        excluding the number of seconds since 1970-01-01
-        */
-        $timeStamp = strtotime("1970-01-01 ".$average_time->average_time);
-        $days = round(($timeStamp/86400));
-
+            );
+        $days = 0;
+        if (count($average_time->get()) > 0) {
+            /*
+            1970-01-01 is added to get only the number of seconds 
+            contained in ($average_time->average_time) and
+            excluding the number of seconds since 1970-01-01
+            */
+            $average_time = $average_time->first();
+            $average_time_value = $average_time->average_time;
+            $timeStamp = strtotime("1970-01-01 ".$average_time_value);
+            $days = round(($timeStamp/86400));
+        }
         return (!$days) ? 0 : $days . "day(s)";
     }
 
@@ -172,5 +201,10 @@ class ReportController extends Controller
         ->count();
 
         return $sessions_completed;
+    }
+
+    private function getRequestParams($request, $key)
+    {
+        return $request->input($key) ?? null;
     }
 }
