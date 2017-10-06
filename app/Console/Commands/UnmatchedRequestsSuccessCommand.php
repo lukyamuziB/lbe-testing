@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\ExternalMentorshipGuidelinesMail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
@@ -53,34 +54,43 @@ class UnmatchedRequestsSuccessCommand extends Command
     {
         try {
             // get all unmatched requests
-            $unmatched_requests = MentorshipRequest::getUnmatchedRequests(24)->toArray();
+            $unmatchedRequests = MentorshipRequest::getUnmatchedRequests(24)->toArray();
 
             // get all unique emails from the unmatched requests
-            $unmatched_requests_emails = $this->getUniqueEmails($unmatched_requests);
-            
-            // get placement info from AIS for placed fellows only
-            $placed_mentee_info
-                = $this->getPlacedMenteeInfoByEmails($unmatched_requests_emails);
+            $unmatchedRequestsEmails = $this->getUniqueEmails($unmatchedRequests);
 
-            if (empty($placed_mentee_info)) {
+            // get placement info from AIS for placed fellows only
+            $placedMenteeInfo
+                = $this->getPlacedMenteeInfoByEmails($unmatchedRequestsEmails);
+
+            if (empty($placedMenteeInfo)) {
                 return $this->info("There are no unmatched requests for placed fellows");
             }
                 // append unmatched request details to mentee's details
-                    $unmatched_requests_details
-                        = $this->appendPlacementInfo($unmatched_requests, $placed_mentee_info);
-                    
-                    $app_environment = getenv('APP_ENV');
+            $unmatchedRequestsDetails
+                = $this->appendPlacementInfo($unmatchedRequests, $placedMenteeInfo);
 
-                    $recipient = Config::get(
-                        "notifications.{$app_environment}.placed_unmatched_fellows_notification_email"
-                    );
+            $appEnvironment = getenv('APP_ENV');
 
-                    // send the email
-                    Mail::to($recipient)->send(
-                        new SuccessUnmatchedRequestsMail($unmatched_requests_details)
-                    );
-                    $number_of_recipients = count($unmatched_requests);
-                    $this->info("Notifications have been sent for $number_of_recipients placed fellows");
+            $recipient = Config::get(
+                "notifications.{$appEnvironment}.placed_unmatched_fellows_notification_email"
+            );
+
+            // send the email
+            Mail::to($recipient)->send(
+                new SuccessUnmatchedRequestsMail($unmatchedRequestsDetails)
+            );
+
+            $numberOfRecipients = count($unmatchedRequests);
+            $this->info("Notifications have been sent for $numberOfRecipients placed fellows");
+            // send notifications to placed fellows that made the requests
+            $placedMenteeEmails = array_keys($placedMenteeInfo);
+
+            Mail::to($placedMenteeEmails)->send(
+                new ExternalMentorshipGuidelinesMail($recipient)
+            );
+
+            $this->info("External engagement notification sent to placed fellows");
         } catch (Exception $e) {
             $this->error("An error occurred - notifications were not sent");
         }
@@ -92,19 +102,20 @@ class UnmatchedRequestsSuccessCommand extends Command
      *
      * @param array $emails emails of fellows/mentees
      *
-     * @return array $placed_mentee_info information about placed mentee
+     * @return array $placedMenteeInfo information about placed mentee
      */
     private function getPlacedMenteeInfoByEmails($emails)
     {
-        $placed_mentee_info = [];
+        $placedMenteeInfo = [];
+
 
         $response = $this->ais_client->getUsersByEmail($emails);
 
-        $placed_status = ["External Engagements - Standard", "External Engagements - Awaiting Onboarding"];
+        $placedStatus = ["External Engagements - Standard", "External Engagements - Awaiting Onboarding"];
 
         foreach ($response["values"] as $info) {
-            if ($info["placement"]["status"] !== null && in_array($info["placement"]["status"], $placed_status)) {
-                $placed_mentee_info[$info["email"]] = [
+            if ($info["placement"]["status"] !== null && in_array($info["placement"]["status"], $placedStatus)) {
+                $placedMenteeInfo[$info["email"]] = [
                     "placement" => $info["placement"]["status"],
                     "client" => $info["placement"]["client"],
                     "email" => $info["email"],
@@ -114,7 +125,7 @@ class UnmatchedRequestsSuccessCommand extends Command
             }
         }
 
-        return $placed_mentee_info;
+        return $placedMenteeInfo;
     }
 
     /**
@@ -138,19 +149,19 @@ class UnmatchedRequestsSuccessCommand extends Command
     /**
      * Append information about a fellow's placement to each unmatched request
      *
-     * @param array $unmatched_requests unmatched mentorship requests
-     * @param array $placed_mentee_info information about feach fellow's placement
+     * @param array $unmatchedRequests unmatched mentorship requests
+     * @param array $placedMenteeInfo  information about feach fellow's placement
      *
-     * @return array $mentee_request_data unmatched requests with placement info
+     * @return array $menteeRequestData unmatched requests with placement info
      */
-    private function appendPlacementInfo($unmatched_requests, $placed_mentee_info)
+    private function appendPlacementInfo($unmatchedRequests, $placedMenteeInfo)
     {
-        $mentee_request_data = [];
+        $menteeRequestData = [];
 
-        foreach ($placed_mentee_info as $fellow) {
-            foreach ($unmatched_requests as $request) {
+        foreach ($placedMenteeInfo as $fellow) {
+            foreach ($unmatchedRequests as $request) {
                 if ($request["mentee"]["email"] === $fellow["email"]) {
-                    $mentee_request_data[$request["id"]] = [
+                    $menteeRequestData[$request["id"]] = [
                         "name" => $fellow["name"],
                         "placement" => $fellow["placement"],
                         "client" => $fellow["client"],
@@ -166,6 +177,7 @@ class UnmatchedRequestsSuccessCommand extends Command
             }
         }
 
-        return $mentee_request_data;
+        return $menteeRequestData;
     }
+
 }
