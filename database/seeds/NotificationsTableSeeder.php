@@ -23,7 +23,9 @@ class NotificationsTableSeeder extends Seeder
             "a user recieves notification when someone logs session remainder"]],
             ["WEEKLY_REQUESTS_REPORTS" => ["default" => "email",
             "description" => 
-            "a user recieves notification when there's a weekly request report"]]
+            "a user recieves notification when there's a weekly request report"]],
+            ["REQUESTS_MATCHING_SKILLS" => ["default" => "slack",
+            "description" => "a user makes a request matching my skills"]]
         ];
         foreach ($data as $entry) {
             foreach ($entry as $title => $body) {

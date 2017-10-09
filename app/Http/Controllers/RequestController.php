@@ -185,42 +185,17 @@ class RequestController extends Controller
         /* we have a list of userids to send emails to, some of the user ids are duplicated
         because one person might have more than one skill matched */
         $mentorIds = array_unique($mentorIds);
-        $requestUrl = $this->getClientBaseUrl().'/requests/'.$createdRequest->id;
-        $bulkEmailAddresses = [];
-        $appEnvironment = getenv('APP_ENV');
-
-        $slackMessage = "*New Mentorship Request*".
-            "\n*Title:* {$createdRequest->title}".
-            "\n*Link:* {$requestUrl}?referrer=slack";
-
-        $slackChannel = Config::get("slack.{$appEnvironment}.new_request_channels");
-
-        $this->slackUtility->sendMessage($slackChannel, $slackMessage);
-
-        try {
-            // get email address of all the people to send the email to
-            foreach ($mentorIds as $mentorId) {
-                $mentorDetails = $this->aisClient->getUserById($mentorId);
-                array_push($bulkEmailAddresses, $mentorDetails["email"]);
-            }
-
-            $emailContent = [
-                "content" => "You might be interested in this mentorship request.
-                You can view the details of the request here {$requestUrl}?referrer=email",
-                "title" => "Matching mentorship request"
-            ];
-
-            // send the email to the first person and bcc everyone else
-            if (sizeof($bulkEmailAddresses) > 0) {
-                $this->sendEmail(
-                    $emailContent,
-                    $bulkEmailAddresses[0],
-                    array_slice($bulkEmailAddresses, 1)
-                );
-            }
-        } catch (Exception $exception) {
-            return $this->respond(Response::HTTP_BAD_REQUEST, ["message" => $exception->getMessage()]);
+        /* remove mentee_id from an array of mentor_ids if present,
+         * to avoid sending mentor matching requests to the mentee
+         */
+        if (($key = array_search($user->uid, $mentorIds)) !== false) {
+            unset($mentorIds[$key]);
         }
+
+        $requestUrl = $this->getClientBaseUrl().'/requests/'.$createdRequest->id;
+
+        $this->sendNewMentorshipRequestNotification($createdRequest, $requestUrl);
+        $this->sendMatchingSkillsNotification($mentorIds, $requestUrl);
 
         return $this->respond(Response::HTTP_CREATED, $createdRequest);
     }
@@ -934,5 +909,90 @@ class RequestController extends Controller
         } catch (Exception $e) {
             return ["message" => $e->getMessage()];
         }
+    }
+
+    /**
+     * Send matching mentorship request to mentors
+     *
+     * @param $mentorIds - IDs of all mentors with matching skills
+     * @param $requestUrl - URL to the new request
+     */
+    private function sendMatchingSkillsNotification($mentorIds, $requestUrl)
+    {
+        $potentialMentorIdsForEmail = [];
+        $potentialMentorIdsForSlack = [];
+
+        $usersSetting = UserNotification::getUsersSettingById(
+            $mentorIds,
+            Notification::REQUESTS_MATCHING_SKILLS
+        );
+
+        foreach ($usersSetting as $userSetting) {
+            if ($userSetting['email']) {
+                $potentialMentorIdsForEmail[] = $userSetting['user_id'];
+            }
+
+            if ($userSetting['slack']) {
+                $potentialMentorIdsForSlack[] = $userSetting["user_id"];
+            }
+        }
+
+        if (count($potentialMentorIdsForEmail) > 0) {
+            $potentialMentorEmails = User::select('email')
+                ->whereIn('user_id', $potentialMentorIdsForEmail)
+                ->get();
+            $potentialMentorEmails
+                = array_flatten(json_decode($potentialMentorEmails, true));
+
+            if (count($potentialMentorEmails) > 0) {
+                $emailContent = [
+                    "content" => "You might be interested in this mentorship request.
+                            You can view the details of the request here" .
+                        "{$requestUrl}?referrer=email",
+                    "title" => "Matching mentorship request"
+                ];
+                // send the email to the first person and bcc everyone else
+                $this->sendEmail(
+                    $emailContent,
+                    $potentialMentorEmails[0],
+                    array_slice($potentialMentorEmails, 1)
+                );
+            }
+        }
+ 
+        if (count($potentialMentorIdsForSlack) > 0) {
+            $potentialMentorSlackIds = User::select('slack_id')
+                ->whereIn('user_id', $potentialMentorIdsForSlack)
+                ->get();
+            $potentialMentorSlackIds
+                = array_flatten(json_decode($potentialMentorSlackIds, true));
+
+            if (count($potentialMentorSlackIds) > 0) {
+                $message = "*Matching mentorship request*\n".
+                    "You might be interested in this mentorship request.\n".
+                    "View details of the request here: {$requestUrl}?referrer=slack";
+                $this->slackUtility->sendMessage($potentialMentorSlackIds, $message);
+            }
+        }
+    }
+
+    /**
+     * Send the slack notification for new requests
+     *
+     * @param MentorshipRequest $createdRequest - the newly created request
+     * @param string $requestUrl - the URL to the request on the frontend
+     *
+     * @return void
+     */
+    private function sendNewMentorshipRequestNotification($createdRequest, $requestUrl)
+    {
+        $slackMessage = "*New Mentorship Request*".
+            "\n*Title:* {$createdRequest->title}".
+            "\n*Link:* {$requestUrl}?referrer=slack";
+
+        $appEnvironment = getenv('APP_ENV');
+        $slackChannel = Config::get("slack.{$appEnvironment}.new_request_channels");
+
+        $this->slackUtility->sendMessage($slackChannel, $slackMessage);
     }
 }

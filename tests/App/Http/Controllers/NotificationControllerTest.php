@@ -45,7 +45,7 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertCount(4, $response);
+        $this->assertCount(5, $response);
         $this->assertObjectHasAttribute('id', $response[0]);
         $this->assertObjectHasAttribute('default', $response[0]);
         $this->assertObjectHasAttribute('description', $response[0]);
