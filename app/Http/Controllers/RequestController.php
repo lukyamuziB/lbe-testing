@@ -299,11 +299,11 @@ class RequestController extends Controller
                 Notification::INDICATES_INTEREST
             );
 
-            if ($userSetting['email']) {
+            if ($userSetting->email) {
                 $this->sendEmail($emailContent, $toAddress);
             }
 
-            if ($userSetting['slack']) {
+            if ($userSetting->slack) {
                 /* Send a slack notification to a mentee
                 when a mentor shows interest in their request
                 */
@@ -380,7 +380,7 @@ class RequestController extends Controller
             $body = $this->aisClient->getUserById($request->mentor_id);
 
             $mentorEmail = $body["email"];
-            if ($userSetting['email']) {
+            if ($userSetting->email) {
                 $this->sendEmail($content, $mentorEmail);
             }
 
@@ -396,7 +396,7 @@ class RequestController extends Controller
             $googleCalendar->createEvent($eventDetails);
 
             // Send the mentor a slack message when notified
-            if ($userSetting['slack']) {
+            if ($userSetting->slack) {
                 $menteeId = $request->input('mentor_id');
                 $user = User::select('slack_id')
                     ->where('user_id', $menteeId)

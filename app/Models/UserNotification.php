@@ -90,7 +90,7 @@ class UserNotification extends Model {
                 ->where("id", $notification_id)
                 ->first();
 
-            $user_setting = [
+            $user_setting = (object)[
                 "notification_id" => $notification_id,
                 "slack" => $default_setting["default"] === "slack",
                 "email" => $default_setting["default"] === "email"

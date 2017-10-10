@@ -20,7 +20,8 @@ class Request extends Model
         "pairing",
         "duration",
         "location",
-        "created_at"
+        "created_at",
+        "interested"
     ];
 
     protected $dates = [];
@@ -220,5 +221,23 @@ class Request extends Model
             ->get();
         
         return $unmatched_requests;
+    }
+
+
+    /**
+     * Get all unmatched requests that have mentors who indicated interest
+     *
+     * @return object
+     */
+    public static function getUnmatchedRequestsWithInterests($duration = 3)
+    {
+        $thresholdDate =  Carbon::now()->subDays($duration);
+        $unmatchedRequests = Request::with("requestSkills.skill", "mentee")
+            ->where("status_id", Status::OPEN)
+            ->where("interested", '!=', null)
+            ->whereDate("created_at", "<", $thresholdDate)
+            ->orderBy("created_at", "asc")
+            ->get();
+        return ($unmatchedRequests);
     }
 }

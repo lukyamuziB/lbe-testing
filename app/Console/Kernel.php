@@ -19,6 +19,7 @@ class Kernel extends ConsoleKernel
         Commands\GenerateGoogleCredentials::class,
         Commands\UnmatchedRequestsFellowsCommand::class,
         Commands\EncryptGoogleCredentialsCommand::class,
+        Commands\UnmatchedRequestsWithInterestCommand::class,
         Commands\UpdateRatingsUserCommand::class
     ];
 
@@ -36,6 +37,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('notify:unapproved-sessions')->hourly();
         $schedule->command('notify:unmatched-requests:fellows')
             ->weekly()->mondays()->at('9:00');
+        $schedule->command('notify:unmatched-requests:with-interests')
+            ->dailyAt('12:00');
     }
 
 }
