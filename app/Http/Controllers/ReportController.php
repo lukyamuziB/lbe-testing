@@ -28,8 +28,6 @@ class ReportController extends Controller
             if ($request->user()->role !== 'Admin') {
                 throw new AccessDeniedException('you do not have permission to perform this action');
             }
-            // initialize response object
-            $response = ["data"=> []];
             // initialize params object
             $params = [];
             if ($period = $this->getRequestParams($request, "period")) {
@@ -39,26 +37,25 @@ class ReportController extends Controller
                 $params["location"] = $location;
             }
             // build all where clauses based off of query params (location & time)
-            $mentorship_requests = MentorshipRequest::buildQuery($params)
+            $mentorshipRequests = MentorshipRequest::buildQuery($params)
                 ->get();
-            $response["data"]["skills_count"] = $this->getSkillCount($mentorship_requests);
-
+            $response["skillsCount"] = $this->getSkillCount($mentorshipRequests);
             // transform the result objects into API ready responses
             if ($request->input('include')) {
                 $includes = explode(",", $request->input('include'));
                 if (in_array("totalRequests", $includes)) {
-                    $response["data"]["totalRequests"] = MentorshipRequest::buildQuery(
+                    $response["totalRequests"] = MentorshipRequest::buildQuery(
                         $params
                     )->count();
                 }
                 if (in_array("totalRequestsMatched", $includes)) {
-                    $response["data"]["totalRequestsMatched"] = $this->getMatchedRequestsCount($request);
+                    $response["totalRequestsMatched"] = $this->getMatchedRequestsCount($request);
                 }
                 if (in_array("averageTimeToMatch", $includes)) {
-                    $response["data"]["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
+                    $response["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
                 }
                 if (in_array("sessionsCompleted", $includes)) {
-                    $response["data"]["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
+                    $response["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
                 }
             }
 
@@ -102,29 +99,27 @@ class ReportController extends Controller
     /**
      * Calculate the number of occurrences for the skills requested
      *
-     * @param object $mentorship_requests object - the request object
+     * @param object $mentorshipRequests object - the request object
      *
      * @return array of skills and the number of occurrences
      */
-    private function getSkillCount($mentorship_requests)
+    private function getSkillCount($mentorshipRequests)
     {
-        $skill_count = [];
+        $countSkillsByStatus = [];
 
-        foreach ($mentorship_requests as $mentorship_request) {
-            foreach ($mentorship_request->requestSkills as $skill) {
-                array_push($skill_count, $skill->skill->name);
+        foreach ($mentorshipRequests as $mentorshipRequest) {
+            $status = $mentorshipRequest->status->name;
+            foreach ($mentorshipRequest->requestSkills as $skill) {
+                $countSkillsByStatus[$skill->skill->name][] = $status;
             }
         }
 
-        // format the output
-        $skill_count = array_count_values($skill_count);
-        $formatted_skill_count = [];
-
-        foreach ($skill_count as $skill_name => $count) {
-            $formatted_skill_count[] = ["name" => $skill_name, "count" => $count];
+        $skillsCount = [];
+        foreach ($countSkillsByStatus as $skill => $statusArray) {
+            $countMatch = array_count_values($statusArray);
+            $skillsCount[] = ["name" => $skill, "count" => $countMatch];
         }
-
-        return $formatted_skill_count;
+        return $skillsCount;
     }
 
     /**
@@ -151,26 +146,28 @@ class ReportController extends Controller
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
         }
-        $average_time = MentorshipRequest::buildQuery($params)
+        $averageTime = MentorshipRequest::buildQuery($params)
             ->groupBy('status_id')
             ->select(
                 'status_id',
                 DB::raw('(SELECT AVG(match_date - created_at) as average_time)')
             );
         $days = 0;
-        if (count($average_time->get()) > 0) {
+        if (count($averageTime->get()) > 0) {
             /*
             1970-01-01 is added to get only the number of seconds 
-            contained in ($average_time->average_time) and
+            contained in ($averageTime->average_time) and
             excluding the number of seconds since 1970-01-01
             */
-            $average_time = $average_time->first();
-            $average_time_value = $average_time->average_time;
-            $timeStamp = strtotime("1970-01-01 ".$average_time_value);
+            $averageTime = $averageTime->first();
+            $averageTimeValue = $averageTime->average_time;
+            $timeStamp = strtotime("1970-01-01 ".$averageTimeValue);
             $days = round(($timeStamp/86400));
         }
         return (!$days) ? 0 : $days . "day(s)";
     }
+
+
 
     /**
      * Gets count of all sessions completed
@@ -181,26 +178,28 @@ class ReportController extends Controller
      */
     private function getSessionsCompletedCount($request)
     {
-        $selected_date = MentorshipRequest::getTimeStamp($request->input('period'));
-        $selected_location = MentorshipRequest::getLocation($request->input('location'));
+        $selectedDate = MentorshipRequest::getTimeStamp($request->input('period'));
+        $selectedLocation = MentorshipRequest::getLocation($request->input('location'));
 
-        $sessions_completed = Session::whereHas(
-            'request', function ($query) use ($selected_location) {
-                if ($selected_location) {
-                    $query->where('location', $selected_location);
+        $sessionsCompleted = Session::whereHas(
+            'request',
+            function ($query) use ($selectedLocation) {
+                if ($selectedLocation) {
+                    $query->where('location', $selectedLocation);
                 }
             }
         )
             ->when(
-                $selected_date, function ($query) use ($selected_date) {
-                    $query->where('date', '>=', $selected_date);
+                $selectedDate,
+                function ($query) use ($selectedDate) {
+                    $query->where('date', '>=', $selectedDate);
                 }
             )
         ->where('mentee_approved', true)
         ->where('mentor_approved', true)
         ->count();
 
-        return $sessions_completed;
+        return $sessionsCompleted;
     }
 
     private function getRequestParams($request, $key)

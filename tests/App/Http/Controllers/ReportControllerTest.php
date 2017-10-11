@@ -39,8 +39,11 @@ class ReportControllerTest extends TestCase
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        foreach ($response->data->skills_count as $skill) {
+        foreach ($response->skillsCount as $skill) {
+            $this->assertNotEmpty($skill->name);
             $this->assertNotEmpty($skill->count);
+            $this->assertObjectHasAttribute('open', $skill->count);
+            $this->assertNotEmpty($skill->count->open);
         }
     }
 
@@ -53,12 +56,15 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->data->skills_count);
+        $this->assertCount(1, $response->skillsCount);
 
-        foreach ($response->data->skills_count as $skill) {
+        foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
+            $this->assertNotEmpty($skill->count);
+            $this->assertObjectHasAttribute('open', $skill->count);
+            $this->assertNotEmpty($skill->count->open);
         }
-        $this->assertEquals(20, $response->data->totalRequests);
+        $this->assertEquals(20, $response->totalRequests);
     }
 
     /**
@@ -70,12 +76,15 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->data->skills_count);
+        $this->assertCount(1, $response->skillsCount);
 
-        foreach ($response->data->skills_count as $skill) {
+        foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
+            $this->assertNotEmpty($skill->count);
+            $this->assertObjectHasAttribute('open', $skill->count);
+            $this->assertNotEmpty($skill->count->open);
         }
-        $this->assertEquals(10, $response->data->totalRequestsMatched);
+        $this->assertEquals(10, $response->totalRequestsMatched);
     }
 
     /**
@@ -87,12 +96,15 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->data->skills_count);
+        $this->assertCount(1, $response->skillsCount);
 
-        foreach ($response->data->skills_count as $skill) {
+        foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
+            $this->assertNotEmpty($skill->count);
+            $this->assertObjectHasAttribute('open', $skill->count);
+            $this->assertNotEmpty($skill->count->open);
         }
-        $this->assertLessThanOrEqual(7, $response->data->averageTimeToMatch);
+        $this->assertLessThanOrEqual(7, $response->averageTimeToMatch);
     }
 
 
@@ -105,13 +117,16 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->data->skills_count);
+        $this->assertCount(1, $response->skillsCount);
 
-        foreach ($response->data->skills_count as $skill) {
+        foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
+            $this->assertNotEmpty($skill->count);
+            $this->assertObjectHasAttribute('open', $skill->count);
+            $this->assertNotEmpty($skill->count->open);
         }
 
-        $this->assertEquals(4, $response->data->sessionsCompleted);
+        $this->assertEquals(4, $response->sessionsCompleted);
     }
 
     /**
@@ -126,12 +141,15 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->data->skills_count);
+        $this->assertCount(1, $response->skillsCount);
 
-        foreach ($response->data->skills_count as $skill) {
+        foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
+            $this->assertNotEmpty($skill->count);
+            $this->assertObjectHasAttribute('open', $skill->count);
+            $this->assertNotEmpty($skill->count->open);
         }
-        $this->assertEquals(20, $response->data->totalRequests);
+        $this->assertEquals(20, $response->totalRequests);
     }
 
     /**
