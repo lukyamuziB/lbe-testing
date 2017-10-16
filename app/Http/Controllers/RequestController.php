@@ -742,11 +742,6 @@ class RequestController extends Controller
         return $eventDetails;
     }
 
-    private function getRequestParams($request, $key)
-    {
-        return $request->input($key) ?? null;
-    }
-
     /**
      * Create a request to extend the mentorship period
      *

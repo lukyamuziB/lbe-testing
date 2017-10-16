@@ -223,7 +223,6 @@ class Request extends Model
         return $unmatched_requests;
     }
 
-
     /**
      * Get all unmatched requests that have mentors who indicated interest
      *

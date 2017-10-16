@@ -36,28 +36,25 @@ class ReportController extends Controller
             if ($location = $this->getRequestParams($request, "location")) {
                 $params["location"] = $location;
             }
-            // build all where clauses based off of query params (location & time)
+            
             $mentorshipRequests = MentorshipRequest::buildQuery($params)
                 ->get();
+
+            // Build the response object
             $response["skillsCount"] = $this->getSkillCount($mentorshipRequests);
-            // transform the result objects into API ready responses
-            if ($request->input('include')) {
-                $includes = explode(",", $request->input('include'));
-                if (in_array("totalRequests", $includes)) {
-                    $response["totalRequests"] = MentorshipRequest::buildQuery(
-                        $params
-                    )->count();
-                }
-                if (in_array("totalRequestsMatched", $includes)) {
-                    $response["totalRequestsMatched"] = $this->getMatchedRequestsCount($request);
-                }
-                if (in_array("averageTimeToMatch", $includes)) {
-                    $response["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
-                }
-                if (in_array("sessionsCompleted", $includes)) {
-                    $response["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
-                }
-            }
+            $response["totalRequests"] = MentorshipRequest::buildQuery(
+                $params
+            )->count();
+
+            // Get request counts for all statuses
+            $requestsCount = $this->getAllStatusRequestsCounts($mentorshipRequests);
+
+            $response["totalMatchedRequests"] = $requestsCount["matched"];
+            $response["totalCompletedRequests"] = $requestsCount["closed"];
+            $response["totalOpenRequests"] = $requestsCount["open"];
+            $response["totalCancelledRequests"] = $requestsCount["cancelled"];
+            $response["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
+            $response["sessionsCompleted"] = $this->getSessionsCompletedCount($request);
 
             return $this->respond(Response::HTTP_OK, $response);
         } catch (AccessDeniedException $exception) {
@@ -66,34 +63,6 @@ class ReportController extends Controller
                 ["message" => $exception->getMessage()]
             );
         }
-    }
-
-    /**
-     * Gets all matched requests count
-     *
-     * @param string $request - the request object
-     *
-     * @return   object
-     * @internal param Request $date request payload
-     */
-    private function getMatchedRequestsCount($request)
-    {
-        $params = [];
-        if ($period = $this->getRequestParams($request, "period")) {
-            $params["date"] = $period;
-        }
-        if ($location = $this->getRequestParams($request, "location")) {
-            $params["location"] = $location;
-        }
-        $params["status"] = array(
-            Status::MATCHED
-        );
-
-        if ($status = $this->getRequestParams($request, "status")) {
-            $params["status"] = explode(",", $status);
-        }
-        return MentorshipRequest::buildQuery($params)
-            ->count();
     }
 
     /**
@@ -167,8 +136,6 @@ class ReportController extends Controller
         return (!$days) ? 0 : $days . "day(s)";
     }
 
-
-
     /**
      * Gets count of all sessions completed
      *
@@ -202,8 +169,36 @@ class ReportController extends Controller
         return $sessionsCompleted;
     }
 
-    private function getRequestParams($request, $key)
+    /**
+     * Creates an object that contains statuses as the keys
+     * and the values initialized to 0. Iterates through all
+     * requests and increases the count of corresponding keys
+     *
+     * @param object $mentorshipRequests - all requests
+     *
+     * @return object - statuses and corresponding counts
+     */
+    private function getAllStatusRequestsCounts($mentorshipRequests)
     {
-        return $request->input($key) ?? null;
+        $requestStatusCount['open'] = 0;
+        $requestStatusCount['closed'] = 0;
+        $requestStatusCount['cancelled'] = 0;
+        $requestStatusCount['matched'] = 0;
+ 
+        foreach ($mentorshipRequests as $mentorshipRequest) {
+            if ($mentorshipRequest->status_id == Status::OPEN) {
+                $requestStatusCount['open']++;
+            }
+            if ($mentorshipRequest->status_id == Status::CLOSED) {
+                $requestStatusCount['closed']++;
+            }
+            if ($mentorshipRequest->status_id == Status::CANCELLED) {
+                $requestStatusCount['cancelled']++;
+            }
+            if ($mentorshipRequest->status_id == Status::MATCHED) {
+                $requestStatusCount['matched']++;
+            }
+        }
+        return $requestStatusCount;
     }
 }

@@ -48,43 +48,19 @@ class ReportControllerTest extends TestCase
     }
 
     /**
-     * Test to generate reports with all requests
+     * Test to check all status counts are accurate
      */
-    public function testAllSuccessTotalRequests()
+    public function testGetAllStatusRequestsCounts()
     {
-        $this->get("/api/v1/reports?include=totalRequests");
+        $this->get("/api/v1/reports");
 
         $response = json_decode($this->response->getContent());
-        $this->assertResponseOk();
-        $this->assertCount(1, $response->skillsCount);
-
-        foreach ($response->skillsCount as $skill) {
-            $this->assertNotEmpty($skill->name);
-            $this->assertNotEmpty($skill->count);
-            $this->assertObjectHasAttribute('open', $skill->count);
-            $this->assertNotEmpty($skill->count->open);
-        }
+        
         $this->assertEquals(20, $response->totalRequests);
-    }
-
-    /**
-     * test to generate report will all requests that are matched
-     */
-    public function testAllSuccessTotalRequestsMatched()
-    {
-        $this->get("/api/v1/reports?include=totalRequestsMatched");
-
-        $response = json_decode($this->response->getContent());
-        $this->assertResponseOk();
-        $this->assertCount(1, $response->skillsCount);
-
-        foreach ($response->skillsCount as $skill) {
-            $this->assertNotEmpty($skill->name);
-            $this->assertNotEmpty($skill->count);
-            $this->assertObjectHasAttribute('open', $skill->count);
-            $this->assertNotEmpty($skill->count->open);
-        }
-        $this->assertEquals(10, $response->totalRequestsMatched);
+        $this->assertEquals(10, $response->totalOpenRequests);
+        $this->assertEquals(10, $response->totalMatchedRequests);
+        $this->assertEquals(0, $response->totalCancelledRequests);
+        $this->assertEquals(0, $response->totalCompletedRequests);
     }
 
     /**
@@ -92,7 +68,7 @@ class ReportControllerTest extends TestCase
      */
     public function testAllSuccessAverageTimeToMatch()
     {
-        $this->get("/api/v1/reports?include=averageTimeToMatch");
+        $this->get("/api/v1/reports");
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
@@ -113,7 +89,7 @@ class ReportControllerTest extends TestCase
      */
     public function testAllSuccessSessionsCompleted()
     {
-        $this->get("/api/v1/reports?include=sessionsCompleted");
+        $this->get("/api/v1/reports");
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
@@ -135,8 +111,7 @@ class ReportControllerTest extends TestCase
     public function testAllSuccessIncludeAll()
     {
         $this->get(
-            "/api/v1/reports?include=".
-            "totalRequests,totalRequestsMatched,averageTimeToMatch,sessionsCompleted"
+            "/api/v1/reports"
         );
 
         $response = json_decode($this->response->getContent());
