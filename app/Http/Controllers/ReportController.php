@@ -50,7 +50,7 @@ class ReportController extends Controller
             $requestsCount = $this->getAllStatusRequestsCounts($mentorshipRequests);
 
             $response["totalMatchedRequests"] = $requestsCount["matched"];
-            $response["totalCompletedRequests"] = $requestsCount["closed"];
+            $response["totalCompletedRequests"] = $requestsCount["completed"];
             $response["totalOpenRequests"] = $requestsCount["open"];
             $response["totalCancelledRequests"] = $requestsCount["cancelled"];
             $response["averageTimeToMatch"] = $this->getAverageTimeToMatch($request);
@@ -181,7 +181,7 @@ class ReportController extends Controller
     private function getAllStatusRequestsCounts($mentorshipRequests)
     {
         $requestStatusCount['open'] = 0;
-        $requestStatusCount['closed'] = 0;
+        $requestStatusCount['completed'] = 0;
         $requestStatusCount['cancelled'] = 0;
         $requestStatusCount['matched'] = 0;
  
@@ -189,8 +189,8 @@ class ReportController extends Controller
             if ($mentorshipRequest->status_id == Status::OPEN) {
                 $requestStatusCount['open']++;
             }
-            if ($mentorshipRequest->status_id == Status::CLOSED) {
-                $requestStatusCount['closed']++;
+            if ($mentorshipRequest->status_id == Status::COMPLETED) {
+                $requestStatusCount['completed']++;
             }
             if ($mentorshipRequest->status_id == Status::CANCELLED) {
                 $requestStatusCount['cancelled']++;

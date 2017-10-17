@@ -10,7 +10,7 @@ class StatusTableSeeder extends Seeder
     public function run()
     {
         $limit = 4;
-        $status = array('open', 'matched', 'closed', 'cancelled');
+        $status = array('open', 'matched', 'completed', 'cancelled');
         for ($i = 0; $i < $limit; $i++) {
             DB::table('status')->insert([
                 'name' => $status[$i]

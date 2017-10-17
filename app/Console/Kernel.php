@@ -20,8 +20,9 @@ class Kernel extends ConsoleKernel
         Commands\UnmatchedRequestsFellowsCommand::class,
         Commands\EncryptGoogleCredentialsCommand::class,
         Commands\UnmatchedRequestsWithInterestCommand::class,
-        Commands\UpdateRatingsUserCommand::class
-    ];
+        Commands\UpdateRatingsUserCommand::class,
+        Commands\UpdateCompletedRequestStatusCommand::class
+        ];
 
     /**
      * Define the application's command schedule.
@@ -32,13 +33,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('notify:unmatched-requests:success')->dailyAt('6:00');
-        $schedule->command('cache:slack-users')->dailyAt('12:00');
-        $schedule->command('notify:unapproved-sessions')->hourly();
-        $schedule->command('notify:unmatched-requests:fellows')
+        $schedule->command("notify:unmatched-requests:success")->dailyAt("6:00");
+        $schedule->command("cache:slack-users")->dailyAt("12:00");
+        $schedule->command("notify:unapproved-sessions")->hourly();
+        $schedule->command("notify:unmatched-requests:fellows")
             ->weekly()->mondays()->at('9:00');
-        $schedule->command('notify:unmatched-requests:with-interests')
-            ->dailyAt('12:00');
+        $schedule->command("notify:unmatched-requests:with-interests")
+            ->dailyAt("12:00");
+        $schedule->command("update:requests:completed")->dailyAt("12:00");
     }
 
 }

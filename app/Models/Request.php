@@ -108,7 +108,7 @@ class Request extends Model
     public static function getTimeStamp($period)
     {
         $date = (int)$period;
-        
+
         return ($date) ? Carbon::now()->subWeeks($date)->__toString() : null;
     }
 
@@ -199,7 +199,7 @@ class Request extends Model
                 return $query->where("location", $params["location"]);
             }
         );
-        
+
         return $mentorship_requests;
     }
 
@@ -219,7 +219,7 @@ class Request extends Model
             ->whereDate("created_at", "<=", $threshold_date)
             ->orderBy("created_at", "asc")
             ->get();
-        
+
         return $unmatched_requests;
     }
 

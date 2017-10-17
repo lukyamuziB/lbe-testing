@@ -942,7 +942,7 @@ class RequestController extends Controller
             if (count($potentialMentorEmails) > 0) {
                 $emailContent = [
                     "content" => "You might be interested in this mentorship request.
-                            You can view the details of the request here" .
+                            You can view the details of the request here " .
                         "{$requestUrl}?referrer=email",
                     "title" => "Matching mentorship request"
                 ];
@@ -954,7 +954,7 @@ class RequestController extends Controller
                 );
             }
         }
- 
+
         if (count($potentialMentorIdsForSlack) > 0) {
             $potentialMentorSlackIds = User::select('slack_id')
                 ->whereIn('user_id', $potentialMentorIdsForSlack)

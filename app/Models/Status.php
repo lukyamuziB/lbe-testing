@@ -12,6 +12,6 @@ class Status extends Model
 
     const OPEN = 1;
     const MATCHED = 2;
-    const CLOSED = 3;
+    const COMPLETED = 3;
     const CANCELLED = 4;
 }
