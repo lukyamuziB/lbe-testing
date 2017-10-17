@@ -67,7 +67,7 @@ class UnmatchedRequestsFellowsCommand extends Command
     public function handle()
     {
         try {
-            $unmatched_requests = Request::getUnmatchedRequests()->toArray();
+            $unmatched_requests = Request::getUnmatchedRequests()->get()->toArray();
 
             if ($unmatched_requests) {
                 $mentee_emails = $this->getMenteeEmails($unmatched_requests);

@@ -3,6 +3,7 @@
 namespace Test\App\Http\Controllers;
 
 use App\Models\User;
+use Mockery\Exception;
 use TestCase;
 
 /**
@@ -46,7 +47,22 @@ class ReportControllerTest extends TestCase
             $this->assertNotEmpty($skill->count->open);
         }
     }
-
+    
+    /**
+     * Test that a user that is an admin can get all unmatched reqests
+     *
+     * @return void
+     */
+    public function testGetUnmatchedRequestsSuccess()
+    {
+        $this->get("/api/v1/reports/unmatched-requests");
+        $this->assertResponseOk();
+        $response = json_decode($this->response->getContent());
+        $this->assertTrue(is_array($response->requests));
+        $this->assertEquals(10, count($response->requests));
+        $this->assertEquals(10, $response->pagination->totalCount);
+    }
+    
     /**
      * Test to check all status counts are accurate
      */

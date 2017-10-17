@@ -62,6 +62,7 @@ $app->group(['prefix' => 'api/v1'], function ($app) {
  */
 $app->group(['prefix' => 'api/v1'], function ($app) {
     $app->get('reports', 'ReportController@all');
+    $app->get('reports/unmatched-requests', 'ReportController@getUnmatchedRequests');
 });
 
 /**

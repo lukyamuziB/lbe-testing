@@ -33,7 +33,8 @@ class AISClientMock extends AISClient
                 "name" => "Adebayo Adesanya",
                 "location" => "Lagos",
                 "picture" => "picture",
-                "first_name" => "adebayo",
+                "first_name" => "Adebayo",
+                "last_name" => "Adesanya",
                 "cohort" => null,
                 "roles" => "staff",
                 "placement" =>  ["client" => "Available", "status" =>"Available"],
@@ -45,7 +46,8 @@ class AISClientMock extends AISClient
                 "name" => "Inumidun Amao",
                 "location" => "Lagos",
                 "picture" => "picture",
-                "first_name" => "adebayo",
+                "first_name" => "Inumidun",
+                "last_name" => "Amao",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
                 "placement" => ["client" => "google", "status" => "External Engagements - Standard"],
@@ -58,7 +60,8 @@ class AISClientMock extends AISClient
                 "name" => "Ichiato Ikkin",
                 "location" => "Lagos",
                 "picture" => "picture",
-                "first_name" => "adebayo",
+                "first_name" => "Ichiato",
+                "last_name" => "Ikkin",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
                 "placement" =>  ["client" => "Available", "status" =>"Available"],
@@ -70,7 +73,8 @@ class AISClientMock extends AISClient
                 "name" => "Felistas Ngunmi",
                 "location" => "Nairobi",
                 "picture" => "picture",
-                "first_name" => "first_name",
+                "first_name" => "Felistas",
+                "last_name" => "Ngumi",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
                 "placement" => ["client" => "google", "status" => "External Engagements - Standard"],
@@ -82,7 +86,8 @@ class AISClientMock extends AISClient
                 "name" => "Faith Omokaro",
                 "location" => "Lagos",
                 "picture" => "picture",
-                "first_name" => "first_name",
+                "first_name" => "Faith",
+                "last_name" => "Omokaro",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
                 "placement" => ["client" => "google", "status" => "External Engagements - Standard"],
@@ -94,7 +99,8 @@ class AISClientMock extends AISClient
                 "name" => "Chinazor Allen",
                 "location" => "Lagos",
                 "picture" => "picture",
-                "first_name" => "first_name",
+                "first_name" => "Chinazor",
+                "last_name" => "Allen",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
                 "placement" => ["client" => "google", "status" =>"External Engagements - Standard"],
@@ -106,7 +112,8 @@ class AISClientMock extends AISClient
                 "name" => "Daisy Wanjiru",
                 "location" => "Nairobi",
                 "picture" => "picture",
-                "first_name" => "first_name",
+                "first_name" => "Daisy",
+                "last_name" => "Wanjiru",
                 "cohort" => "cohort15",
                 "roles" => "fellow",
                 "placement" => ["client" => "Available", "status" =>"Available"],
@@ -121,6 +128,8 @@ class AISClientMock extends AISClient
      * @param string $id - user's id
      *
      * @return json $user JSON object containing targeted user
+     *
+     * @throws \App\Exceptions\NotFoundException
      */
     public function getUserById($id)
     {

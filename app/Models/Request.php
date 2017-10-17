@@ -61,6 +61,7 @@ class Request extends Model
         "mentee_name" => "required|string",
         "match_date" => "numeric|required"
     ];
+    
     /**
      * Defines Foreign Key Relationship to the user model
      *
@@ -70,6 +71,7 @@ class Request extends Model
     {
         return $this->belongsTo("App\Models\User", "mentee_id");
     }
+    
     /**
      * Defines Foreign Key Relationship to the user model
      *
@@ -79,6 +81,7 @@ class Request extends Model
     {
         return $this->belongsTo("App\Models\User", "mentor_id");
     }
+    
     /**
      * Defines Foreign Key Relationship to the skill model
      *
@@ -88,6 +91,7 @@ class Request extends Model
     {
         return $this->hasMany("App\Models\RequestSkill");
     }
+    
     /**
      * Defines Foreign Key Relationship to the status model
      *
@@ -133,19 +137,19 @@ class Request extends Model
      */
     public static function buildQuery($params)
     {
-        $mentorship_requests = Request::when(
+        $mentorshipRequests = Request::when(
             isset($params["search_query"]),
             function ($query) use ($params) {
-                $search_query = $params["search_query"];
+                $searchQuery = $params["search_query"];
                 return $query->whereHas(
                     "mentor",
-                    function ($query) use ($search_query) {
-                        $query-> where("email", "iLIKE", "%".$search_query."%");
+                    function ($query) use ($searchQuery) {
+                        $query-> where("email", "iLIKE", "%".$searchQuery."%");
                     }
                 )->orWhereHas(
                     "mentee",
-                    function ($query) use ($search_query) {
-                        $query -> where("email", "iLIKE", "%".$search_query."%");
+                    function ($query) use ($searchQuery) {
+                        $query -> where("email", "iLIKE", "%".$searchQuery."%");
                     }
                 );
             }
@@ -199,28 +203,30 @@ class Request extends Model
                 return $query->where("location", $params["location"]);
             }
         );
-
-        return $mentorship_requests;
+        
+        return $mentorshipRequests;
     }
 
     /**
      * Get all unmatched requests that have been made
      * before the given duration
      *
-     * @param integer $duration duration
+     * @param array $params - parameter key value pairs for querying
      *
      * @return array
      */
-    public static function getUnmatchedRequests($duration = 0)
+    public static function getUnmatchedRequests($params = [])
     {
-        $threshold_date = Carbon::now()->subHours($duration);
-        $unmatched_requests = Request::with("requestSkills.skill", "mentee")
-            ->where("status_id", Status::OPEN)
-            ->whereDate("created_at", "<=", $threshold_date)
-            ->orderBy("created_at", "asc")
-            ->get();
+        $duration = isset($params["duration"]) ?? 0;
+        $thresholdDate = Carbon::now()->subHours(intval($duration));
+        $params["status"] = [Status::OPEN];
 
-        return $unmatched_requests;
+        $unmatchedRequests = Request::buildQuery($params)
+            ->with("requestSkills.skill", "mentee")
+            ->whereDate("created_at", "<=", $thresholdDate)
+            ->orderBy("created_at", "asc");
+    
+        return $unmatchedRequests;
     }
 
     /**

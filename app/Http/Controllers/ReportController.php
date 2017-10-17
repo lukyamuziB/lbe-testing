@@ -9,11 +9,23 @@ use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use App\Clients\AISClient;
 
 class ReportController extends Controller
 {
     use RESTActions;
-
+    protected $aisClient;
+    
+    /**
+     * ReportController constructor.
+     *
+     * @param AISClient $aisClient AIS client
+     */
+    public function __construct(AISClient $aisClient)
+    {
+        $this->aisClient = $aisClient;
+    }
+    
     /**
      * Gets all Mentorship Requests by location and period
      *
@@ -30,9 +42,11 @@ class ReportController extends Controller
             }
             // initialize params object
             $params = [];
+            
             if ($period = $this->getRequestParams($request, "period")) {
                 $params["date"] = $period;
             }
+            
             if ($location = $this->getRequestParams($request, "location")) {
                 $params["location"] = $location;
             }
@@ -101,20 +115,21 @@ class ReportController extends Controller
     private function getAverageTimeToMatch($request)
     {
         $params = [];
+        
         if ($period = $this->getRequestParams($request, "period")) {
             $params["date"] = $period;
         }
+        
         if ($location = $this->getRequestParams($request, "location")) {
             $params["location"] = $location;
         }
-
-        $params["status"] = array(
-            Status::MATCHED
-        );
-
+        
+        $params["status"] = array(Status::MATCHED);
+        
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
         }
+        
         $averageTime = MentorshipRequest::buildQuery($params)
             ->groupBy('status_id')
             ->select(
@@ -133,6 +148,7 @@ class ReportController extends Controller
             $timeStamp = strtotime("1970-01-01 ".$averageTimeValue);
             $days = round(($timeStamp/86400));
         }
+        
         return (!$days) ? 0 : $days . "day(s)";
     }
 
@@ -155,13 +171,12 @@ class ReportController extends Controller
                     $query->where('location', $selectedLocation);
                 }
             }
+        )->when(
+            $selectedDate,
+            function ($query) use ($selectedDate) {
+                $query->where('date', '>=', $selectedDate);
+            }
         )
-            ->when(
-                $selectedDate,
-                function ($query) use ($selectedDate) {
-                    $query->where('date', '>=', $selectedDate);
-                }
-            )
         ->where('mentee_approved', true)
         ->where('mentor_approved', true)
         ->count();
@@ -200,5 +215,56 @@ class ReportController extends Controller
             }
         }
         return $requestStatusCount;
+    }
+    
+    /**
+     * Gets unmatched requests
+     *
+     * @param Request $request - the HTTP Request object
+     *
+     * @return report of unmatched request
+     */
+    public function getUnmatchedRequests(Request $request)
+    {
+        $params = [];
+        if ($location = $this->getRequestParams($request, "location")) {
+            $params["location"] = $location;
+        }
+        $params["duration"]  = $request->input("duration") ?? 24;
+        $limit = $request->input("limit") ?? 20;
+
+        $unmatchedRequests = MentorshipRequest::getUnmatchedRequests($params)->paginate($limit);
+
+        $menteeEmails =  $unmatchedRequests->pluck("mentee.email")->toArray();
+        $mentees = $this->aisClient->getUsersByEmail(array_unique($menteeEmails));
+
+        $unmatchedRequestsWithMenteeDetails = [];
+        if ($unmatchedRequests) {
+            foreach ($unmatchedRequests as $unmatchedRequest) {
+                foreach ($mentees["values"] as $mentee) {
+                    if ($mentee["email"] === $unmatchedRequest->mentee->email) {
+                        $unmatchedRequestsWithMenteeDetails[] = (object)[
+                            "id" => $unmatchedRequest->id,
+                            "title" => $unmatchedRequest->title,
+                            "skills" => array_column($unmatchedRequest->requestSkills->toArray(), "skill"),
+                            "createdAt" =>$unmatchedRequest->created_at,
+                            "mentee" => (object)[
+                                "name" => $mentee["first_name"]. " " . $mentee["last_name"],
+                                "avatar" => $mentee["picture"],
+                                "client" => $mentee["client"] ?? "Not placed",
+                            ]
+                        ];
+                    }
+                }
+            }
+        }
+
+        $response = [
+            "requests" => $unmatchedRequestsWithMenteeDetails,
+            "pagination" => [
+                "totalCount" => $unmatchedRequests->total(),
+                "pageSize" => $unmatchedRequests->perPage()]
+        ];
+        return $this->respond(Response::HTTP_OK, $response);
     }
 }
