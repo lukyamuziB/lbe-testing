@@ -54,7 +54,7 @@ class UnmatchedRequestsSuccessCommand extends Command
     {
         try {
             // get all unmatched requests
-            $unmatchedRequests = MentorshipRequest::getUnmatchedRequests(["duration" => 24])->get()->toArray();
+            $unmatchedRequests = MentorshipRequest::getUnmatchedRequests(24)->get()->toArray();
 
             // get all unique emails from the unmatched requests
             $unmatchedRequestsEmails = $this->getUniqueEmails($unmatchedRequests);

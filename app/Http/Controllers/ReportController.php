@@ -230,10 +230,10 @@ class ReportController extends Controller
         if ($location = $this->getRequestParams($request, "location")) {
             $params["location"] = $location;
         }
-        $params["duration"]  = $request->input("duration") ?? 24;
+        $duration  = $request->input("duration") ?? 0;
         $limit = $request->input("limit") ?? 20;
 
-        $unmatchedRequests = MentorshipRequest::getUnmatchedRequests($params)->paginate($limit);
+        $unmatchedRequests = MentorshipRequest::getUnmatchedRequests($duration, $params)->paginate($limit);
 
         $menteeEmails =  $unmatchedRequests->pluck("mentee.email")->toArray();
         $mentees = $this->aisClient->getUsersByEmail(array_unique($menteeEmails));

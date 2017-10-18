@@ -208,16 +208,18 @@ class Request extends Model
     }
 
     /**
-     * Get all unmatched requests that have been made
-     * before the given duration
+     * Get all unmatched requests that have been made over the given
+     * duration. i.e a duration of 24 gets all unmatched requests created
+     * that are older than 24hours.
      *
-     * @param array $params - parameter key value pairs for querying
+     * @param int $duration - threshold duration for query.
+     * @param array $params - parameter key value pairs for additional queries
+     * on the request model.
      *
      * @return array
      */
-    public static function getUnmatchedRequests($params = [])
+    public static function getUnmatchedRequests($duration = 0, $params = [])
     {
-        $duration = isset($params["duration"]) ?? 0;
         $thresholdDate = Carbon::now()->subHours(intval($duration));
         $params["status"] = [Status::OPEN];
 
