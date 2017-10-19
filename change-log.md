@@ -1,3 +1,31 @@
+# V 1.6.0
+
+## Features
+- allow Admins close open Requests
+- allow Admins view Mentor/Mentee profile from User Search
+- add descriptions to User Notifications
+- automatically close abandoned Mentorship Requests for placed Fellows
+- implement weekly Reports for inactive Mentorships
+- include support for Kampala
+- send email reminders to Mentees with inactive Mentorships
+
+## Bug Fixes
+- fix random seed data causing Request tests to fail
+
+# V 1.5.0
+
+## Features
+- implement Requests Matching Skills notification setting
+- implement reminders for Mentees to pick a Mentor
+- show Request Skills report by status
+- add reporting for all Request statuses
+- change "Closed" status to "Completed"
+- add report for Unmatched Requests
+- allow Admins cancel Requests
+
+## Tech Debt
+- round up User Ratings to two decimal places
+
 # V 1.4.4
 
 ## Features
