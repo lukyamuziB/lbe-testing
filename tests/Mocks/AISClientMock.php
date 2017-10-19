@@ -36,7 +36,7 @@ class AISClientMock extends AISClient
                 "first_name" => "Adebayo",
                 "last_name" => "Adesanya",
                 "cohort" => null,
-                "roles" => "staff",
+                "roles" => "fellow",
                 "placement" =>  ["client" => "Available", "status" =>"Available"],
                 "level" => null
             ],

@@ -93,6 +93,15 @@ class Request extends Model
     }
     
     /**
+     * Defines Foreign Key Relationship to the cancelledRequest model
+     *
+     * @return Object
+     */
+    public function requestCancellationReason()
+    {
+        return $this->hasOne("App\Models\RequestCancellationReason");
+    }
+    /**
      * Defines Foreign Key Relationship to the status model
      *
      * @return Object

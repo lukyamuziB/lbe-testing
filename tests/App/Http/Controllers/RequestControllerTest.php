@@ -108,18 +108,18 @@ class RequestControllerTest extends TestCase
         "location" => "Lagos"
     ];
 
-    private function makeUser($id)
+    private function makeUser($id, $role = "Fellow")
     {
         $this->be(
             factory(User::class)->make(
                 [
                     "uid" => $id,
-                    "name" => "Adebayo Adesanya",
+                    "name" => "Inumidun Amao",
                     "email" => "inumidun.amao@andela.com",
-                    "role" => "Admin",
+                    "role" => $role,
                     "slack_handle"=> "@amao",
-                    "firstname" => "Adebayo",
-                    "lastname" => "Adesanya",
+                    "firstname" => "Inumidun",
+                    "lastname" => "Amao",
                 ]
             )
         );
@@ -537,17 +537,26 @@ class RequestControllerTest extends TestCase
     /*
      * Test that a user can cancel their own request
      */
-    public function testCancelRequestSuccess()
+    public function testMenteeCancelRequestSuccess()
     {
-        $this->patch("/api/v1/requests/14/cancel-request");
-
+        $this->patch("/api/v1/requests/14/cancel-request?reason=mentee_cancelling");
         $this->assertResponseOk();
-
         $response = json_decode($this->response->getContent());
-
-        $this->assertEquals(4, $response->status_id);
+        $this->assertEquals("Request Cancelled.", $response->message);
     }
-
+    
+    /*
+     * Test that a user can cancel their own request
+     */
+    public function testAdminCancelRequestSuccess()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->patch("/api/v1/requests/14/cancel-request?reason=admin_cancelling");
+        $this->assertResponseOk();
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Request Cancelled.", $response->message);
+    }
+    
     /*
      * Test should prevent from cancelling someone else's request
      */
