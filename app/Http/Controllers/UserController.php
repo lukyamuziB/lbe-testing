@@ -10,6 +10,8 @@ use App\Models\UserSkill;
 use App\Models\Skill;
 use App\Models\Session;
 use App\Models\Rating;
+use App\Models\Status;
+use App\Models\RequestSkill;
 
 class UserController extends Controller
 {
@@ -26,7 +28,7 @@ class UserController extends Controller
      *
      * @return Response object
      */
-    public function get($id)
+    public function get(Request $request, $id)
     {
         $userDetails = $this->aisClient->getUserById($id);
 
@@ -35,12 +37,13 @@ class UserController extends Controller
         $userSkills = [];
 
         foreach ($userSkillObjects as $skill) {
-            $extractedSkills = (object) [
+            $userSkills[$skill->skill->name] = (object)[
                 "id" => $skill->skill_id,
-                "name"=> $skill->skill->name
+                "name" => $skill->skill->name
             ];
-            array_push($userSkills, $extractedSkills);
         }
+
+        $userSkills = array_values($userSkills);
 
         $requestCount = $this->getMenteeRequests($id);
 
@@ -64,7 +67,24 @@ class UserController extends Controller
             "logged_hours" => $totalLoggedHours,
             "rating" => $averageRating
         ];
-        
+
+        if ($this->getRequestParams($request, "include") === "skills_gained") {
+            $userRequestSkills = $this->getUserGainedSkills($id);
+
+            $userGainedSkills = [];
+
+            foreach ($userRequestSkills as $requestSkill) {
+                $userGainedSkills[$requestSkill->skill->name] = (object)[
+                    "id" => $requestSkill->skill->id,
+                    "name" => $requestSkill->skill->name
+                ];
+            }
+
+            $userGainedSkills = array_values($userGainedSkills);
+
+            $response->skills_gained = $userGainedSkills;
+        }
+
         return $this->respond(Response::HTTP_OK, $response);
     }
 
@@ -78,5 +98,20 @@ class UserController extends Controller
     {
         return MentorshipRequest::where('mentee_id', $userId)
             ->count();
+    }
+
+     /**
+     * Returns all skills from completed requests for a particular user
+     *
+     * @param string $user_id
+     * @return object completed request skills
+     */
+    public function getUserGainedSkills($userId)
+    {
+        return RequestSkill::whereIn('request_id', MentorshipRequest::select("id", "title")
+            ->where('mentee_id', $userId)
+            ->where("status_id", Status::COMPLETED)
+            ->get()->pluck("id"))
+            ->get();
     }
 }

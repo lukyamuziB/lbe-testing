@@ -71,4 +71,41 @@ class UserControllerTest extends TestCase
             
             $this->assertEquals("user not found", $response->message);
     }
+
+    /**
+     * Test for get user details with skills gained successfully
+     *
+     * @return void
+     */
+    public function testGetUserDetailsWithSkillsGainedSuccess()
+    {
+
+        $this->get("/api/v1/users/-KXGy1MTiQgFim7?include=skills_gained");
+
+        $this->assertResponseOk();
+
+        $response = $this->response->getContent();
+
+        $this->assertNotEmpty($response);
+
+        $this->assertContains("id", $response);
+
+        $this->assertContains("email", $response);
+
+        $this->assertContains("name", $response);
+
+        $this->assertContains("picture", $response);
+
+        $this->assertContains("first_name", $response);
+
+        $this->assertContains("cohort", $response);
+
+        $this->assertContains("roles", $response);
+
+        $this->assertContains("placement", $response);
+
+        $this->assertContains("location", $response);
+
+        $this->assertContains("skills_gained", $response);
+    }
 }
