@@ -455,7 +455,6 @@ class RequestController extends Controller
             $this->sendCancellationNotification($mentorshipRequest, $reason);
 
             return $this->respond(Response::HTTP_OK, ["message" => "Request Cancelled."]);
-
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("The specified mentor request was not found");
         } catch (UnauthorizedException $exception) {

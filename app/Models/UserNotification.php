@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserNotification extends Model {
     
-    protected $table = 'user_notifications';
+    protected $table = "user_notifications";
     public $incrementing = false;
     protected $fillable = [
         "user_id",
@@ -25,12 +25,12 @@ class UserNotification extends Model {
 
     public function notification()
     {
-        return $this->belongsTo('App\Models\Notification', 'id', 'id');
+        return $this->belongsTo("App\Models\Notification", "id", "id");
     }
 
     public function user()
     {
-        return $this->belongsTo('App\Models\User', 'user_id', 'user_id');
+        return $this->belongsTo("App\Models\User", "user_id", "user_id");
     }
 
     /**
@@ -43,22 +43,23 @@ class UserNotification extends Model {
      */
     public static function getUserSettings($user_id)
     {
-        $user_settings = UserNotification::where('user_id', $user_id)
-        ->select('id', 'slack', 'email')
-        ->orderBy('id')
+        $user_settings = UserNotification::where("user_id", $user_id)
+        ->select("id", "slack", "email")
+        ->orderBy("id")
         ->get();
 
         if (Notification::count() > count($user_settings)) {
             $notifications = Notification::whereNotIn(
-                'id', $user_settings->pluck("id")
-            )->select('id', 'default')
-            ->orderBy('id')
+                "id",
+                $user_settings->pluck("id")
+            )->select("id", "default", "description")
+            ->orderBy("id")
                 ->get();
-
             $default_settings = [];
             foreach ($notifications as $notification) {
                 $default_settings[] = [
                     "id" => $notification["id"],
+                    "description" => $notification["description"],
                     "email" => $notification["default"] === "email",
                     "slack" => $notification["default"] === "slack",
                 ];
@@ -110,9 +111,9 @@ class UserNotification extends Model {
      */
     public static function getUsersSettingById($user_ids, $notification_id)
     {
-        $users_setting =  UserNotification::select('user_id', 'email', 'slack')
-            ->whereIn('user_id', $user_ids)
-            ->where('id', $notification_id)
+        $users_setting =  UserNotification::select("user_id", "email", "slack")
+            ->whereIn("user_id", $user_ids)
+            ->where("id", $notification_id)
             ->get()
             ->toArray();
 
@@ -120,15 +121,15 @@ class UserNotification extends Model {
         $unfetched_ids = array_diff($user_ids, $fetched_ids);
 
         if ($unfetched_ids) {
-            $default_setting = Notification::select('default')
-                ->where('id', $notification_id)
+            $default_setting = Notification::select("default")
+                ->where("id", $notification_id)
                 ->first();
 
             foreach ($unfetched_ids as $user_id) {
                 $users_setting[] = [
-                    'user_id' => $user_id,
-                    'email' => $default_setting['default'] === 'email',
-                    'slack' => $default_setting['default'] === 'slack'
+                    "user_id" => $user_id,
+                    "email" => $default_setting["default"] === "email",
+                    "slack" => $default_setting["default"] === "slack"
                 ];
             }
         }

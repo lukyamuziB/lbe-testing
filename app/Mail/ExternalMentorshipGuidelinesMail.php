@@ -2,6 +2,7 @@
 namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
+
 /**
  * Unmatched requests mail object sent to placed fellows. This
  * contains guidelines on how they can apply for external mentorships
@@ -38,5 +39,4 @@ class ExternalMentorshipGuidelinesMail extends Mailable
         return $this->from($this->sender)
             ->view('external_mentorship_guidelines');
     }
-
 }

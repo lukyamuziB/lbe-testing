@@ -66,7 +66,9 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
             UnmatchedRequestsSuccessCommand::class
         );
 
-        $message = "Notifications have been sent for 10 placed fellows\nExternal engagement notification sent to placed fellows\n";
+        $message = "Notifications have been ".
+            "sent for 10 placed fellows\nExternal ".
+            "engagement notification sent to placed fellows\n";
 
         $this->assertEquals($command_tester->getDisplay(), $message);
     }

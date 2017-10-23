@@ -46,9 +46,9 @@ class NotificationControllerTest extends TestCase
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
         $this->assertCount(5, $response);
-        $this->assertObjectHasAttribute('id', $response[0]);
-        $this->assertObjectHasAttribute('default', $response[0]);
-        $this->assertObjectHasAttribute('description', $response[0]);
+        $this->assertObjectHasAttribute("id", $response[0]);
+        $this->assertObjectHasAttribute("default", $response[0]);
+        $this->assertObjectHasAttribute("description", $response[0]);
     }
     /**
      * Test - Add new Notification Success
@@ -61,9 +61,9 @@ class NotificationControllerTest extends TestCase
         $default = "slack";
         $description = "settings for my profile settings";
         $data = array(
-            'id' => $id,
-            'default' => $default,
-            'description' => $description
+            "id" => $id,
+            "default" => $default,
+            "description" => $description
         );
 
         $this->post(
@@ -73,8 +73,8 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseStatus(201);
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('id', $response);
-        $this->assertObjectHasAttribute('description', $response);
+        $this->assertObjectHasAttribute("id", $response);
+        $this->assertObjectHasAttribute("description", $response);
         $this->assertEquals($id, $response->id);
         $this->assertEquals($description, $response->description);
     }
@@ -88,9 +88,9 @@ class NotificationControllerTest extends TestCase
         $id = "my profile settings";
         $description = "settings for my profile settings";
         $data = array(
-            'id' => $id,
-            'default' => '',
-            'description' => $description
+            "id" => $id,
+            "default" => "",
+            "description" => $description
         );
 
         $this->post(
@@ -114,9 +114,9 @@ class NotificationControllerTest extends TestCase
          $id = "INDICATES_INTEREST";
          $description = "settings for my profile settings";
          $data = array(
-             'id' => $id,
-             'default' => 'email',
-             'description' => $description
+             "id" => $id,
+             "default" => "email",
+             "description" => $description
          );
  
          $this->post(
@@ -126,7 +126,7 @@ class NotificationControllerTest extends TestCase
  
          $this->assertResponseStatus(409);
          $response = json_decode($this->response->getContent());
-         $this->assertObjectHasAttribute('message', $response);
+         $this->assertObjectHasAttribute("message", $response);
          $this->assertEquals("Notification already exists", $response->message);
      }
 
@@ -141,9 +141,9 @@ class NotificationControllerTest extends TestCase
         $default = "slack"; 
         $description = "settings for my profile settings";
         $data = array(
-            'id' => $id,
-            'default' => $default,
-            'description' => $description
+            "id" => $id,
+            "default" => $default,
+            "description" => $description
         );
 
         $this->put(
@@ -153,8 +153,8 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('id', $response);
-        $this->assertObjectHasAttribute('default', $response);
+        $this->assertObjectHasAttribute("id", $response);
+        $this->assertObjectHasAttribute("default", $response);
         $this->assertEquals($id, $response->id);
         $this->assertEquals($default, $response->default);
         $this->assertEquals($description, $response->description);
@@ -170,9 +170,9 @@ class NotificationControllerTest extends TestCase
         $default = "slack";
         $description = "settings for my profile settings";
         $data = array(
-            'id' => $id,
-            'default' => $default,
-            'description' => $description
+            "id" => $id,
+            "default" => $default,
+            "description" => $description
         );
 
         $this->put(
@@ -182,7 +182,7 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseStatus(404);
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('message', $response);
+        $this->assertObjectHasAttribute("message", $response);
         $this->assertEquals("The specified notification was not found", $response->message);
     }
     
@@ -192,9 +192,9 @@ class NotificationControllerTest extends TestCase
         $default = "";
         $description = "settings for my profile settings";
         $data = array(
-            'id' => $id,
-            'default' => $default,
-            'description' => $description
+            "id" => $id,
+            "default" => $default,
+            "description" => $description
         );
 
         $this->put(
@@ -204,7 +204,7 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseStatus(422);
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('default', $response);
+        $this->assertObjectHasAttribute("default", $response);
         $this->assertEquals("The default field is required.", $response->default[0]);
     }
 
@@ -221,8 +221,8 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseStatus(404);
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('message', $response);
-        $this->assertEquals('The specified notification was not found', $response->message);
+        $this->assertObjectHasAttribute("message", $response);
+        $this->assertEquals("The specified notification was not found", $response->message);
     }
 
      /**
@@ -238,8 +238,8 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('id', $response);
-        $this->assertObjectHasAttribute('description', $response);
+        $this->assertObjectHasAttribute("id", $response);
+        $this->assertObjectHasAttribute("description", $response);
         $this->assertEquals("INDICATES_INTEREST", $response->id);
     }
 
@@ -250,13 +250,14 @@ class NotificationControllerTest extends TestCase
      */
     public function testGetNotifcationByUserIdSuccess()
     {
-        $this->get('/api/v1/user/-KXGy1MT1oimjQgFim7u/settings');
+        $this->get("/api/v1/user/-KXGy1MT1oimjQgFim7u/settings");
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('id', $response[0]);
-        $this->assertObjectHasAttribute('slack', $response[0]);
-        $this->assertObjectHasAttribute('email', $response[0]);
+        $this->assertObjectHasAttribute("id", $response[0]);
+        $this->assertObjectHasAttribute("slack", $response[0]);
+        $this->assertObjectHasAttribute("email", $response[0]);
+        $this->assertObjectHasAttribute("description", $response[0]);
 
     }
 
@@ -268,10 +269,10 @@ class NotificationControllerTest extends TestCase
     public function testUpdateUserSettingsSuccess()
     {
         $data = array(
-            'user_id' => "-K_nkl19N6-EGNa0W8LF",
-            'id' => 'INDICATES_INTEREST',
-            'slack' => true,
-            'email' => true
+            "user_id" => "-K_nkl19N6-EGNa0W8LF",
+            "id" => "INDICATES_INTEREST",
+            "slack" => true,
+            "email" => true
         );
 
         $this->put(
@@ -280,10 +281,10 @@ class NotificationControllerTest extends TestCase
         );
 
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('id', $response);
-        $this->assertObjectHasAttribute('user_id', $response);
-        $this->assertObjectHasAttribute('slack', $response);
-        $this->assertObjectHasAttribute('email', $response);
+        $this->assertObjectHasAttribute("id", $response);
+        $this->assertObjectHasAttribute("user_id", $response);
+        $this->assertObjectHasAttribute("slack", $response);
+        $this->assertObjectHasAttribute("email", $response);
         $this->assertEquals($data["id"], $response->id);
         $this->assertEquals($data["email"], $response->email);
         $this->assertEquals($data["slack"], $response->slack);
@@ -297,10 +298,10 @@ class NotificationControllerTest extends TestCase
     public function testUpdateUserSettingsFailureForInvalidId()
     {
         $data = array(
-            'user_id' => "-K_nkl19N6-EGNa0W8LF",
-            'id' => 'INDICATES_INTEREST',
-            'slack' => true,
-            'email' => true
+            "user_id" => "-K_nkl19N6-EGNa0W8LF",
+            "id" => "INDICATES_INTEREST",
+            "slack" => true,
+            "email" => true
         );
 
         $this->put(
@@ -310,7 +311,7 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseStatus(400);
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute('message', $response);
+        $this->assertObjectHasAttribute("message", $response);
         $this->assertEquals("Notification does not exist", $response->message);
     }
 
@@ -322,8 +323,8 @@ class NotificationControllerTest extends TestCase
      public function testUpdateSettingsFailureForInvalidInput()
      {
          $data = array(
-             'user_id' => "",
-             'id' => '',
+             "user_id" => "",
+             "id" => "",
          );
  
          $this->put(
@@ -333,10 +334,10 @@ class NotificationControllerTest extends TestCase
  
          $this->assertResponseStatus(422);
          $response = json_decode($this->response->getContent());
-         $this->assertObjectHasAttribute('user_id', $response);
-         $this->assertObjectHasAttribute('slack', $response);
-         $this->assertObjectHasAttribute('email', $response);
-         $this->assertObjectHasAttribute('id', $response);
+         $this->assertObjectHasAttribute("user_id", $response);
+         $this->assertObjectHasAttribute("slack", $response);
+         $this->assertObjectHasAttribute("email", $response);
+         $this->assertObjectHasAttribute("id", $response);
          $this->assertEquals("The email field is required.", $response->email[0]);
          $this->assertEquals("The user id field is required.", $response->user_id[0]);
          $this->assertEquals("The slack field is required.", $response->slack[0]);
