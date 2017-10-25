@@ -94,6 +94,7 @@ class UnmatchedRequestsFellowsCommand extends Command
                     new FellowsUnmatchedRequestsMail($requests)
                 );
             }
+
             $count = count($unmatched_requests);
 
             if ($count) {
@@ -160,6 +161,8 @@ class UnmatchedRequestsFellowsCommand extends Command
      * This sorts the array to ensure all placed fellows requests come up first
      *
      * @param array $requests unmatched requests
+     *
+     * @return void
      */
     public function sortRequestsByPlacementStatus(&$requests)
     {

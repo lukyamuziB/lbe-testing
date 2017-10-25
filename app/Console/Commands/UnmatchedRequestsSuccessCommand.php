@@ -4,12 +4,15 @@ namespace App\Console\Commands;
 
 use App\Mail\ExternalMentorshipGuidelinesMail;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
 use Exception;
 
 use App\Clients\AISClient as AISClient;
+use App\Models\Status;
 use App\Models\Request as MentorshipRequest;
+use App\Models\RequestCancellationReason;
 use App\Mail\SuccessUnmatchedRequestsMail;
 
 class UnmatchedRequestsSuccessCommand extends Command
@@ -53,8 +56,22 @@ class UnmatchedRequestsSuccessCommand extends Command
     public function handle()
     {
         try {
+            // get requests with more than three emails sent for them
+            $abandonedRequests = $this->getAbandonedMenteeRequests();
+
+            // find and cancel abandoned requests.
+            if ($abandonedRequests) {
+                $this->cancelRequests($abandonedRequests);
+                $cancelledRequestCount = count($abandonedRequests);
+                $this->info("$cancelledRequestCount abandoned request(s) cancelled");
+            }
+
             // get all unmatched requests
             $unmatchedRequests = MentorshipRequest::getUnmatchedRequests(24)->get()->toArray();
+
+            if (empty($unmatchedRequests)) {
+                return $this->info("There are no unmatched requests");
+            }
 
             // get all unique emails from the unmatched requests
             $unmatchedRequestsEmails = $this->getUniqueEmails($unmatchedRequests);
@@ -66,7 +83,8 @@ class UnmatchedRequestsSuccessCommand extends Command
             if (empty($placedMenteeInfo)) {
                 return $this->info("There are no unmatched requests for placed fellows");
             }
-                // append unmatched request details to mentee's details
+
+            // append unmatched request details to mentee's details
             $unmatchedRequestsDetails
                 = $this->appendPlacementInfo($unmatchedRequests, $placedMenteeInfo);
 
@@ -83,16 +101,95 @@ class UnmatchedRequestsSuccessCommand extends Command
 
             $numberOfRecipients = count($unmatchedRequests);
             $this->info("Notifications have been sent for $numberOfRecipients placed fellows");
+
             // send notifications to placed fellows that made the requests
             $placedMenteeEmails = array_keys($placedMenteeInfo);
-
             Mail::to($placedMenteeEmails)->send(
                 new ExternalMentorshipGuidelinesMail($recipient)
             );
 
+            $this->cacheReqeustEmailCount($unmatchedRequests);
+
             $this->info("External engagement notification sent to placed fellows");
         } catch (Exception $e) {
             $this->error("An error occurred - notifications were not sent");
+        }
+    }
+
+    /**
+     * Caches the number of times email for abandoned request is sent
+     *
+     * @param array $unmatchedRequests -Ids for unmatched requests with sent emails.
+     *
+     * @return void
+     */
+    public function cacheReqeustEmailCount($unmatchedRequests)
+    {
+        $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
+        $requestToCache = [];
+
+        // Creates emails sent counter and saves to cache.
+        foreach ($unmatchedRequests as $unmatchedRequest) {
+            $requestId = $unmatchedRequest['id'];
+
+            $requestToCache[$requestId] = [
+                'email_count' => array_key_exists($requestId, $cachedRequests)
+                    ? intval($cachedRequests[$requestId]['email_count']) + 1 : 1,
+                'mentee_id' => $unmatchedRequest['mentee']['user_id']
+            ];
+        }
+
+        // Add to cache.
+        Cache::forever("requests:emailNotificationCount", $requestToCache);
+    }
+
+    /**
+     * Gets number of requests with 3 emails sent.
+     *
+     * @return array $abandonedMentorRequests - request and mentee ids
+     */
+    public function getAbandonedMenteeRequests()
+    {
+        // Get requests with three or more emails sent
+        $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
+        $abandonedMenteeRequests = [];
+
+        foreach ($cachedRequests as $requestId => $content) {
+            if ($content['email_count'] >= 3) {
+                $abandonedMenteeRequests[] = [
+                    'request_id' => $requestId,
+                    'mentee_id' => $content['mentee_id']
+                ];
+            }
+        }
+
+        return $abandonedMenteeRequests;
+    }
+
+    /**
+     * Cancels requests with the ids provided.
+     *
+     * @param array $requests - All requests that are not matched.
+     *
+     * @return void
+     */
+    public function cancelRequests($requests)
+    {
+
+        $requestIdsToCancel = array_column($requests, "request_id");
+
+        // Cancel requests.
+        MentorshipRequest::whereIn("id", $requestIdsToCancel)->update(["status_id" => Status::CANCELLED]);
+
+        // Add cancellation reasons
+        foreach ($requests as $request) {
+            RequestCancellationReason::create(
+                [
+                    "request_id" => $request['request_id'],
+                    "user_id" => $request['mentee_id'],
+                    "reason" => "Mentee abandoned"
+                ]
+            );
         }
     }
 
@@ -107,7 +204,6 @@ class UnmatchedRequestsSuccessCommand extends Command
     private function getPlacedMenteeInfoByEmails($emails)
     {
         $placedMenteeInfo = [];
-
 
         $response = $this->ais_client->getUsersByEmail($emails);
 

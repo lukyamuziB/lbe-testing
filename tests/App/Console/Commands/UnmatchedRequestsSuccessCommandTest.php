@@ -10,6 +10,7 @@
 
 namespace Tests\App\Console\Commands;
 
+use App\Models\RequestCancellationReason;
 use Symfony\Component\Console\Application;
 
 use TestCase;
@@ -71,6 +72,31 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
             "engagement notification sent to placed fellows\n";
 
         $this->assertEquals($command_tester->getDisplay(), $message);
+    }
+
+    /**
+     * Test if unattended requests are cancelled after 3 successful emails
+     */
+    public function testCancelUnattendedRequests()
+    {
+        $commandTester = null;
+
+        /*
+         * run command 4 times so request is closed instead of sending
+         * fourth email
+         */
+        for ($i = 0; $i < 4; $i++) {
+            $commandTester = $this->executeCommand(
+                $this->application,
+                "notify:unmatched-requests:success",
+                UnmatchedRequestsSuccessCommand::class
+            );
+        }
+
+        $message = "10 abandoned request(s) cancelled\n".
+            "There are no unmatched requests\n";
+
+        $this->assertEquals($commandTester->getDisplay(), $message);
     }
 
     /**
@@ -157,7 +183,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
         );
 
         $this->assertEquals(
-            "An error occurred - notifications were not sent\n",
+            "There are no unmatched requests\n",
             $command_tester->getDisplay()
         );
     }
