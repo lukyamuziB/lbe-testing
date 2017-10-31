@@ -14,18 +14,18 @@ class NotificationsTableSeeder extends Seeder
         $data = [
             ["INDICATES_INTEREST" => ["default" => "slack",
             "description" => 
-            "a user recieves notification when someone indicates interest"]],
+            "You'll be notified when someone indicates interest"]],
             ["SELECTED_AS_MENTOR" => ["default" => "slack",
             "description" => 
-            "a user recieves notification when he\she is selected as mentor"]],
+            "You'll be notified when someone selects you as a mentor"]],
             ["LOG_SESSIONS_REMINDER" => ["default" => "slack",
             "description" => 
-            "a user recieves notification when someone logs session remainder"]],
+            "You'll be notified when someone logs a session"]],
             ["WEEKLY_REQUESTS_REPORTS" => ["default" => "email",
             "description" => 
-            "a user recieves notification when there's a weekly request report"]],
+            "You'll receive a weekly list of open requests"]],
             ["REQUESTS_MATCHING_SKILLS" => ["default" => "slack",
-            "description" => "a user makes a request matching my skills"]]
+            "description" => "You'll be notified when someone requests one of your skills"]]
         ];
         foreach ($data as $entry) {
             foreach ($entry as $title => $body) {

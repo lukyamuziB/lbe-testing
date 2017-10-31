@@ -37,27 +37,32 @@ class UserNotification extends Model {
      * Get all a user's notification settings
      * if no settings exist, it returns the defaults of all notifications
      *
-     * @param string $user_id user's unique id
+     * @param string $userId user's unique id
      *
-     * @return array $user_settings all notification settings for user
+     * @return array $userSettings all notification settings for user
      */
-    public static function getUserSettings($user_id)
+    public static function getUserSettings($userId)
     {
-        $user_settings = UserNotification::where("user_id", $user_id)
+        $userSettings = UserNotification::with(
+            ['notification' => function ($query) {
+                $query->select('id', 'description');
+            }]
+        )
+        ->where("user_id", $userId)
         ->select("id", "slack", "email")
         ->orderBy("id")
         ->get();
-
-        if (Notification::count() > count($user_settings)) {
+   
+        if (Notification::count() > count($userSettings)) {
             $notifications = Notification::whereNotIn(
                 "id",
-                $user_settings->pluck("id")
+                $userSettings->pluck("id")
             )->select("id", "default", "description")
             ->orderBy("id")
                 ->get();
-            $default_settings = [];
+            $defaultSettings = [];
             foreach ($notifications as $notification) {
-                $default_settings[] = [
+                $defaultSettings[] = [
                     "id" => $notification["id"],
                     "description" => $notification["description"],
                     "email" => $notification["default"] === "email",
@@ -65,75 +70,84 @@ class UserNotification extends Model {
                 ];
             }
             
-            $user_settings = array_merge(
-                $default_settings, $user_settings->toArray()
+            $userSettings = array_map(
+                function ($setting) {
+                    $setting["description"] = $setting["notification"]["description"];
+                    unset($setting["notification"]);
+                    return $setting;
+                },
+                $userSettings->toArray()
+            );
+            $allUserSettings = array_merge(
+                $defaultSettings,
+                $userSettings
             );
         }
-        return $user_settings;
+        return $allUserSettings;
     }
 
     /**
      * Get user notification setting by user_id and notification id
      *
-     * @param integer $user_id         Unique ID used to identify the users
-     * @param integer $notification_id Unique ID used to identify the notification
+     * @param integer $userId         Unique ID used to identify the users
+     * @param integer $notificationId Unique ID used to identify the notification
      *
-     * @return UserNotification $user_setting a user's setting for notification
+     * @return UserNotification $userSetting a user's setting for notification
      */
-    public static function getUserSettingById($user_id, $notification_id)
+    public static function getUserSettingById($userId, $notificationId)
     {
-        $user_setting = UserNotification::where("user_id", $user_id)
-            ->where("id", $notification_id)
+        $userSetting = UserNotification::where("user_id", $userId)
+            ->where("id", $notificationId)
             ->first();
 
-        if (!$user_setting) {
-            $default_setting = Notification::select("default")
-                ->where("id", $notification_id)
+        if (!$userSetting) {
+            $defaultSetting = Notification::select("default")
+                ->where("id", $notificationId)
                 ->first();
 
-            $user_setting = (object)[
-                "notification_id" => $notification_id,
-                "slack" => $default_setting["default"] === "slack",
-                "email" => $default_setting["default"] === "email"
+            $userSetting = (object)[
+                "notification_id" => $notificationId,
+                "slack" => $defaultSetting["default"] === "slack",
+                "email" => $defaultSetting["default"] === "email"
             ];
         }
 
-        return $user_setting;
+        return $userSetting;
     }
 
     /**
      * Get notification settings for multiple users
      *
-     * @param array  $user_ids        user IDs
-     * @param string $notification_id the notification ID
+     * @param array  $userIds        user IDs
+     * @param string $notificationId the notification ID
      *
      * @return array
      */
-    public static function getUsersSettingById($user_ids, $notification_id)
+    public static function getUsersSettingById($userIds, $notificationId)
     {
-        $users_setting =  UserNotification::select("user_id", "email", "slack")
-            ->whereIn("user_id", $user_ids)
-            ->where("id", $notification_id)
+        $usersSetting =  UserNotification::select("user_id", "email", "slack")
+            ->whereIn("user_id", $userIds)
+            ->where("id", $notificationId)
             ->get()
             ->toArray();
 
-        $fetched_ids = array_column($users_setting, "user_id");
-        $unfetched_ids = array_diff($user_ids, $fetched_ids);
+        $fetchedIds = array_column($usersSetting, "user_id");
+        $unfetchedIds = array_diff($userIds, $fetchedIds);
 
-        if ($unfetched_ids) {
-            $default_setting = Notification::select("default")
-                ->where("id", $notification_id)
+        if ($unfetchedIds) {
+            $defaultSetting = Notification::select("default")
+                ->where("id", $notificationId)
                 ->first();
 
-            foreach ($unfetched_ids as $user_id) {
-                $users_setting[] = [
-                    "user_id" => $user_id,
-                    "email" => $default_setting["default"] === "email",
-                    "slack" => $default_setting["default"] === "slack"
+            foreach ($unfetchedIds as $userId) {
+                $usersSetting[] = [
+                    "user_id" => $userId,
+                    "email" => $defaultSetting["default"] === "email",
+                    "slack" => $defaultSetting["default"] === "slack"
                 ];
             }
         }
 
-        return $users_setting;
+        return $usersSetting;
     }
 }
