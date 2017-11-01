@@ -177,10 +177,10 @@ class ReportControllerTest extends TestCase
     public function testGetInactiveMentorshipsReportSuccess()
     {
         $today = Carbon::now();
-        $startDate = $today->subWeek(3)->toDateString();
+        $startDate = $today->subWeek(2)->toDateString();
         $this->get("/api/v1/reports/inactive-mentorships?start_date=".$startDate);
         $response = json_decode($this->response->getContent(), true);
-        $this->assertTrue(is_integer($response[0]["count"]));
+        $this->assertEquals(10, $response[1]["count"]);
     }
 
     public function testGetInactiveMentorshipsReportFailureNotAdmin()
