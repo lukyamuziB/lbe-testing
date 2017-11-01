@@ -91,6 +91,11 @@ class Request extends Model
     {
         return $this->hasMany("App\Models\RequestSkill");
     }
+
+    public function sessions()
+    {
+        return $this->hasMany("App\Models\Session");
+    }
     
     /**
      * Defines Foreign Key Relationship to the cancelledRequest model
