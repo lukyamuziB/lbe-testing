@@ -13,40 +13,6 @@ use TestCase;
 class GoogleCalendarHelperTest extends TestCase
 {
     /**
-     * Test format calendar timezone
-     * The tested output is the timezone in a format contentinent/city
-     *
-     * @return void
-     */
-    public function testFormatCalendarTimezoneSuccess()
-    {
-
-        $this->assertEquals(
-            "Africa/Nairobi",
-            formatCalendarTimezone("EAT")
-        );
-
-        $this->assertEquals(
-            "Africa/Lagos",
-            formatCalendarTimezone("WAT")
-        );
-    }
-
-
-    /**
-     * Test format calendar timezone failure
-     *
-     * @return void
-     */
-    public function testFormatCalendarTimezoneFailure()
-    {
-        $this->expectException(NotFoundException::class);
-        $this->expectExceptionMessage("Timezone not found");
-        formatCalendarTimezone("EST");
-    }
-
-
-    /**
      * Test get calendar recursion rule
      *
      * @return void

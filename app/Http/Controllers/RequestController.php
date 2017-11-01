@@ -461,7 +461,7 @@ class RequestController extends Controller
             return $this->respond(Response::HTTP_FORBIDDEN, ["message" => $exception->getMessage()]);
         }
     }
-    
+
     /**
      * Send slack notification for cancelled request
      *
@@ -479,7 +479,7 @@ class RequestController extends Controller
             opened on `{$createdAt}` has been cancelled \n*REASON:* `{$reason}`.";
         $this->slackUtility->sendMessage([$slackId], $slackMessage);
     }
-    
+
     /**
      * Maps the skills in the request body by type and
      * saves them in the request_skills table
@@ -561,6 +561,7 @@ class RequestController extends Controller
             "status_id" => $result->status_id,
             "match_date" => $result->match_date,
             "duration" => $result->duration,
+            "location" => $result->location,
             "pairing" => $result->pairing,
             "request_skills" => $this->formatRequestSkills($result->request_skills),
             "status" => $result->status->name,
@@ -717,8 +718,7 @@ class RequestController extends Controller
         $sessionStartTime = $mentorshipRequest->pairing["start_time"] . ":00";
         $sessionEndTime = $mentorshipRequest->pairing["end_time"] . ":00";
         $duration = $mentorshipRequest->duration;
-
-        $timezone = formatCalendarTimezone($mentorshipRequest->pairing["timezone"]);
+        $timezone = $mentorshipRequest->pairing["timezone"];
 
         //Format start date and end date to 'Y-m-sTH:m:s' format
         $eventStartDate = calculateEventStartDate(
