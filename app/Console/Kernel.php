@@ -21,9 +21,10 @@ class Kernel extends ConsoleKernel
         Commands\EncryptGoogleCredentialsCommand::class,
         Commands\UnmatchedRequestsWithInterestCommand::class,
         Commands\UpdateRatingsUserCommand::class,
-        Commands\UpdateCompletedRequestStatusCommand::class
-        ];
+        Commands\UpdateCompletedRequestStatusCommand::class,
+        Commands\InactiveMentorshipNotificationCommand::class
 
+    ];
     /**
      * Define the application's command schedule.
      *
@@ -41,6 +42,6 @@ class Kernel extends ConsoleKernel
         $schedule->command("notify:unmatched-requests:with-interests")
             ->dailyAt("12:00");
         $schedule->command("update:requests:completed")->dailyAt("12:00");
+        $schedule->command("notify:inactive-mentorships")->dailyAt("9:00");
     }
-
 }

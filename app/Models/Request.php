@@ -115,7 +115,6 @@ class Request extends Model
     {
         return $this->belongsTo("App\Models\Status");
     }
-
     /**
      * Gets the timestamp of how many weeks ago request was made
      *
