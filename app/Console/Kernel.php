@@ -38,7 +38,7 @@ class Kernel extends ConsoleKernel
         $schedule->command("cache:slack-users")->dailyAt("12:00");
         $schedule->command("notify:unapproved-sessions")->hourly();
         $schedule->command("notify:unmatched-requests:fellows")
-            ->weekly()->mondays()->at('9:00');
+            ->weekly()->tuesdays()->timezone("Africa/Lagos")->at("10:00");
         $schedule->command("notify:unmatched-requests:with-interests")
             ->dailyAt("12:00");
         $schedule->command("update:requests:completed")->dailyAt("12:00");
