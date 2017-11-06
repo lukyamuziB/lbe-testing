@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\V1;
 
 use App\Exceptions\AccessDeniedException;
 use App\Exceptions\NotFoundException;
@@ -174,12 +174,14 @@ class SessionController extends Controller
             $session_date = Carbon::createFromTimestamp($date, $timezone);
 
             $sessions_logged = $this->getSessionByRequestIdAndDate(
-                $request_id, $session_date
+                $request_id,
+                $session_date
             );
-
             if (sizeof($sessions_logged)) {
-                return $this->respond(Response::HTTP_CONFLICT,
-                    ["message" => "Session already logged"]);
+                return $this->respond(
+                    Response::HTTP_CONFLICT,
+                    ["message" => "Session already logged"]
+                );
             }
             $approver = [];
             if ($user_id === $mentorship_request->mentor_id) {
@@ -256,13 +258,11 @@ class SessionController extends Controller
                     "You do not have permission to approve this session"
                 );
             }
-
             //Send Sessions to Freckle
             $sessionApproved = $session->fill($approver)->save();
             if ($sessionApproved) {
                 return $this->logSessionToFreckle($session, $mentorship_request);
             }
-
         } catch (ModelNotFoundException $exception) {
             throw new NotFoundException("Session does not exist");
         } catch (Exception $exception) {
@@ -300,7 +300,6 @@ class SessionController extends Controller
                     "You do not have permission to reject this session"
                 );
         }
-        
         $session->fill($values)->save();
         return $this->respond(Response::HTTP_OK, $session);
     }
@@ -358,7 +357,6 @@ class SessionController extends Controller
                 );
 
                 $this->freckle_client->postEntry($data);
-
             } else {
                 throw new TransferException();
             }

@@ -1,10 +1,11 @@
-<?php namespace App\Http\Controllers;
+<?php namespace App\Http\Controllers\V2;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Skill;
 
-trait RESTActions {
+trait RESTActions
+{
 
     protected $client;
 
@@ -13,7 +14,7 @@ trait RESTActions {
         $this->middleware('auth');
     }
 
-    public function all(Request $request)
+    public function all()
     {
         $m = self::MODEL;
         return $this->respond(Response::HTTP_OK, ["data" => $m::all()]);
@@ -23,7 +24,7 @@ trait RESTActions {
     {
         $m = self::MODEL;
         $model = $m::find($id);
-        if(is_null($model)){
+        if (is_null($model)) {
             return $this->respond(Response::HTTP_NOT_FOUND);
         }
         return $this->respond(Response::HTTP_OK, $model);
@@ -41,7 +42,7 @@ trait RESTActions {
         $m = self::MODEL;
         $this->validate($request, $m::$rules);
         $model = $m::find($id);
-        if(is_null($model)){
+        if (is_null($model)) {
             return $this->respond(Response::HTTP_NOT_FOUND);
         }
         $model->update($request->all());
@@ -51,7 +52,7 @@ trait RESTActions {
     public function remove($id)
     {
         $m = self::MODEL;
-        if(is_null($m::find($id))){
+        if (is_null($m::find($id))) {
             return $this->respond(Response::HTTP_NOT_FOUND);
         }
         $m::destroy($id);
@@ -62,5 +63,4 @@ trait RESTActions {
     {
         return response()->json($data, $status);
     }
-
 }

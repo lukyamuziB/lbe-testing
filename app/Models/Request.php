@@ -62,6 +62,10 @@ class Request extends Model
         "match_date" => "numeric|required"
     ];
     
+    public function session()
+    {
+        return $this->hasMany("App\Models\Session", "request_id");
+    }
     /**
      * Defines Foreign Key Relationship to the user model
      *

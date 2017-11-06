@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\V1;
 
 use App\Models\Request as MentorshipRequest;
 use Laravel\Lumen\Routing\Controller as BaseController;

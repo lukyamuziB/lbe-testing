@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\V1;
 
 use App\Models\Skill;
 use App\Models\UserSkill;
@@ -29,7 +29,7 @@ class SkillController extends Controller
 
         if (array_keys($input) === ['id']) {
             return $this->getUserSkills($input['id']);
-        } else if (array_keys($input) === ['q']) {
+        } elseif (array_keys($input) === ['q']) {
             if (!preg_match("/^[a-zA-Z0-9-]+$/", $input['q'])) {
                 return $this->respond(
                     Response::HTTP_BAD_REQUEST,
@@ -42,7 +42,10 @@ class SkillController extends Controller
 
             return $this->respond(Response::HTTP_OK, ["data" => $matched_skill]);
         } else {
-            return $this->respond(Response::HTTP_OK, ["data" => $m::withCount('requestSkills', 'userSkills')->orderBy('name')->get()]);
+            return $this->respond(
+                Response::HTTP_OK,
+                ["data" => $m::withCount('requestSkills', 'userSkills')->orderBy('name')->get()]
+            );
         }
     }
 
@@ -61,9 +64,12 @@ class SkillController extends Controller
                                 ->toArray();
 
         // pluck just skills out
-        $skills = array_map(function ($user_skill) {
-          return $user_skill["skill"];
-        }, $user_skills);
+        $skills = array_map(
+            function ($user_skill) {
+                return $user_skill["skill"];
+            },
+            $user_skills
+        );
 
         $response = [
             "data" => $skills
@@ -84,7 +90,8 @@ class SkillController extends Controller
 
         if (Skill::where('name', 'ilike', $request->name)->exists()) {
             return $this->respond(
-                Response::HTTP_CONFLICT, ["message" => "Skill already exists"]
+                Response::HTTP_CONFLICT,
+                ["message" => "Skill already exists"]
             );
         }
 
@@ -133,12 +140,12 @@ class SkillController extends Controller
      *
      * @return object Response object
      */
-    public function remove(Request $request, $id)
+    public function remove($id)
     {
         try {
             if (UserSkill::where('skill_id', $id)->exists()
                 || \App\Models\RequestSkill::where('skill_id', $id)->exists()
-            ){
+            ) {
                 return $this->respond(Response::HTTP_FORBIDDEN, ["data" => "Skill is currently in use"]);
             }
             

@@ -63,7 +63,7 @@ $app->singleton(
 */
 
 $app->middleware([
-   App\Http\Middleware\ExampleMiddleware::class,
+    App\Http\Middleware\ExampleMiddleware::class,
     \Barryvdh\Cors\HandleCors::class,
 ]);
 
@@ -109,8 +109,12 @@ $app->configure('notifications');
 |
 */
 
-$app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
-    require __DIR__.'/../routes/web.php';
+$app->group(['namespace' => 'App\Http\Controllers\V1'], function ($app) {
+    require __DIR__.'/../routes/V1/web.php';
+});
+
+$app->group(['namespace' => 'App\Http\Controllers\V2'], function ($app) {
+    require __DIR__.'/../routes/V2/web.php';
 });
 
 return $app;

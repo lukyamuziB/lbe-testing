@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,7 +25,7 @@ class NotificationController extends Controller
      * @return Response object - all notifications object
      */
     public function all()
-    { 
+    {
         $notifications = Notification::all();
 
         return $this->respond(Response::HTTP_OK, $notifications);
@@ -50,7 +50,6 @@ class NotificationController extends Controller
         $new_notification = Notification::create($request->all());
 
         return $this->respond(Response::HTTP_CREATED, $new_notification);
-
     }
 
     /**
@@ -70,7 +69,7 @@ class NotificationController extends Controller
         $notification = Notification::find($id);
         $notification->update($request->all());
 
-        return $this->respond(Response::HTTP_OK,  $notification);
+        return $this->respond(Response::HTTP_OK, $notification);
     }
 
     /**
@@ -81,7 +80,7 @@ class NotificationController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function delete(Request $request, $id)
+    public function delete($id)
     {
         if (!Notification::where('id', $id)->exists()) {
             throw new NotFoundException("The specified notification was not found");
@@ -127,7 +126,7 @@ class NotificationController extends Controller
                 [
                     "user_id" => $user_id,
                     "id" => $notification_id
-                ], 
+                ],
                 [
                     "slack" => $request->slack,
                     "email" => $request->email

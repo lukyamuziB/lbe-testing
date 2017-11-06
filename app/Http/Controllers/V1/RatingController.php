@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers;
+<?php
+
+namespace App\Http\Controllers\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,7 +17,7 @@ class RatingController extends Controller
     /**
      *  Mentee rates a specific session after logging it
      *
-     * @param Request|object $request -request payload from the user
+     * @param  Request|object $request -request payload from the user
      * @return object - ratings object that has been created
      */
     public function rateSession(Request $request)
@@ -33,7 +35,6 @@ class RatingController extends Controller
                     ["message" => "You are not allowed to rate this session"]
                 );
             }
-
             $session_id = $request->input('session_id');
             $values = json_encode($request->input('values'), true);
             $scale = $request->input('scale');
@@ -53,7 +54,6 @@ class RatingController extends Controller
             ];
 
             return $this->respond(Response::HTTP_CREATED, $response);
-
         } catch (QueryException $exception) {
             return $this->respond(
                 Response::HTTP_BAD_REQUEST,
@@ -65,6 +65,5 @@ class RatingController extends Controller
                 ["message" => "Session does not exist"]
             );
         }
-
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\V1;
 
 use \Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -29,14 +29,13 @@ use App\Models\RequestExtension;
 /**
  * Class RequestController
  *
- * @package App\Http\Controllers
+ * @package App\Http\V1\Controllers
  */
-
 class RequestController extends Controller
 {
     const MODEL = "App\Models\Request";
     const MODEL2 = "App\Models\RequestSkill";
-
+    
     use RESTActions;
 
     protected $aisClient;
