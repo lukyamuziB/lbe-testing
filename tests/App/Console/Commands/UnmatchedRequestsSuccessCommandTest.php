@@ -44,17 +44,17 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
 
     /**
      * Delete data from tables
-      */
+     */
     private function clearTables()
     {
-         RequestSkill::where("id", ">", 0)->forceDelete();
-         Rating::where("session_id", ">", 0)->forceDelete();
-         Session::where("id", ">", 0)->forceDelete();
-         RequestExtension::where("request_id", ">", 0)->forceDelete();
-         Request::where("id", ">", 0)->forceDelete();
-         User::where("user_id", "not", 0)->forceDelete();
+        RequestSkill::where("id", ">", 0)->forceDelete();
+        Rating::where("session_id", ">", 0)->forceDelete();
+        Session::where("id", ">", 0)->forceDelete();
+        RequestExtension::where("request_id", ">", 0)->forceDelete();
+        Request::where("id", ">", 0)->forceDelete();
+        User::where("user_id", "not", 0)->forceDelete();
     }
- 
+
     /**
      * Test if handle works correctly when there are
      * unmatched placed fellow request
@@ -75,17 +75,17 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
     }
 
     /**
-     * Test if unattended requests are cancelled after 3 successful emails
+     * Test if unattended requests are cancelled after 2 successful emails
      */
     public function testCancelUnattendedRequests()
     {
         $commandTester = null;
 
         /*
-         * run command 4 times so request is closed instead of sending
-         * fourth email
+         * run command 3 times so request is closed instead of sending
+         * third email
          */
-        for ($i = 0; $i < 4; $i++) {
+        for ($i = 0; $i < 3; $i++) {
             $commandTester = $this->executeCommand(
                 $this->application,
                 "notify:unmatched-requests:success",
@@ -119,9 +119,9 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
             ]
         );
 
-         /*
-         * create request for un-placed fellow
-         */
+        /*
+        * create request for un-placed fellow
+        */
         Request::create(
             [
                 'mentee_id' => "-KXGy1MTimjQgFim7u",
@@ -160,7 +160,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
      */
     public function testHandleFailureForInvalidData()
     {
-         // delete all valid data
+        // delete all valid data
         $this->clearTables();
 
         /*

@@ -22,15 +22,15 @@ class UnmatchedRequestsSuccessCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'notify:unmatched-requests:success';
+    protected $signature = "notify:unmatched-requests:success";
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sends an email notification when mentorship 
-    requests by placed fellows do not get matched within 24 hours';
+    protected $description = "Sends an email notification when mentorship 
+    requests by placed fellows do not get matched within 24 hours";
 
     protected $ais_client;
     protected $base_url;
@@ -45,7 +45,7 @@ class UnmatchedRequestsSuccessCommand extends Command
         parent::__construct();
 
         $this->ais_client = $ais_client;
-        $this->base_url = getenv('LENKEN_FRONTEND_BASE_URL');
+        $this->base_url = getenv("LENKEN_FRONTEND_BASE_URL");
     }
 
     /**
@@ -56,7 +56,7 @@ class UnmatchedRequestsSuccessCommand extends Command
     public function handle()
     {
         try {
-            // get requests with more than three emails sent for them
+            // get requests with more than two emails sent for them
             $abandonedRequests = $this->getAbandonedMenteeRequests();
 
             // find and cancel abandoned requests.
@@ -88,7 +88,7 @@ class UnmatchedRequestsSuccessCommand extends Command
             $unmatchedRequestsDetails
                 = $this->appendPlacementInfo($unmatchedRequests, $placedMenteeInfo);
 
-            $appEnvironment = getenv('APP_ENV');
+            $appEnvironment = getenv("APP_ENV");
 
             $recipient = Config::get(
                 "notifications.{$appEnvironment}.placed_unmatched_fellows_notification_email"
@@ -108,7 +108,8 @@ class UnmatchedRequestsSuccessCommand extends Command
                 new ExternalMentorshipGuidelinesMail($recipient)
             );
 
-            $this->cacheReqeustEmailCount($unmatchedRequests);
+            // Cache placed fellow mentorship requests email count.
+            $this->cacheRequestEmailCount($unmatchedRequestsDetails);
 
             $this->info("External engagement notification sent to placed fellows");
         } catch (Exception $e) {
@@ -119,23 +120,22 @@ class UnmatchedRequestsSuccessCommand extends Command
     /**
      * Caches the number of times email for abandoned request is sent
      *
-     * @param array $unmatchedRequests -Ids for unmatched requests with sent emails.
+     * @param array $unmatchedRequestDetails - Placed mentee details
+     * for unmatched requests.
      *
      * @return void
      */
-    public function cacheReqeustEmailCount($unmatchedRequests)
+    public function cacheRequestEmailCount($unmatchedRequestDetails)
     {
         $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
         $requestToCache = [];
 
         // Creates emails sent counter and saves to cache.
-        foreach ($unmatchedRequests as $unmatchedRequest) {
-            $requestId = $unmatchedRequest['id'];
-
+        foreach ($unmatchedRequestDetails as $requestId => $unmatchedRequest) {
             $requestToCache[$requestId] = [
-                'email_count' => array_key_exists($requestId, $cachedRequests)
-                    ? intval($cachedRequests[$requestId]['email_count']) + 1 : 1,
-                'mentee_id' => $unmatchedRequest['mentee']['user_id']
+                "emailCount" => array_key_exists($requestId, $cachedRequests)
+                    ? intval($cachedRequests[$requestId]["emailCount"]) + 1 : 1,
+                "mentee_id" => $unmatchedRequest["mentee_id"]
             ];
         }
 
@@ -144,21 +144,21 @@ class UnmatchedRequestsSuccessCommand extends Command
     }
 
     /**
-     * Gets number of requests with 3 emails sent.
+     * Gets number of requests with 2 emails sent.
      *
      * @return array $abandonedMentorRequests - request and mentee ids
      */
     public function getAbandonedMenteeRequests()
     {
-        // Get requests with three or more emails sent
+        // Get requests with two emails sent
         $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
         $abandonedMenteeRequests = [];
 
         foreach ($cachedRequests as $requestId => $content) {
-            if ($content['email_count'] >= 3) {
+            if ($content["emailCount"] >= 2) {
                 $abandonedMenteeRequests[] = [
-                    'request_id' => $requestId,
-                    'mentee_id' => $content['mentee_id']
+                    "request_id" => $requestId,
+                    "mentee_id" => $content["mentee_id"]
                 ];
             }
         }
@@ -185,8 +185,8 @@ class UnmatchedRequestsSuccessCommand extends Command
         foreach ($requests as $request) {
             RequestCancellationReason::create(
                 [
-                    "request_id" => $request['request_id'],
-                    "user_id" => $request['mentee_id'],
+                    "request_id" => $request["request_id"],
+                    "user_id" => $request["mentee_id"],
                     "reason" => "Mentee abandoned"
                 ]
             );
@@ -259,13 +259,14 @@ class UnmatchedRequestsSuccessCommand extends Command
                 if ($request["mentee"]["email"] === $fellow["email"]) {
                     $menteeRequestData[$request["id"]] = [
                         "name" => $fellow["name"],
+                        "mentee_id" => $request['mentee']['user_id'],
                         "placement" => $fellow["placement"],
                         "client" => $fellow["client"],
                         "email" => $fellow["email"],
                         "avatar" => $fellow["avatar"],
                         "request_title" => $request["title"],
                         "request_url"
-                        => $this->base_url . '/requests/' . $request["id"],
+                        => $this->base_url . "/requests/" . $request["id"],
                         "request_skills"
                         => array_column($request["request_skills"], "skill")
                     ];
