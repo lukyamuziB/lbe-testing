@@ -125,19 +125,17 @@ class UnmatchedRequestsSuccessCommand extends Command
      *
      * @return void
      */
-    public function cacheRequestEmailCount($unmatchedRequests)
+    public function cacheRequestEmailCount($unmatchedRequestDetails)
     {
         $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
         $requestToCache = [];
 
         // Creates emails sent counter and saves to cache.
-        foreach ($unmatchedRequests as $unmatchedRequest) {
-            $requestId = $unmatchedRequest["id"];
-
+        foreach ($unmatchedRequestDetails as $requestId => $unmatchedRequest) {
             $requestToCache[$requestId] = [
                 "emailCount" => array_key_exists($requestId, $cachedRequests)
                     ? intval($cachedRequests[$requestId]["emailCount"]) + 1 : 1,
-                "mentee_id" => $unmatchedRequest["mentee"]["user_id"]
+                "mentee_id" => $unmatchedRequest["mentee_id"]
             ];
         }
 
