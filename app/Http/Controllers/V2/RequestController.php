@@ -27,12 +27,17 @@ class RequestController extends Controller
     {
         $userId = $request->user()->uid;
 
-        $mentorshipRequests = MentorshipRequest::where("mentor_id", "=", $userId)
-                                    ->orWhere("mentee_id", "=", $userId)
-                                    ->where("status_id", "=", Status::COMPLETED)
-                                    ->with("session.rating")
-                                    ->with("requestSkills")
-                                    ->get();
+        $mentorshipRequests = MentorshipRequest::where("status_id", STATUS::COMPLETED)
+                                            ->where(
+                                                function ($query) use ($userId) {
+                                                    $query->where("mentor_id", $userId)
+                                                        ->orWhere("mentee_id", $userId);
+                                                }
+                                            )
+                                            ->with("session.rating")
+                                            ->with("requestSkills")
+                                            ->get();
+
 
         $this->appendRating($mentorshipRequests);
         $formattedRequests = $this->formatRequestData($mentorshipRequests);
@@ -76,8 +81,7 @@ class RequestController extends Controller
      * Format request data
      * extracts returned request queries to match data on client side
      *
-     * @param object $result - the result object
-     * @param object $extensionRequest the request extension object
+     * @param object $requests - the result object
      *
      * @return object
      */
