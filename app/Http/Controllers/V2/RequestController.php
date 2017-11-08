@@ -17,6 +17,47 @@ class RequestController extends Controller
     use RESTActions;
 
     /**
+     * Gets Mentorship Requests
+     *
+     * @param Request $request - request  object
+     *
+     * @return Array $response - A formatted array of Mentorship Requests
+     */
+    public function getRequestsPool(Request $request)
+    {
+        // Get all request params
+        $params = [];
+        $limit = $request->input("limit") ?
+            intval($request->input("limit")) : 20;
+        
+        $params["user"] = $request->user()->uid;
+        if ($requestsType = $this->getRequestParams($request, "category")) {
+            $params["category"] = $requestsType;
+        }
+        if ($locations = $this->getRequestParams($request, "locations")) {
+            $params["locations"] = explode(",", $locations);
+        }
+        if ($lengths = $this->getRequestParams($request, "lengths")) {
+            $params["lengths"] = explode(",", $lengths);
+        }
+        if ($skills = $this->getRequestParams($request, "skills")) {
+            $params["skills"] = explode(",", $skills);
+        }
+
+        $mentorshipRequests  = MentorshipRequest::buildPoolFilterQuery($params)
+                                                ->orderBy("created_at", "desc")
+                                                ->paginate($limit);
+
+        $response["requests"] = $this->formatRequestData($mentorshipRequests);
+        $response["pagination"] = [
+            "totalCount" => $mentorshipRequests->total(),
+            "pageSize" => $mentorshipRequests->perPage()
+        ];
+        
+        return $this->respond(Response::HTTP_OK, $response);
+    }
+    
+    /**
      * Gets all completed Mentorship Requests belonging to the logged in user
      *
      * @param Request $request - request  object
@@ -44,7 +85,6 @@ class RequestController extends Controller
 
         return $this->respond(Response::HTTP_OK, $formattedRequests);
     }
-
 
     /**
      * Calculate and attach the rating of each request Object
@@ -81,30 +121,31 @@ class RequestController extends Controller
      * Format request data
      * extracts returned request queries to match data on client side
      *
-     * @param object $requests - the result object
+     * @param Object $requests - collection of requests
      *
-     * @return object
+     * @return array - array of formatted requests
      */
     private function formatRequestData($requests)
     {
         $formattedRequests = [];
         foreach ($requests as $request) {
             $formattedRequest = (object) [
+                "id" => $request->id,
                 "mentee_id" => $request->mentee_id,
                 "mentor_id" => $request->mentor_id,
                 "title" => $request->title,
                 "status_id" => $request->status_id,
                 "match_date" => $request->match_date,
-                "created_at" => $this->formatTime($request->created_at),
+                "location" => $request->location,
                 "duration" => $request->duration,
                 "request_skills" => $this->formatRequestSkills($request->requestSkills),
-                "rating" => $request->rating,
+                "rating" => $request->rating ?? null,
+                "created_at" => $this->formatTime($request->created_at),
             ];
             $formattedRequests[] = $formattedRequest;
         }
         return $formattedRequests;
     }
-
 
     /**
      * Format time

@@ -223,6 +223,53 @@ class Request extends Model
         
         return $mentorshipRequests;
     }
+    
+    /**
+     * Returns the mentorship request based on the params
+     *
+     * @param string $params - request filters
+     *
+     * @return Array - Filtered request
+     */
+    public static function buildPoolFilterQuery($params)
+    {
+        $mentorshipRequests = Request::when(
+            isset($params["skills"]),
+            function ($query) use ($params) {
+                return $query->whereHas(
+                    "requestSkills",
+                    function ($query) use ($params) {
+                        $query->whereIn("skill_id", $params["skills"]);
+                    }
+                );
+            }
+        )
+        ->when(
+            isset($params["category"]) && $params["category"] == "recommended",
+            function ($query) use ($params) {
+                $userId =$params["user"];
+                return $query->whereHas("requestSkills", function ($query) use ($userId) {
+                    $query->whereHas("skill", function ($query) use ($userId) {
+                        $query->whereIn("skill_id", UserSkill::whereUserId($userId)->pluck("skill_id"));
+                    });
+                });
+            }
+        )
+        ->when(
+            isset($params["lengths"]),
+            function ($query) use ($params) {
+                return $query->whereIn("duration", $params["lengths"]);
+            }
+        )
+        ->when(
+            isset($params["locations"]),
+            function ($query) use ($params) {
+                return $query->whereIn("location", $params["locations"]);
+            }
+        );
+
+        return $mentorshipRequests;
+    }
 
     /**
      * Get all unmatched requests that have been made over the given

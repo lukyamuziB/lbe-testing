@@ -11,13 +11,21 @@
 |
 */
 
-$app->get('/', function () use ($app) {
+$app->get("/", function () use ($app) {
     return $app->version();
 });
 
 /**
  * Routes for  requests
  */
-$app->group(['prefix' => 'api/v2'], function ($app) {
-    $app->get('requests/history', 'RequestController@getUserHistory');
+$app->group(["prefix" => "api/v2"], function ($app) {
+    $app->get("requests/pool", "RequestController@getRequestsPool");
+    $app->get("requests/history", "RequestController@getUserHistory");
+});
+
+/**
+ * Routes for  skills
+ */
+$app->group(["prefix" => "api/v2"], function ($app) {
+    $app->get("skills/request-skills", "SkillController@getSkillsWithRequests");
 });
