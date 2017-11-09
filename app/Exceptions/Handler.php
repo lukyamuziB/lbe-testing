@@ -74,6 +74,12 @@ class Handler extends ExceptionHandler
                     $e->getMessage()
                 );
                 break;
+            case $e instanceof ConflictException:
+                $response = $this->composeJsonResponse(
+                    Response::HTTP_CONFLICT,
+                    $e->getMessage()
+                );
+                break;
             default:
                 $response = parent::render($request, $e);
         }

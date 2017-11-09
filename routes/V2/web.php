@@ -24,8 +24,18 @@ $app->group(["prefix" => "api/v2"], function ($app) {
 });
 
 /**
- * Routes for  skills
+ * Routes for skills
  */
 $app->group(["prefix" => "api/v2"], function ($app) {
     $app->get("skills/request-skills", "SkillController@getSkillsWithRequests");
+    $app->post("users/{userId}/skills", "SkillController@addUserSkill");
+    $app->delete("users/{userId}/skills/{skillId}", "SkillController@deleteUserSkill");
+});
+
+/**
+ * Routes for users
+ */
+$app->group(["prefix" => "api/v2"], function ($app) {
+    $app->post("users/{userId}/skills", "UserController@addUserSkill");
+    $app->delete("users/{userId}/skills/{skillId}", "UserController@deleteUserSkill");
 });

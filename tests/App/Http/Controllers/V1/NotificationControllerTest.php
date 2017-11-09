@@ -10,7 +10,7 @@ use App\Models\User;
 use TestCase;
 
 class NotificationControllerTest extends TestCase
-{   
+{
     /**
      * Test setup
      *
@@ -84,7 +84,7 @@ class NotificationControllerTest extends TestCase
      * @return void
      */
     public function testAddFailureForInvalidInput()
-    {   
+    {
         $id = "my profile settings";
         $description = "settings for my profile settings";
         $data = array(
@@ -108,9 +108,9 @@ class NotificationControllerTest extends TestCase
      * Test - Add new Notification failure
      *
      * @return void
-    */
+     */
     public function testAddFailureForDuplicates()
-    {   
+    {
          $id = "INDICATES_INTEREST";
          $description = "settings for my profile settings";
          $data = array(
@@ -138,7 +138,7 @@ class NotificationControllerTest extends TestCase
     public function testPutSuccess()
     {
         $id = "PROFILE_SETTINGS";
-        $default = "slack"; 
+        $default = "slack";
         $description = "settings for my profile settings";
         $data = array(
             "id" => $id,
@@ -318,19 +318,20 @@ class NotificationControllerTest extends TestCase
      * Test - Update user settings failure
      *
      * @return void
-    */
+     */
+
     public function testUpdateSettingsFailureForInvalidInput()
     {
-         $data = array(
-             "user_id" => "",
-             "id" => "",
-         );
- 
-         $this->put(
-             "/api/v1/user/-KXGy1MT1oimjQgFim7u/settings/INDICATE_INTEREST",
-             $data
-         );
- 
+        $data = array(
+            "user_id" => "",
+            "id" => "",
+        );
+
+        $this->put(
+            "/api/v1/user/-KXGy1MT1oimjQgFim7u/settings/INDICATE_INTEREST",
+            $data
+        );
+
         $this->assertResponseStatus(422);
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("user_id", $response);

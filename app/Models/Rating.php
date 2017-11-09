@@ -45,21 +45,25 @@ class Rating extends Model
     }
     
     /**
-     * Gets the ratings of the user and calculate the average
+     * Gets the ratings of the user and calculate the average and total ratings
      *
      * @param string $userId -The logged in user's id
      *
-     * @return int - The average rating of the user to one decimal place
+     * @return object - The average rating of the user to one decimal place
+     * and total ratings count
      */
-    public static function getAverageRatings($userId)
+    public static function getRatingDetails($userId)
     {
         $ratingValues = [];
         $averageRating = 0;
         $ratingName = '';
+        $ratingDetails;
         
         $ratings = Rating::select("values")
                     ->where("user_id", $userId)
                     ->get();
+
+        $ratingDetails["total_ratings"] = count($ratings);
 
         foreach ($ratings as $rating) {
             $userRatings = json_decode($rating->values);
@@ -71,6 +75,9 @@ class Rating extends Model
                 );
             }
         }
-        return $averageRating;
+
+        $ratingDetails["average_rating"] = $averageRating;
+        
+        return $ratingDetails;
     }
 }

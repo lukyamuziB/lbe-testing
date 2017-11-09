@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Controllers\V2;
 
 use App\Models\Skill;
+use App\Exceptions\Exception;
 use Illuminate\Http\Response;
 
 /**
@@ -13,6 +13,7 @@ use Illuminate\Http\Response;
 class SkillController extends Controller
 {
     use RESTActions;
+
     /**
      * GET all skills that have at least one request
      *

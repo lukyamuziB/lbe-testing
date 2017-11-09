@@ -47,9 +47,9 @@ class UserController extends Controller
 
         $requestCount = $this->getMenteeRequests($id);
 
-        $totalLoggedHours = Session::getTotalLoggedHours($id);
+        $sessionDetails = Session::getSessionDetails($id);
 
-        $averageRating = Rating::getAverageRatings($id);
+        $ratingDetails = Rating::getRatingDetails($id);
     
         $response = (object) [
             "id" => $userDetails["id"],
@@ -64,8 +64,10 @@ class UserController extends Controller
             "level" => $userDetails["level"] ?? "",
             "skills" => $userSkills,
             "request_count" => $requestCount,
-            "logged_hours" => $totalLoggedHours,
-            "rating" => $averageRating
+            "logged_hours" => $sessionDetails["totalHours"],
+            "total_sessions" => $sessionDetails["totalSessions"],
+            "rating" => $ratingDetails["average_rating"],
+            "total_ratings" => $ratingDetails["total_ratings"]
         ];
 
         if ($this->getRequestParams($request, "include") === "skills_gained") {
