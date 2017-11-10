@@ -87,8 +87,36 @@ class RequestController extends Controller
     }
 
     /**
+     * Get's requests that are in progress for the logged in user
+     *
+     * @param Request $request - the request object
+     *
+     * @return array $response - the response object, in progress requests
+     */
+    public function getRequestsInProgress(Request $request)
+    {
+        $userId = $request->user()->uid;
+
+        $requestsInProgress = MentorshipRequest::where(
+            function ($query) use ($userId) {
+                $query->where("mentor_id", $userId)
+                    ->orWhere("mentee_id", $userId);
+            }
+        )
+            ->where("status_id", STATUS::MATCHED)
+            ->orderBy("created_at", "desc")
+            ->get();
+        $formattedRequestsInProgress = $this->formatRequestData($requestsInProgress);
+
+        return $this->respond(Response::HTTP_OK, $formattedRequestsInProgress);
+    }
+
+    /**
      * Calculate and attach the rating of each request Object
-     * @param  object $mentorshipRequests
+     *
+     * @param object $mentorshipRequests - mentorship requests
+     *
+     * @return {void}
      */
     private function appendRating(&$mentorshipRequests)
     {
@@ -152,7 +180,8 @@ class RequestController extends Controller
      * checks if the given time is null and
      * returns null else it returns the time in the date format
      *
-     * @param  string $time
+     * @param string $time - the time in the date format
+     *
      * @return mixed null|string
      */
     private function formatTime($time)

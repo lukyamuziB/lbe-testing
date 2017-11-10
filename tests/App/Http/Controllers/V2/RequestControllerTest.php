@@ -75,4 +75,22 @@ class RequestControllerTest extends TestCase
         $this->assertNotEmpty($response);
         $this->assertEquals(1, count($response));
     }
+
+    /**
+     * Test to get requests that are in progress for a user
+     *
+     * @return {void}
+     */
+    public function testGetRequestsInProgressSuccess()
+    {
+        $this->get('/api/v2/requests/in-progress');
+
+        $this->assertResponseOk();
+        
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+
+        $this->assertNotEmpty($response);
+    }
 }

@@ -21,6 +21,7 @@ $app->get("/", function () use ($app) {
 $app->group(["prefix" => "api/v2"], function ($app) {
     $app->get("requests/pool", "RequestController@getRequestsPool");
     $app->get("requests/history", "RequestController@getUserHistory");
+    $app->get('requests/in-progress', 'RequestController@getRequestsInProgress');
 });
 
 /**
