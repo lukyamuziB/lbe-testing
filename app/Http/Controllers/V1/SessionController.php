@@ -117,22 +117,36 @@ class SessionController extends Controller
         return $sessions_logged;
     }
 
+
     /**
      * Get total number of sessions logged by either mentor and mentee
+     * that have not been approved
      *
-     * @param $request_id
+     * @param $requestId - the id of the request
+     *
      * @return Number - sessions pending to be logged by both mentor and mentee
      */
-    public function getTotalSessionsPending($request_id)
+    public function getTotalSessionsPending($requestId)
     {
-        $sessions_pending = Session::where('request_id', $request_id)
-            ->where(function ($query) {
-                $query->where('mentee_approved', true)->where('mentor_approved', null);
-            })->orWhere(function ($query) {
-                $query->where('mentee_approved', null)->where('mentor_approved', true);
-            })->count();
-        return $sessions_pending;
+        $pendingSessions = Session::where(
+            function ($query) use ($requestId) {
+                                        $query->where('mentee_approved', true)
+                                            ->where('mentor_approved', null)
+                                            ->where('request_id', $requestId);
+            }
+        )
+            ->orWhere(
+                function ($query) use ($requestId) {
+                    $query->where('mentee_approved', null)
+                        ->where('mentor_approved', true)
+                        ->where('request_id', $requestId);
+                }
+            )
+            ->count();
+        return $pendingSessions;
     }
+
+
 
     /**
      * Get all the number of remaining unlogged sessions for a particular

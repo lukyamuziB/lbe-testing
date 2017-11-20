@@ -66,13 +66,13 @@ class SessionControllerTest extends TestCase
      */
     public function testGetSessionsReportSuccessSessionsPending()
     {
-        $this->get("/api/v1/sessions/2?include=totalSessionsPending");
+        $this->get("/api/v1/sessions/3?include=totalSessionsPending");
 
         $this->assertResponseOk();
 
         $response = json_decode($this->response->getContent());
 
-        $this->assertEquals(3, $response->data->totalSessionsPending);
+        $this->assertEquals(1, $response->data->totalSessionsPending);
     }
 
     /**
@@ -126,7 +126,7 @@ class SessionControllerTest extends TestCase
         );
 
         $this->assertResponseStatus(201);
-        
+
         $response = json_decode($this->response->getContent());
 
         $this->assertTrue($response->data->mentee_approved);
@@ -141,7 +141,7 @@ class SessionControllerTest extends TestCase
                 "user_id" => "-KesEogCwjq6lkOzKmLI",
             ]
         );
-        
+
         $this->assertResponseStatus(200);
 
         $response = json_decode($this->response->getContent());
@@ -170,7 +170,7 @@ class SessionControllerTest extends TestCase
         $this->assertResponseStatus(200);
 
         $this->assertTrue($response->mentee_approved === false);
-        
+
         $this->assertNotEmpty($response->mentee_logged_at);
     }
 
@@ -188,13 +188,13 @@ class SessionControllerTest extends TestCase
              "user_id" => "-KesEogCwjq6lkOzKmLI",
              ]
          );
- 
+
          $response = json_decode($this->response->getContent());
- 
+
          $this->assertResponseStatus(200);
- 
+
          $this->assertTrue($response->mentor_approved === false);
-         
+
          $this->assertNotEmpty($response->mentor_logged_at);
     }
 
@@ -298,9 +298,9 @@ class SessionControllerTest extends TestCase
             ]
         );
         $this->assertResponseStatus(404);
- 
+
         $response = json_decode($this->response->getContent());
- 
+
         $this->assertEquals(
             "Session does not exist",
             $response->message
