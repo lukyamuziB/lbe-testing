@@ -82,7 +82,7 @@ class Session extends Model
     public static function getSessionDetails($userId)
     {
         $totalHours = 0;
-        $sessionDetails;
+        $sessionDetails = [];
 
         $sessions = Session::select("start_time", "end_time")
                          ->where("mentor_approved", true)

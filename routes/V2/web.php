@@ -37,6 +37,7 @@ $app->group(["prefix" => "api/v2"], function ($app) {
  * Routes for users
  */
 $app->group(["prefix" => "api/v2"], function ($app) {
+    $app->get("users/{id}", "UserController@get");
     $app->post("users/{userId}/skills", "UserController@addUserSkill");
     $app->delete("users/{userId}/skills/{skillId}", "UserController@deleteUserSkill");
 });

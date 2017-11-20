@@ -56,8 +56,7 @@ class Rating extends Model
     {
         $ratingValues = [];
         $averageRating = 0;
-        $ratingName = '';
-        $ratingDetails;
+        $ratingDetails = [];
         
         $ratings = Rating::select("values")
                     ->where("user_id", $userId)
