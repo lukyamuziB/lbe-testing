@@ -1,3 +1,14 @@
+# V 2.0.0
+
+## Features
+- implement V2 endpoints for history, pool, profile, and user routes
+- reduce placed fellow guidelines to 2 emails before cancelling
+
+## Bug Fixes
+- cache and close only placed fellows
+- fix sessions awaiting confirmation statistics
+
+
 # V 1.6.0
 
 ## Features
