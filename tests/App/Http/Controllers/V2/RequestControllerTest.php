@@ -9,6 +9,9 @@ use TestCase;
 
 class RequestControllerTest extends TestCase
 {
+    private $cancellationReason = [
+        "reason"=> "test cancellations reason."
+    ];
 
     private function makeUser($identifier, $role = "Fellow")
     {
@@ -119,5 +122,72 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(200);
 
         $this->assertNotEmpty($response);
+    }
+
+    /**
+     * Test that a mentee can cancel there own request succesfully
+     *
+     * @return {void}
+     */
+    public function testMenteeCancelRequestSuccess()
+    {
+        $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that admin can cancel request succesfully
+     *
+     * @return {void}
+     */
+    public function testAdminCancelRequestSuccess()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that user can't delete request that doesn't belong to them
+     *
+     * @return {void}
+     */
+    public function testCancelRequestFailureNotOwner()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF");
+        $this->patch("/api/v2/requests/14/cancel-request");
+        $this->assertResponseStatus(401);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals(
+            "You don't have permission to cancel this Mentorship Request.",
+            $response->message
+        );
+    }
+
+    /**
+     * Test user can't cancel request that doesn't exist
+     *
+     * @return {void}
+     */
+    public function testCancelRequestFailsWithInvalidRequestId()
+    {
+        $this->patch("/api/v2/requests/1499/cancel-request");
+        $this->assertResponseStatus(404);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Mentorship Request not found.", $response->message);
+    }
+
+    /**
+     * Test user can't cancel request twice.
+     *
+     * @return {void}
+     */
+    public function testRequestAlreadyCanceled()
+    {
+        $this->patch("/api/v2/requests/14/cancel-request");
+        $this->patch("/api/v2/requests/14/cancel-request");
+        $this->assertResponseStatus(409);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Mentorship Request already cancelled.", $response->message);
     }
 }

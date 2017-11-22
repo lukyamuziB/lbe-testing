@@ -20,6 +20,7 @@ $app->group(["prefix" => "api/v2"], function ($app) {
     $app->get("requests/history", "RequestController@getUserHistory");
     $app->get("requests/in-progress", "RequestController@getRequestsInProgress");
     $app->get("requests/pending", "RequestController@getPendingPool");
+    $app->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
 });
 /**
  * Routes for skills

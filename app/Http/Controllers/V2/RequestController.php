@@ -1,10 +1,19 @@
 <?php
 namespace App\Http\Controllers\V2;
 
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+
+use App\Exceptions\NotFoundException;
+use App\Exceptions\UnauthorizedException;
+use App\Exceptions\BadRequestException;
+use App\Exceptions\ConflictException;
+
 use App\Models\Status;
 use App\Models\Request as MentorshipRequest;
+use App\Models\RequestCancellationReason;
+use App\Utility\SlackUtility;
 
 /**
  * Class RequestController
@@ -14,6 +23,13 @@ use App\Models\Request as MentorshipRequest;
 class RequestController extends Controller
 {
     use RESTActions;
+
+    protected $slackUtility;
+
+    public function __construct(SlackUtility $slackUtility)
+    {
+        $this->slackUtility = $slackUtility;
+    }
 
     /**
      * Gets Mentorship Requests
@@ -153,6 +169,87 @@ class RequestController extends Controller
         $formattedRequestsInProgress = $this->formatRequestData($requestsInProgress);
 
         return $this->respond(Response::HTTP_OK, $formattedRequestsInProgress);
+    }
+
+    /**
+     * Cancels a request for a mentorship that a logged in user requested
+     * by setting the request status to cancelled
+     *
+     * @param Request $request - the request object
+     * @param integer $id      - Unique ID used to identify the request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * @throws NotFoundException | ConflictException | UnauthorizedException
+     */
+    public function cancelRequest(Request $request, $id)
+    {
+        $currentUser = $request->user();
+        $mentorshipRequest = $this->validateRequestBeforeCancellation($id, $currentUser);
+        
+        $mentorshipRequest->status_id = Status::CANCELLED;
+        $cancellationReason = $request->input("reason");
+        DB::transaction(
+            function () use ($mentorshipRequest, $currentUser, $cancellationReason) {
+                $mentorshipRequest->save();
+                if ($cancellationReason) {
+                    RequestCancellationReason::create(
+                        [
+                            "request_id" => $mentorshipRequest->id,
+                            "user_id" => $currentUser->uid,
+                            "reason" => ucfirst($cancellationReason)
+                            ]
+                    );
+                }
+                $this->sendCancellationNotification($mentorshipRequest, $cancellationReason);
+                return $this->respond(Response::HTTP_OK);
+            }
+        );
+    }
+
+    /**
+     * Validate whether mentorship request belongs to user and whether its
+     * already cancelled before cancellation
+     *
+     * @param integer $id          - Mentorship Request ID
+     * @param object  $currentUser - User requesting to cancel request
+     *
+     * @throws NotFoundException | ConflictException | UnauthorizedException
+     * @return object $mentorshipRequest
+     */
+    private function validateRequestBeforeCancellation($id, $currentUser)
+    {
+        $mentorshipRequest = MentorshipRequest::find(intval($id));
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->mentee_id) {
+            throw new UnauthorizedException("You don't have permission to cancel this Mentorship Request.");
+        }
+
+        if ($mentorshipRequest->status_id == Status::CANCELLED) {
+            throw new ConflictException("Mentorship Request already cancelled.");
+        }
+        return $mentorshipRequest;
+    }
+
+    /**
+     * Send slack notification for cancelled request
+     *
+     * @param object $mentorshipRequest  - Cancelled request
+     * @param string $cancellationReason - Reason for canceling request
+     *
+     * @return void
+     */
+    private function sendCancellationNotification($mentorshipRequest, $cancellationReason)
+    {
+        $requestTitle = $mentorshipRequest->title;
+        $creationDate = $mentorshipRequest->created_at;
+        $recipientSlackID = $mentorshipRequest->mentee->slack_id;
+        $slackMessage = "Your Mentorship Request `$requestTitle` 
+            opened on `$creationDate` has been cancelled \nREASON: `$cancellationReason`.";
+        $this->slackUtility->sendMessage([$recipientSlackID], $slackMessage);
     }
 
     /**
