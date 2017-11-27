@@ -5,14 +5,13 @@ namespace App\Http\Controllers\V2;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Clients\AISClient;
+use App\Models\Rating;
+use App\Models\Session;
+use App\Models\Skill;
+use App\Models\UserSkill;
 use App\Exceptions\ConflictException;
 use App\Exceptions\NotFoundException;
-
-use App\Models\Skill;
 use App\Models\User;
-use App\Models\UserSkill;
-use App\Models\Session;
-use App\Models\Rating;
 use App\Models\Request as MentorshipRequest;
 
 /**
@@ -47,6 +46,65 @@ class UserController extends Controller
             throw new NotFoundException("User not found.");
         }
 
+        $requestCount = $this->getMenteeRequestCount($id);
+
+        $sessionDetails = Session::getSessionDetails($id);
+
+        $ratingDetails = Rating::getRatingDetails($id);
+
+        $user = $this->getUserInfo($id);
+        $user["requestCount"] = $requestCount;
+        $user["loggedHours"] = $sessionDetails["totalHours"];
+        $user["totalSessions"] = $sessionDetails["totalSessions"];
+        $user["rating"] = $ratingDetails["average_rating"];
+        $user["totalRatings"] = $ratingDetails["total_ratings"];
+
+        return $this->respond(Response::HTTP_OK, (object)$user);
+    }
+
+    /**
+     * Returns the requests for a particular mentee
+     *
+     * @param string $userId - user id
+     *
+     * @return integer total number of mentorship request made
+     */
+    private function getMenteeRequestCount($userId)
+    {
+        return MentorshipRequest::where("mentee_id", $userId)
+            ->count();
+    }
+
+    /**
+     * Gets multiple user information based on their user ids.
+     *
+     * @param Request $request - request object
+     *
+     * @return Response object
+     */
+    public function getUsersByIds(Request $request)
+    {
+        $commaSeparatedUserIds = $request->input("ids");
+        $userIds = explode(",", $commaSeparatedUserIds);
+        $users = [];
+
+        foreach ($userIds as $id) {
+            $user = $this->getUserInfo($id);
+            $users[] = $user;
+        }
+
+        return $this->respond(Response::HTTP_OK, $users);
+    }
+
+    /**
+     * Query AIS to get user info
+     *
+     * @param integer $id - id belonging to user
+     *
+     * @return array $user - object containing user info
+     */
+    private function getUserInfo($id)
+    {
         $userDetails = $this->aisClient->getUserById($id);
 
         $userSkills = UserSkill::with("skill")->where("user_id", $id)->get();
@@ -61,13 +119,22 @@ class UserController extends Controller
 
         $skills = array_values($skills);
 
-        $requestCount = $this->getMenteeRequestCount($id);
+        $user = $this->formatUserInfo($userDetails);
+        $user["skills"] = $skills;
 
-        $sessionDetails = Session::getSessionDetails($id);
+        return $user;
+    }
 
-        $ratingDetails = Rating::getRatingDetails($id);
-
-        $response = (object)[
+    /**
+     * Format ais user information
+     *
+     * @param object $userDetails - user information from ais
+     *
+     * @return array
+     */
+    private function formatUserInfo($userDetails)
+    {
+        $user = [
             "id" => $userDetails["id"],
             "picture" => $userDetails["picture"],
             "firstName" => $userDetails["first_name"],
@@ -78,28 +145,9 @@ class UserController extends Controller
             "placement" => $userDetails["placement"] ?? "",
             "email" => $userDetails["email"],
             "level" => $userDetails["level"] ?? "",
-            "skills" => $skills,
-            "requestCount" => $requestCount,
-            "loggedHours" => $sessionDetails["totalHours"],
-            "totalSessions" => $sessionDetails["totalSessions"],
-            "rating" => $ratingDetails["average_rating"],
-            "totalRatings" => $ratingDetails["total_ratings"]
         ];
 
-        return $this->respond(Response::HTTP_OK, $response);
-    }
-    
-    /**
-     * Returns the requests for a particular mentee
-     *
-     * @param string $userId - user id
-     *
-     * @return integer total number of mentorship request made
-     */
-    private function getMenteeRequestCount($userId)
-    {
-        return MentorshipRequest::where("mentee_id", $userId)
-            ->count();
+        return $user;
     }
 
     /**

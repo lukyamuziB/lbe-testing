@@ -30,6 +30,11 @@ class RequestsTableSeeder extends Seeder
                     'title' => $faker->sentence($nbWords = 6, $variableNbWords = true),
                     'description' => $faker->text($maxNbChars = 300),
                     'status_id' => ($i%2 === 0 ? 1 : 2),
+                    'interested' => (
+                        ($i === 20) ? json_encode(['-KesEogCwjq6lkOzKmLI'])
+                            : ($i === 18) ? json_encode(['-K_nkl19N6-EGNa0W8LF'])
+                            : null
+                    ),
                     'created_at' => $created_at,
                     'updated_at' => null,
                     'match_date' => $faker->dateTimeBetween($created_at, $created_at->format('Y-m-d H:i:s').' +7 days'),

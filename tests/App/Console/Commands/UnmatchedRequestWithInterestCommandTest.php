@@ -60,6 +60,8 @@ class TestUnmatchedRequestsWithInterestCommand extends TestCase
      */
     public function testUnmatchedRequestsWithInterestCommand()
     {
+        $this->clearTables();
+
         $commandTester = $this->executeCommand(
             $this->application,
             "notify:unmatched-requests:with-interests",

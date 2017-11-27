@@ -28,31 +28,32 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Creates a request with a status_id of 3
-     * i.e a completed request.
-    */
+     * Creates a request with the status id provided as argument
+     *
+     * @return void
+     */
     private function makeCompletedRequest()
     {
         Request::create(
             [
-                'mentee_id' => "-K_nkl19N6-EGNa0W8LF",
-                'title' => "Javascript",
-                'description' => "Learn Javascript",
-                'status_id' => 3,
-                'created_at' => "2017-09-19 20:55:24",
-                'match_date' => null,
-                'interested' => ["-K_nkl19N6-EGNa0W8LF"],
-                'duration' => 2,
-                'pairing' => json_encode(
+                "mentee_id" => "-K_nkl19N6-EGNa0W8LF",
+                "title" => "Javascript",
+                "description" => "Learn Javascript",
+                "status_id" => 3,
+                "created_at" => "2017-09-19 20:55:24",
+                "match_date" => null,
+                "interested" => ["-K_nkl19N6-EGNa0W8LF"],
+                "duration" => 2,
+                "pairing" => json_encode(
                     [
-                        'start_time' => '01:00',
-                        'end_time' => '02:00',
-                        'days' => ['monday'],
-                        'timezone' => 'EAT'
+                        "start_time" => "01:00",
+                        "end_time" => "02:00",
+                        "days" => ["monday"],
+                        "timezone" => "EAT"
                     ]
                 ),
-                'location' => "Nairobi"
-             ]
+                "location" => "Nairobi"
+            ]
         );
     }
 
@@ -64,6 +65,8 @@ class RequestControllerTest extends TestCase
 
     /**
      * Test to get the completed requests of a user
+     *
+     * @return void
      */
     public function testGetCompletedRequestsSuccess()
     {
@@ -77,13 +80,37 @@ class RequestControllerTest extends TestCase
     }
 
     /**
+     * Test pending requests are retrieved successfully
+     *
+     * @return void
+     */
+    public function testGetPendingPoolSuccess()
+    {
+        $this->get("/api/v2/requests/pending");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+
+        $this->assertEquals(
+            "-K_nkl19N6-EGNa0W8LF",
+            $response->requestsWithInterests[0]->mentee_id
+        );
+
+        $this->assertContains(
+            "-K_nkl19N6-EGNa0W8LF",
+            $response->requestsInterestedIn[0]->interested
+        );
+    }
+
+    /**
      * Test to get requests that are in progress for a user
      *
-     * @return {void}
+     * @return void
      */
     public function testGetRequestsInProgressSuccess()
     {
-        $this->get('/api/v2/requests/in-progress');
+        $this->get("/api/v2/requests/in-progress");
 
         $this->assertResponseOk();
         

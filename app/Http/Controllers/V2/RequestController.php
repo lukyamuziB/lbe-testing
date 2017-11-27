@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\V2;
 
 use Illuminate\Http\Request;
@@ -29,7 +28,7 @@ class RequestController extends Controller
         $params = [];
         $limit = $request->input("limit") ?
             intval($request->input("limit")) : 20;
-        
+
         $params["user"] = $request->user()->uid;
         if ($requestsType = $this->getRequestParams($request, "category")) {
             $params["category"] = $requestsType;
@@ -43,20 +42,18 @@ class RequestController extends Controller
         if ($skills = $this->getRequestParams($request, "skills")) {
             $params["skills"] = explode(",", $skills);
         }
-
         $mentorshipRequests  = MentorshipRequest::buildPoolFilterQuery($params)
-                                                ->orderBy("created_at", "desc")
-                                                ->paginate($limit);
-
+            ->orderBy("created_at", "desc")
+            ->paginate($limit);
         $response["requests"] = $this->formatRequestData($mentorshipRequests);
         $response["pagination"] = [
             "totalCount" => $mentorshipRequests->total(),
             "pageSize" => $mentorshipRequests->perPage()
         ];
-        
+
         return $this->respond(Response::HTTP_OK, $response);
     }
-    
+
     /**
      * Gets all completed Mentorship Requests belonging to the logged in user
      *
@@ -67,23 +64,70 @@ class RequestController extends Controller
     public function getUserHistory(Request $request)
     {
         $userId = $request->user()->uid;
-
         $mentorshipRequests = MentorshipRequest::where("status_id", STATUS::COMPLETED)
-                                            ->where(
-                                                function ($query) use ($userId) {
-                                                    $query->where("mentor_id", $userId)
-                                                        ->orWhere("mentee_id", $userId);
-                                                }
-                                            )
-                                            ->with("session.rating")
-                                            ->with("requestSkills")
-                                            ->get();
-
-
+            ->where(
+                function ($query) use ($userId) {
+                    $query->where("mentor_id", $userId)
+                        ->orWhere("mentee_id", $userId);
+                }
+            )
+            ->with("session.rating")
+            ->with("requestSkills")
+            ->get();
         $this->appendRating($mentorshipRequests);
         $formattedRequests = $this->formatRequestData($mentorshipRequests);
-
         return $this->respond(Response::HTTP_OK, $formattedRequests);
+    }
+
+    /**
+     * Gets requests that are awaiting user to select mentor or mentee to select user
+     * as mentor
+     *
+     * @param Request $request - request object
+     *
+     * @return Response Object
+     */
+    public function getPendingPool(Request $request)
+    {
+        $userId = $request->user()->uid;
+
+        $allRequestsWithInterestedMentors
+            = MentorshipRequest::where("status_id", STATUS::OPEN)->whereNotNull("interested");
+
+        $requestsInterestedIn
+            = $this->getRequestsInterestedIn($allRequestsWithInterestedMentors, $userId);
+
+        $userRequestsWithInterestedMentors
+            = $allRequestsWithInterestedMentors->where("mentee_id", $userId)->get();
+
+        $response = [
+            "requestsWithInterests" => $this->formatRequestData($userRequestsWithInterestedMentors),
+            "requestsInterestedIn" => $this->formatRequestData($requestsInterestedIn),
+        ];
+
+        return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    /**
+     * Get mentorship requests which user has shown interest in
+     *
+     * @param array  $requestsWithInterested - requests that have interested mentors
+     * @param string $userId - id for currently logged in user
+     *
+     * @return array $requestsInterestedIn - requests user is interested in
+     */
+    private function getRequestsInterestedIn($requestsWithInterested, $userId)
+    {
+        $requestsWithInterested = $requestsWithInterested->get();
+
+        $requestsInterestedIn = [];
+        foreach ($requestsWithInterested as $request) {
+            if (in_array($userId, $request->interested)) {
+                $requestsInterestedIn[] = $request;
+            }
+        }
+
+        return $requestsInterestedIn;
     }
 
     /**
@@ -126,13 +170,11 @@ class RequestController extends Controller
             foreach ($sessions as $session) {
                 if ($session->rating) {
                     $ratingValues = json_decode($session->rating->values);
-
                     $availability = $ratingValues->availability;
                     $usefulness = $ratingValues->usefulness;
                     $reliability = $ratingValues->reliability;
                     $knowledge = $ratingValues->knowledge;
                     $teaching = $ratingValues->teaching;
-
                     $rating = ($availability+ $usefulness + $reliability + $knowledge + $teaching)/5;
                     $ratings[] = $rating;
                 }
@@ -162,10 +204,13 @@ class RequestController extends Controller
                 "mentee_id" => $request->mentee_id,
                 "mentor_id" => $request->mentor_id,
                 "title" => $request->title,
+                "description" => $request->description,
                 "status_id" => $request->status_id,
+                "interested" => $request->interested,
                 "match_date" => $request->match_date,
                 "location" => $request->location,
                 "duration" => $request->duration,
+                "pairing" => $request->pairing,
                 "request_skills" => $this->formatRequestSkills($request->requestSkills),
                 "rating" => $request->rating ?? null,
                 "created_at" => $this->formatTime($request->created_at),
@@ -186,7 +231,7 @@ class RequestController extends Controller
      */
     private function formatTime($time)
     {
-        return $time === null ? null : date('Y-m-d H:i:s', $time->getTimestamp());
+        return $time === null ? null : date("Y-m-d H:i:s", $time->getTimestamp());
     }
 
     /**
@@ -200,7 +245,6 @@ class RequestController extends Controller
     private function formatRequestSkills($requestSkills)
     {
         $skills = [];
-
         foreach ($requestSkills as $skill) {
             $result = (object) [
                 "id" => $skill->skill_id,

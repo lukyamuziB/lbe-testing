@@ -161,4 +161,27 @@ class UserControllerTest extends \TestCase
             
             $this->assertEquals("User not found.", $response->message);
     }
+
+    /**
+     * Test for get user details successfully
+     *
+     * @return void
+     */
+    public function testGetUsersByIdsSuccess()
+    {
+
+        $this->get("/api/v2/users?ids=-K_nkl19N6-EGNa0W8LF,-KXGy1MimjQgFim7u");
+
+        $this->assertResponseStatus(200);
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotEmpty($response);
+
+        $this->assertAttributeContains("Adebayo Adesanya", "name", $response[0]);
+
+        $this->assertAttributeContains("Inumidun Amao", "name", $response[1]);
+
+        $this->assertCount(2, $response);
+    }
 }
