@@ -1,3 +1,13 @@
+# V 2.0.1
+
+## Features
+- implement V2 endpoints for User routes to get single and multiple User by ID
+- implement pending page functionality route
+
+## Bug Fixes
+- stop notifications for completed Mentorships
+- fix rating in getUserById route
+
 # V 2.0.0
 
 ## Features
@@ -7,7 +17,6 @@
 ## Bug Fixes
 - cache and close only placed fellows
 - fix sessions awaiting confirmation statistics
-
 
 # V 1.6.0
 

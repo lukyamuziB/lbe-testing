@@ -89,7 +89,12 @@ class UserController extends Controller
         $users = [];
 
         foreach ($userIds as $id) {
+            $ratingDetails = Rating::getRatingDetails($id);
+
             $user = $this->getUserInfo($id);
+            $user["rating"] = $ratingDetails["average_rating"];
+            $user["totalRatings"] = $ratingDetails["total_ratings"];
+
             $users[] = $user;
         }
 
