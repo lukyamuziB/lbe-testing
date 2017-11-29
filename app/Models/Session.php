@@ -42,18 +42,24 @@ class Session extends Model
     }
 
     /**
-     * Gets unapproved sessions that were logged by one of the
-     * participants before the specified time
+     * Gets unapproved sessions, whose request status is matched, that were logged
+     * by one of the participants before the specified time
      *
      * @param integer $duration hours since last unapproved session
      *
      * @return array $unapproved_sessions
      */
-    public static function getUnapprovedSessionsByTime($duration)
+    public static function getUnapprovedSessions($duration)
     {
         $threshold_time = Carbon::now()->subHours($duration);
 
         $unapproved_sessions = Session::with('request.mentee', 'request.mentor')
+            ->whereIn(
+                "request_id",
+                Request::select("id")
+                ->where("status_id", STATUS::MATCHED)
+                    ->get()->toArray()
+            )
             ->where(
                 function ($query) use ($threshold_time) {
                     $query->where('mentor_approved', null)

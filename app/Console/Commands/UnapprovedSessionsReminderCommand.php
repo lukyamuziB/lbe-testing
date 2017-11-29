@@ -74,7 +74,7 @@ class UnapprovedSessionsReminderCommand extends Command
     public function handle()
     {
         try {
-            $unapproved_sessions = Session::getUnApprovedSessionsByTime(2)
+            $unapproved_sessions = Session::getUnApprovedSessions(2)
                 ->toArray();
 
             if ($unapproved_sessions) {

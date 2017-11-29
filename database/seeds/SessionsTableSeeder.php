@@ -27,8 +27,8 @@ class SessionsTableSeeder extends Seeder
                     'end_time' => Carbon::now()->addHour(14),
                     'mentee_approved' => $isMenteeApproved,
                     'mentor_approved' => $isMentorApproved,
-                    'mentee_logged_at' => Carbon::today(),
-                    'mentor_logged_at' => Carbon::now()
+                    'mentee_logged_at' => Carbon::today()->subHours(2),
+                    'mentor_logged_at' => Carbon::now()->subHours(2)
                 ]
             );
         }

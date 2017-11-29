@@ -66,7 +66,7 @@ class TestUnapprovedSessionsReminderCommand extends TestCase
             UnapprovedSessionsReminderCommand::class
         );
 
-        $message = "Notifications have been sent to 2 recipients\n";
+        $message = "Notifications have been sent to 1 recipients\n";
 
         $this->assertEquals($command_tester->getDisplay(), $message);
     }
@@ -123,7 +123,7 @@ class TestUnapprovedSessionsReminderCommand extends TestCase
                 'mentor_id' => "another_fake_id",
                 'title' => "Javascript",
                 'description' => "Learn Javascript",
-                'status_id' => 1,
+                'status_id' => 2,
                 'match_date' => null,
                 'duration' => 2,
                 'pairing' => json_encode(
