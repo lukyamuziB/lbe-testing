@@ -35,7 +35,7 @@ class UserControllerTest extends \TestCase
      */
     public function testAddUserSkillSuccess()
     {
-        $this->post("/api/v2/users/-KXGy1MT1oimjQgFim7u/skills", ["skill_id" => "18"]);
+        $this->post("/api/v2/users/-KXGy1MT1oimjQgFim7u/skills", ["skill_id" => "50"]);
 
         $this->assertResponseStatus(201);
         $response = json_decode($this->response->getContent());
