@@ -178,8 +178,6 @@ class RequestController extends Controller
      * @param Request $request - the request object
      * @param integer $id      - Unique ID used to identify the request
      *
-     * @return \Illuminate\Http\JsonResponse
-     *
      * @throws NotFoundException | ConflictException | UnauthorizedException
      */
     public function cancelRequest(Request $request, $id)
@@ -189,7 +187,7 @@ class RequestController extends Controller
         
         $mentorshipRequest->status_id = Status::CANCELLED;
         $cancellationReason = $request->input("reason");
-        DB::transaction(
+        $result = DB::transaction(
             function () use ($mentorshipRequest, $currentUser, $cancellationReason) {
                 $mentorshipRequest->save();
                 if ($cancellationReason) {
@@ -202,9 +200,13 @@ class RequestController extends Controller
                     );
                 }
                 $this->sendCancellationNotification($mentorshipRequest, $cancellationReason);
-                return $this->respond(Response::HTTP_OK);
+                return true;
             }
         );
+
+        if ($result) {
+            $this->respond(Response::HTTP_OK);
+        }
     }
 
     /**
@@ -215,6 +217,7 @@ class RequestController extends Controller
      * @param object  $currentUser - User requesting to cancel request
      *
      * @throws NotFoundException | ConflictException | UnauthorizedException
+     *
      * @return object $mentorshipRequest
      */
     private function validateRequestBeforeCancellation($id, $currentUser)
@@ -250,6 +253,42 @@ class RequestController extends Controller
         $slackMessage = "Your Mentorship Request `$requestTitle` 
             opened on `$creationDate` has been cancelled \nREASON: `$cancellationReason`.";
         $this->slackUtility->sendMessage([$recipientSlackID], $slackMessage);
+    }
+
+    /**
+     * Cancel interest in offering mentorship
+     *
+     * @param Request $request - the request object
+     * @param integer $id      - Unique ID used to identify a request
+     *
+     * @throws NotFoundException | BadRequestException
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function withdrawInterest(Request $request, $id)
+    {
+        $mentorshipRequest = MentorshipRequest::find(intval($id));
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        $currentUser = $request->user();
+        if (!$mentorshipRequest->interested || !in_array($currentUser->uid, $mentorshipRequest->interested)) {
+            throw new BadRequestException("You don't have interest in this Mentorship Request");
+        }
+
+        $currentUserId = array_search($currentUser->uid, $mentorshipRequest->interested);
+        $interested = $mentorshipRequest->interested;
+        unset($interested[$currentUserId]);
+
+        if (sizeof($interested) == 0) {
+            $interested = null;
+        }
+        $mentorshipRequest->interested = $interested;
+
+        $mentorshipRequest->save();
+
+        return $this->respond(Response::HTTP_OK);
     }
 
     /**

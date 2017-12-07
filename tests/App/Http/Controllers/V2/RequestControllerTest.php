@@ -129,7 +129,7 @@ class RequestControllerTest extends TestCase
      *
      * @return {void}
      */
-    public function testMenteeCancelRequestSuccess()
+    public function testCancelRequestSuccessByMentee()
     {
         $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
         $this->assertResponseOk();
@@ -140,7 +140,7 @@ class RequestControllerTest extends TestCase
      *
      * @return {void}
      */
-    public function testAdminCancelRequestSuccess()
+    public function testCancelRequestSuccessByAdmin()
     {
         $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
         $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
@@ -152,7 +152,7 @@ class RequestControllerTest extends TestCase
      *
      * @return {void}
      */
-    public function testCancelRequestFailureNotOwner()
+    public function testCancelRequestFailureForNoPermission()
     {
         $this->makeUser("-KXKtD8TK2dAXdUF3dPF");
         $this->patch("/api/v2/requests/14/cancel-request");
@@ -169,7 +169,7 @@ class RequestControllerTest extends TestCase
      *
      * @return {void}
      */
-    public function testCancelRequestFailsWithInvalidRequestId()
+    public function testCancelRequestFailureForInvalidRequestId()
     {
         $this->patch("/api/v2/requests/1499/cancel-request");
         $this->assertResponseStatus(404);
@@ -182,12 +182,44 @@ class RequestControllerTest extends TestCase
      *
      * @return {void}
      */
-    public function testRequestAlreadyCanceled()
+    public function testCancelRequestForAlreadyCancelledRequest()
     {
         $this->patch("/api/v2/requests/14/cancel-request");
         $this->patch("/api/v2/requests/14/cancel-request");
         $this->assertResponseStatus(409);
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Mentorship Request already cancelled.", $response->message);
+    }
+
+    /**
+     * Test user can withdraw interest from mentorship succesfully
+     *
+     * @return void
+     */
+    public function testWithdrawInterestSuccess()
+    {
+        $this->makeUser("-KXGy1MimjQgFim7u");
+        $this->patch(
+            "/api/v1/requests/14/update-interested",
+            [
+                "interested" => ["-KXGy1MimjQgFim7u"]
+                ]
+        );
+        $this->patch("api/v2/requests/14/withdraw-interest");
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test user can not withdraw interest from a Mentorship that doesn't exist
+     * or request that they are not interested in
+     *
+     * @return void
+     */
+    public function testWithdrawInterestFailureforNonExistingRequest()
+    {
+        $this->patch("api/v2/requests/1499/withdraw-interest");
+        $this->assertResponseStatus(404);
+        $this->patch("api/v2/requests/14/withdraw-interest");
+        $this->assertResponseStatus(400);
     }
 }
