@@ -21,6 +21,11 @@ class SessionController extends Controller
 
     protected $freckle_client;
 
+    /**
+     * SessionController constructor.
+     *
+     * @param FreckleClient $freckle_client
+     */
     public function __construct(FreckleClient $freckle_client)
     {
         $this->freckle_client = $freckle_client;
@@ -31,10 +36,10 @@ class SessionController extends Controller
      * including sessions logged by both mentee & mentor,
      * sessions pending to be logged.
      *
-     * @param Request|Object $request - request payload
+     * @param Request $request - request payload
      * @param String $id - id of the mentorship request
-     * @return Response object containing session details
      * @throws NotFoundException
+     * @return Response object containing session details
      */
     public function getSessionsReport(Request $request, $id)
     {
@@ -171,9 +176,10 @@ class SessionController extends Controller
     /**
      * Log completed sessions
      *
-     * @param Request|object $request - request payload
-     * @return object - session object that has just been logged
+     * @param Request $request - request payload
+     * @throws AccessDeniedException
      * @throws NotFoundException
+     * @return object - session object that has just been logged
      */
     public function logSession(Request $request)
     {
@@ -249,10 +255,11 @@ class SessionController extends Controller
      * Update existing logged session for either the mentee or mentor
      * that logs to confirm a completed session
      *
-     * @param Request|object $request - request payload
-     * @param String | Number $id - id of the session to be updated
+     * @param Request $request - request payload
+     * @param String $id - id of the session to be updated
+     * @throws AccessDeniedException
+     * @throws NotFoundException
      * @return object - session object that has been updated
-     * @throws AccessDeniedException | NotFoundException
      */
     public function approveSession(Request $request, $id)
     {
@@ -288,11 +295,12 @@ class SessionController extends Controller
      * Update existing logged session for either the mentee or mentor
      * that logs to reject a session
      *
-     * @param object          $request - request payload
-     * @param String | Number $id      - id of the session to be updated
-     *
+     * @param Request $request - request payload
+     * @param String $id - id of the session to be updated
+     * @throws AccessDeniedException
+     * @throws NotFoundException
      * @return object - session object that has been updated
-     * @throws AccessDeniedException | NotFoundException
+     *
      */
     public function rejectSession(Request $request, $id)
     {

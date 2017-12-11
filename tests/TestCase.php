@@ -8,6 +8,7 @@ use Test\Mocks\FreckleClientMock;
 use Test\Mocks\SlackUtilityMock;
 use Test\Mocks\SlackUsersRepositoryMock;
 use Test\Mocks\AISClientMock;
+use Test\Mocks\GoogleCloudStorageClientMock;
 
 abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 {
@@ -39,6 +40,10 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
         $slack_utility_mock = new SlackUtilityMock($slack_user_repository_mock);
 
         $ais_client_mock = new AISClientMock();
+
+        $google_cloud_storage_mock = new GoogleCloudStorageClientMock();
+
+        $this->app->instance("App\Clients\GoogleCloudStorageClient", $google_cloud_storage_mock);
 
         $this->app->instance("App\Utility\SlackUtility", $slack_utility_mock);
 

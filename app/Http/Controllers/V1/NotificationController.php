@@ -34,8 +34,7 @@ class NotificationController extends Controller
     /**
      * Creates a new notification and saves it in the notifications table
      *
-     * @param object $request Request
-     *
+     * @param Request $request Request
      * @return object Response object of created notifications
      */
     public function add(Request $request)
@@ -55,9 +54,9 @@ class NotificationController extends Controller
     /**
      * Edit a notifications name field
      *
-     * @param object   $request Request
-     * @param sinteger $id      Unique ID of a particular notifications
-     *
+     * @param Request $request Request
+     * @param integer $id Unique ID of a particular notifications
+     * @throws NotFoundException
      * @return object response of modified notifications and success message
      */
     public function put(Request $request, $id)
@@ -75,10 +74,11 @@ class NotificationController extends Controller
     /**
      * Removes a notifications from notifications table
      *
-     * @param object  $request Request
-     * @param integer $id      Unique ID used to identify the notifications
-     *
+     * @param integer $id Unique ID used to identify the notifications
+     * @throws NotFoundException
+     * @internal param Request|object $request Request
      * @return \Illuminate\Http\JsonResponse
+     *
      */
     public function delete($id)
     {
@@ -103,14 +103,13 @@ class NotificationController extends Controller
         $user_settings = UserNotification::getUserSettings($user_id);
         return $this->respond(Response::HTTP_OK, $user_settings);
     }
-    
+
     /**
      * Updates user notificstion settings
      *
-     * @param object  $request         Request
-     * @param integer $user_id         Unique ID used to identify the users
+     * @param Request $request Request
+     * @param integer $user_id Unique ID used to identify the users
      * @param integer $notification_id Unique ID used to identify the notifications
-     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateUserSettings(Request $request, $user_id, $notification_id)

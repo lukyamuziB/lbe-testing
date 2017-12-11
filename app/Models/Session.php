@@ -117,4 +117,14 @@ class Session extends Model
 
         return $sessionDetails;
     }
+
+    /**
+     * Defines Foreign Key Relationship to the session model
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function files()
+    {
+        return $this->belongsToMany("App\Models\File", "session_file", "session_id", "file_id");
+    }
 }

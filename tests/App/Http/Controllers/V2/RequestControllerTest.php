@@ -5,6 +5,7 @@ namespace Test\App\Http\Controllers\V2;
 use App\Models\User;
 use App\Models\Request;
 
+use Illuminate\Http\UploadedFile;
 use TestCase;
 
 class RequestControllerTest extends TestCase
@@ -221,5 +222,20 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(404);
         $this->patch("api/v2/requests/14/withdraw-interest");
         $this->assertResponseStatus(400);
+    }
+
+    /**
+     * Test that a user can get all files and sessions that belongs to a request.
+     */
+    public function testAllGetSessionFilesSuccess()
+    {
+        $fileDetails = ["file" => UploadedFile::fake()->create("test.doc", 1000)];
+        $this->call("POST", "/api/v2/sessions/19/files", [], [], $fileDetails, []);
+        $this->assertResponseStatus(201);
+        $this->get("/api/v2/requests/in-progress/19");
+        $this->assertResponseStatus(200);
+        $result = json_decode($this->response->getContent());
+        $file = $result[0]->files[0];
+        $this->assertEquals($file->name, "test.doc");
     }
 }

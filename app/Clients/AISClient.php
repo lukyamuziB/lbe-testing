@@ -33,6 +33,8 @@ class AISClient
      *
      * @param string $id - user's id
      *
+     * @throws NotFoundException
+     *
      * @return json $user JSON object containing targeted user
      */
     public function getUserById($id)
@@ -78,8 +80,6 @@ class AISClient
      * GET a multiple users by multiple emails provided
      *
      * @param array $emails - list of user's emails
-     *
-     * @param integer $limit - limit of results returned
      *
      * @return json $users JSON object containing all targeted users
      */
