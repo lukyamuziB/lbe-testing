@@ -21,12 +21,12 @@ class FilesUtility
      *
      * @return string
      */
-    public function getFileUrl($name, $expiryDate = null)
+    public function getFileUrl($name, $saveAs = null, $expiryDate = null)
     {
         $googleCloudFile = $this->googleCloudStorageClient->getFileByName($name);
         $timestamp = $expiryDate ?? Carbon::tomorrow();
 
-        $url = $googleCloudFile->signedUrl($timestamp, ["method"=>"GET", "saveAsName"=>$name]);
+        $url = $googleCloudFile->signedUrl($timestamp, ["method"=>"GET", "saveAsName"=> $saveAs ?? $name]);
 
         return str_replace('"', '', $url);
     }

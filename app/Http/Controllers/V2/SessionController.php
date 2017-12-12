@@ -91,7 +91,7 @@ class SessionController extends Controller
             $sessionFiles = $session->files()->get();
 
             foreach ($sessionFiles as &$sessionFile) {
-                $sessionFile->url = $this->filesUtility->getFileUrl($sessionFile->generated_name);
+                $sessionFile->url = $this->filesUtility->getFileUrl($sessionFile->generated_name, $sessionFile->name);
             }
             $session->files = $sessionFiles;
 

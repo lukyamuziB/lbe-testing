@@ -51,7 +51,7 @@ class FilesController extends Controller
         $response = (object) [
             "id" => $file->id,
             "name" => $file->name,
-            "url" =>$this->filesUtility->getFileUrl($file->generated_name),
+            "url" =>$this->filesUtility->getFileUrl($file->generated_name, $file->name),
             "createdAt" => $file->created_at->toDatetimeString(),
             "updatedAt" => $file->updated_at->toDatetimeString(),
         ];
