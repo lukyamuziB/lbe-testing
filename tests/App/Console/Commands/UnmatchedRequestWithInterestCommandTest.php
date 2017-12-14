@@ -10,6 +10,8 @@
 
 namespace Tests\App\Console\Commands;
 
+use App\Mail\UnmatchedRequestWithInterestMail;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Application;
 
 use TestCase;
@@ -43,17 +45,17 @@ class TestUnmatchedRequestsWithInterestCommand extends TestCase
 
     /**
      * Delete data from tables
-      */
+     */
     private function clearTables()
     {
-         RequestExtension::where("id", ">", 0)->forceDelete();
-         RequestSkill::where("id", ">", 0)->forceDelete();
-         Rating::where("session_id", ">", 0)->forceDelete();
-         Session::where("id", ">", 0)->forceDelete();
-         Request::where("id", ">", 0)->forceDelete();
-         User::where("user_id", "not", 0)->forceDelete();
+        RequestExtension::where("id", ">", 0)->forceDelete();
+        RequestSkill::where("id", ">", 0)->forceDelete();
+        Rating::where("session_id", ">", 0)->forceDelete();
+        Session::where("id", ">", 0)->forceDelete();
+        Request::where("id", ">", 0)->forceDelete();
+        User::where("user_id", "not", 0)->forceDelete();
     }
- 
+
     /**
      * Test if command works correctly when they are
      * no unmatched requests with interest
@@ -79,51 +81,19 @@ class TestUnmatchedRequestsWithInterestCommand extends TestCase
      */
     public function testSuccessUnmatchedRequestsWithInterestCommand()
     {
-        $this->clearTables();
-    
-        /*
-        * Create a new user
-        *
-        */
-        User::create(
-            [
-                "user_id" => "-KXGy1MTimjQgFim7u",
-                "email" => "daisy.wanjiru@andela.com",
-                "slack_id" => "idgoeshere"
-            ]
+
+        $commandTester = $this->executeCommand(
+            $this->application,
+            "notify:unmatched-requests:with-interests",
+            UnmatchedRequestsWithInterestCommand::class
         );
 
-        /*
-         * create request
-        */
-        Request::create(
-            [
-                'mentee_id' => "-KXGy1MTimjQgFim7u",
-                'title' => "Javascript",
-                'description' => "Learn Javascript",
-                'status_id' => 1,
-                'created_at' => "2017-09-19 20:55:24",
-                'match_date' => null,
-                'interested' => ["-K_nkl19N6-EGNa0W8LF"],
-                'duration' => 2,
-                'pairing' => json_encode(
-                    [
-                        'start_time' => '01:00',
-                        'end_time' => '02:00',
-                        'days' => ['monday'],
-                        'timezone' => 'EAT'
-                    ]
-                ),
-                'location' => "Nairobi"
-             ]
-        );
-         $commandTester = $this->executeCommand(
-             $this->application,
-             "notify:unmatched-requests:with-interests",
-             UnmatchedRequestsWithInterestCommand::class
-         );
-         $message = "Notifications have been sent to 1 user(s)\n";
-         
+        Mail::assertSent(UnmatchedRequestWithInterestMail::class, function ($mail) {
+            return $mail->hasTo("inumidun.amao@andela.com");
+        });
+
+        $message = "Notifications have been sent to 1 user(s)\n";
+
         $this->assertEquals($commandTester->getDisplay(), $message);
     }
 }

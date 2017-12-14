@@ -10,6 +10,8 @@
 
 namespace Tests\App\Console\Commands;
 
+use App\Mail\FellowsUnmatchedRequestsMail;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Application;
 
 use TestCase;
@@ -65,6 +67,10 @@ class TestUnmatchedRequestsFellowsCommand extends TestCase
             "notify:unmatched-requests:fellows",
             UnmatchedRequestsFellowsCommand::class
         );
+
+        Mail::assertSent(FellowsUnmatchedRequestsMail::class, function ($mail) {
+            return $mail->hasTo("test-user-admin@andela.com");
+        });
 
         $message = "A notification about 10 unmatched " .
             "requests has been sent to all fellows\n";

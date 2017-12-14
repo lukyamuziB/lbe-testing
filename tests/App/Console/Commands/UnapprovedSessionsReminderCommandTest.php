@@ -10,7 +10,9 @@
 
 namespace Tests\App\Console\Commands;
 
+use App\Mail\UnapprovedSessionsMail;
 use App\Models\RequestExtension;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Application;
 
 use TestCase;
@@ -65,6 +67,10 @@ class TestUnapprovedSessionsReminderCommand extends TestCase
             "notify:unapproved-sessions",
             UnapprovedSessionsReminderCommand::class
         );
+
+        Mail::assertSent(UnapprovedSessionsMail::class, function ($mail) {
+            return $mail->hasTo("inumidun.amao@andela.com");
+        });
 
         $message = "Notifications have been sent to 1 recipients\n";
 

@@ -25,7 +25,7 @@ class UserNotificationsTableSeeder extends Seeder
                     'user_id' => $user_ids[$i],
                     'id' => $id,
                     'slack' => true,
-                    'email' => false
+                    'email' => true
                     ]
                 );
             }

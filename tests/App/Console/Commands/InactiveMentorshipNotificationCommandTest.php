@@ -1,8 +1,10 @@
 <?php
 namespace Tests\App\Console\Commands;
 
+use App\Mail\InactiveMentorshipNotificationMail;
 use Carbon\Carbon;
 use Symfony\Component\Console\Application;
+use Illuminate\Support\Facades\Mail;
 
 use TestCase;
 use App\console\Commands\InactiveMentorshipNotificationCommand;
@@ -57,7 +59,12 @@ class TestInactiveMentorshipNotificationCommand extends TestCase
             "notify:inactive-mentorships",
             InactiveMentorshipNotificationCommand::class
         );
+
         $message = "Inactive notifications have been sent to 3 fellows\n";
+
+        Mail::assertSent(InactiveMentorshipNotificationMail::class, function ($mail) {
+            return $mail->hasTo("inumidun.amao@andela.com");
+        });
 
         $this->assertEquals($command_tester->getDisplay(), $message);
     }

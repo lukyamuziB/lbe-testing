@@ -10,7 +10,9 @@
 
 namespace Tests\App\Console\Commands;
 
+use App\Mail\SuccessUnmatchedRequestsMail;
 use App\Models\RequestCancellationReason;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Application;
 
 use TestCase;
@@ -66,6 +68,10 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
             "notify:unmatched-requests:success",
             UnmatchedRequestsSuccessCommand::class
         );
+
+        Mail::assertSent(SuccessUnmatchedRequestsMail::class, function ($mail) {
+            return $mail->hasTo("test-user-admin@andela.com");
+        });
 
         $message = "Notifications have been ".
             "sent for 10 placed fellows\nExternal ".
