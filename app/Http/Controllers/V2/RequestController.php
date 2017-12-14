@@ -41,23 +41,9 @@ class RequestController extends Controller
     public function getRequestsPool(Request $request)
     {
         // Get all request params
-        $params = [];
         $limit = $request->input("limit") ?
-            intval($request->input("limit")) : 20;
-
-        $params["user"] = $request->user()->uid;
-        if ($requestsType = $this->getRequestParams($request, "category")) {
-            $params["category"] = $requestsType;
-        }
-        if ($locations = $this->getRequestParams($request, "locations")) {
-            $params["locations"] = explode(",", $locations);
-        }
-        if ($lengths = $this->getRequestParams($request, "lengths")) {
-            $params["lengths"] = explode(",", $lengths);
-        }
-        if ($skills = $this->getRequestParams($request, "skills")) {
-            $params["skills"] = explode(",", $skills);
-        }
+        intval($request->input("limit")) : 20;
+        $params = $this->buildPoolFilterParams($request);
         $mentorshipRequests  = MentorshipRequest::buildPoolFilterQuery($params)
             ->orderBy("created_at", "desc")
             ->paginate($limit);
@@ -68,6 +54,42 @@ class RequestController extends Controller
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    /**
+     * Build query params from request
+     *
+     * @param Request $request - request object
+     *
+     * @return Array $response - An associative array containing
+     * query string data from request url
+     */
+    private function buildPoolFilterParams($request)
+    {
+    
+        $params = [];
+
+        $params["user"] = $request->user()->uid;
+        if ($requestsType = $this->getRequestParams($request, "category")) {
+            $params["category"] = $requestsType;
+        }
+
+        if ($locations = $this->getRequestParams($request, "locations")) {
+            $params["locations"] = explode(",", $locations);
+        }
+
+        if ($lengths = $this->getRequestParams($request, "lengths")) {
+            $params["lengths"] = explode(",", $lengths);
+        }
+
+        if ($skills = $this->getRequestParams($request, "skills")) {
+            $params["skills"] = explode(",", $skills);
+        }
+        
+        if ($status = $this->getRequestParams($request, "status")) {
+            $params["status"] = explode(",", $status);
+        }
+        return $params;
     }
 
     /**

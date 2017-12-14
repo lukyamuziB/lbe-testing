@@ -238,4 +238,15 @@ class RequestControllerTest extends TestCase
         $file = $result[0]->files[0];
         $this->assertEquals($file->name, "test.doc");
     }
+
+    public function testGetOpenRequestsOnlySuccess()
+    {
+        $this->get("api/v2/requests/pool?limit=5&page=1&status=1");
+        $this->assertResponseStatus(200);
+        $randomNumber = rand(1, 4);
+        $mentorshipRequests = json_decode(
+            $this->response->getContent()
+        )->requests;
+        $this->assertEquals($mentorshipRequests[$randomNumber]->status_id, 1);
+    }
 }

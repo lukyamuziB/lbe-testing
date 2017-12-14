@@ -266,7 +266,14 @@ class Request extends Model
             function ($query) use ($params) {
                 return $query->whereIn("location", $params["locations"]);
             }
+        )
+        ->when(
+            isset($params["status"]),
+            function ($query) use ($params) {
+                return $query->whereIn("status_id", $params["status"]);
+            }
         );
+
 
         return $mentorshipRequests;
     }
