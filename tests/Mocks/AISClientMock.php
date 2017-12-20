@@ -118,6 +118,19 @@ class AISClientMock extends AISClient
                 "roles" => "fellow",
                 "placement" => ["client" => "Available", "status" =>"Available"],
                 "level" => "D1"
+            ],
+            [
+                "id" => "-KXGy1MT1oimjQgFim7u",
+                "email" => "timothy.kyadondo@andela.com",
+                "name" => "Timothy Kyadondo",
+                "location" => "Kampala",
+                "picture" => "picture",
+                "first_name" => "Timothy",
+                "last_name" => "Kyadondo",
+                "cohort" => "cohort2",
+                "roles" => "fellow",
+                "placement" => ["client" => "Available", "status" =>"Available"],
+                "level" => "D1"
             ]
         ];
     }

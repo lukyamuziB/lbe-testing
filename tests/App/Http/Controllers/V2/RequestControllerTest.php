@@ -43,19 +43,23 @@ class RequestControllerTest extends TestCase
     /**
      * Creates a request with the status id provided as argument
      *
+     * @param string $menteeId   - The ID of the mentee.
+     * @param string $interested - The ID of the user interested
+     * @param int    $statusId   - The status of the request.
+     *
      * @return void
      */
-    private function makeCompletedRequest()
+    private function createRequest($menteeId, $interested, $statusId)
     {
         Request::create(
             [
-                "mentee_id" => "-K_nkl19N6-EGNa0W8LF",
+                "mentee_id" => $menteeId,
                 "title" => "Javascript",
                 "description" => "Learn Javascript",
-                "status_id" => 3,
+                "status_id" => $statusId,
                 "created_at" => "2017-09-19 20:55:24",
                 "match_date" => null,
-                "interested" => ["-K_nkl19N6-EGNa0W8LF"],
+                "interested" => [$interested],
                 "duration" => 2,
                 "pairing" => json_encode(
                     [
@@ -83,7 +87,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetCompletedRequestsSuccess()
     {
-        $this->makeCompletedRequest();
+        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "-KesEogCwjq6lkOzKmLI", 3);
         $this->get("/api/v2/requests/history");
 
         $response = json_decode($this->response->getContent());
@@ -99,20 +103,20 @@ class RequestControllerTest extends TestCase
      */
     public function testGetPendingPoolSuccess()
     {
+        $this->createRequest("-KXGy1MT1oimjQgFim7u", "-K_nkl19N6-EGNa0W8LF", 1);
         $this->get("/api/v2/requests/pending");
 
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
 
         $this->assertEquals(
-            "-K_nkl19N6-EGNa0W8LF",
-            $response->requestsWithInterests[0]->mentee_id
+            "-KXGy1MT1oimjQgFim7u",
+            $response->awaitingResponse[10]->mentee_id
         );
 
         $this->assertContains(
             "-K_nkl19N6-EGNa0W8LF",
-            $response->requestsInterestedIn[0]->interested
+            $response->awaitingYou[0]->interested
         );
     }
 

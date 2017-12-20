@@ -16,6 +16,7 @@ use App\Models\Status;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestCancellationReason;
 use App\Utility\SlackUtility;
+use App\Clients\AISClient;
 
 /**
  * Class RequestController
@@ -27,10 +28,12 @@ class RequestController extends Controller
     use RESTActions;
 
     protected $slackUtility;
+    protected $aisClient;
 
-    public function __construct(SlackUtility $slackUtility)
+    public function __construct(SlackUtility $slackUtility, AISClient $aisClient)
     {
         $this->slackUtility = $slackUtility;
+        $this->aisClient = $aisClient;
     }
 
     /**
@@ -130,44 +133,58 @@ class RequestController extends Controller
     public function getPendingPool(Request $request)
     {
         $userId = $request->user()->uid;
+        $openRequests = MentorshipRequest::where("status_id", STATUS::OPEN)->get();
 
-        $allRequestsWithInterestedMentors
-            = MentorshipRequest::where("status_id", STATUS::OPEN)->whereNotNull("interested");
-
-        $requestsInterestedIn
-            = $this->getRequestsInterestedIn($allRequestsWithInterestedMentors, $userId);
-
-        $userRequestsWithInterestedMentors
-            = $allRequestsWithInterestedMentors->where("mentee_id", $userId)->get();
+        $sortedRequests = $this->sortUserRequests($openRequests, $userId);
 
         $response = [
-            "requestsWithInterests" => $this->formatRequestData($userRequestsWithInterestedMentors),
-            "requestsInterestedIn" => $this->formatRequestData($requestsInterestedIn),
+            "awaitingResponse" => $this->formatRequestData($sortedRequests["awaitingResponse"]),
+            "awaitingYou" => $this->formatRequestData($sortedRequests["awaitingYou"])
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**
-     * Get mentorship requests which user has shown interest in
+     * Sort the user requests
      *
-     * @param array  $requestsWithInterested - requests that have interested mentors
-     * @param string $userId - id for currently logged in user
+     * @param Model  $mentorshipRequests - requests object
+     * @param string $userId             - id for currently logged in user
      *
-     * @return array $requestsInterestedIn - requests user is interested in
+     * @return array $sortedRequests - request that have been sorted.
      */
-    private function getRequestsInterestedIn($requestsWithInterested, $userId)
+    private function sortUserRequests($requests, $userId)
     {
-        $requestsWithInterested = $requestsWithInterested->get();
+        $sortedRequests = [
+            "awaitingResponse" => [],
+            "awaitingYou" => []
+        ];
+        $requestsIamInterestedIn = [];
+        $myRequestsThatNoOneHasShownInterestIn = [];
 
-        $requestsInterestedIn = [];
-        foreach ($requestsWithInterested as $request) {
-            if (in_array($userId, $request->interested)) {
-                $requestsInterestedIn[] = $request;
+        foreach ($requests as $request) {
+            $userInfo = $this->aisClient->getUserById($request->mentee_id);
+            $request->userName = $userInfo['name'];
+
+            if ($request->interested) {
+                if (in_array($userId, $request->interested)) {
+                    $requestsIamInterestedIn[] = $request;
+                }
+
+                if ($request->mentee_id == $userId) {
+                    $sortedRequests["awaitingYou"][] = $request;
+                }
+            } elseif (empty($request->interested) && $request->mentee_id == $userId) {
+                $myRequestsThatNoOneHasShownInterestIn[] = $request;
             }
         }
 
-        return $requestsInterestedIn;
+        $sortedRequests["awaitingResponse"] = array_merge(
+            $myRequestsThatNoOneHasShownInterestIn,
+            $requestsIamInterestedIn
+        );
+
+        return $sortedRequests;
     }
 
     /**
@@ -452,6 +469,7 @@ class RequestController extends Controller
         foreach ($requests as $request) {
             $formattedRequest = (object) [
                 "id" => $request->id,
+                "userName" => $request->userName ?? "",
                 "mentee_id" => $request->mentee_id,
                 "mentor_id" => $request->mentor_id,
                 "title" => $request->title,
