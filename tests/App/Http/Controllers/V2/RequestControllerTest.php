@@ -6,12 +6,21 @@ use App\Models\User;
 use App\Models\Request;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use TestCase;
 
 class RequestControllerTest extends TestCase
 {
     private $cancellationReason = [
         "reason"=> "test cancellations reason."
+    ];
+    private $validAcceptOrRejectMentorData = [
+        "mentorId" => "-K_nkl19N6-EGNa0W8LF",
+        "mentorName" => "Test Admin",
+    ];
+    private $invalidAcceptOrRejectMentorIdData = [
+        "mentorId" => "wrongMentorId",
+        "mentorName" => "Test Admin",
     ];
 
     private function makeUser($identifier, $role = "Fellow")
@@ -248,5 +257,125 @@ class RequestControllerTest extends TestCase
             $this->response->getContent()
         )->requests;
         $this->assertEquals($mentorshipRequests[$randomNumber]->status_id, 1);
+    }
+    
+    /**
+     * Test interested mentor is accepted succesfully
+     *
+     * @return void
+     */
+    public function testAcceptInterestedMentorSuccess()
+    {
+        $this->patch(
+            "/api/v2/requests/17/accept-mentor",
+            $this->validAcceptOrRejectMentorData
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+
+        $this->assertEquals($response->status_id, 2);
+        $this->assertEquals($response->mentor_id, "-K_nkl19N6-EGNa0W8LF");
+        $this->assertNotNull($response->match_date);
+    }
+
+    /**
+     * Test valid interested mentor id is required
+     *
+     * @return void
+     */
+    public function testAcceptInterestedMentorFailureInvalidMentorId()
+    {
+        $this->patch(
+            "/api/v2/requests/17/accept-mentor",
+            $this->invalidAcceptOrRejectMentorIdData
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(404);
+        $this->assertEquals($response->message, "The fellow is not an interested mentor");
+    }
+
+
+    /**
+     * Test only requests owner can accept interested mentor
+     *
+     * @return void
+     */
+    public function testAcceptInterestedmentorFailureUnauthorizedUser()
+    {
+        $this->makeUser("-Kv6NjpXJ_suEwaCsBzq");
+        $this->patch(
+            "/api/v2/requests/17/accept-mentor",
+            $this->validAcceptOrRejectMentorData
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(403);
+        $this->assertEquals(
+            $response->message,
+            "You do not have permission to perform this operation"
+        );
+    }
+
+    /**
+     * Test interested mentor is rejected succesfully
+     *
+     * @return void
+     */
+    public function testRejectInterestedMentorSuccess()
+    {
+        $this->patch(
+            "/api/v2/requests/17/reject-mentor",
+            $this->validAcceptOrRejectMentorData
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+        $this->assertNull($response->interested);
+    }
+
+    /**
+     * Test valid interested mentor id is required
+     *
+     * @return void
+     */
+    public function testRejectInterestedMentorFailureInvalidMentorId()
+    {
+        $this->patch(
+            "/api/v2/requests/17/reject-mentor",
+            $this->invalidAcceptOrRejectMentorIdData
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(404);
+        $this->assertEquals($response->message, "The fellow is not an interested mentor");
+    }
+
+    /**
+     * Test only owner of request can reject interested mentor
+     *
+     * @return void
+     */
+    public function testRejectInterestedMentorFailureUnauthorizedUser()
+    {
+        $this->makeUser("-Kv6NjpXJ_suEwaCsBzq");
+        $this->patch(
+            "/api/v2/requests/17/reject-mentor",
+            $this->validAcceptOrRejectMentorData
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(403);
+        $this->assertEquals(
+            $response->message,
+            "You do not have permission to perform this operation"
+        );
     }
 }

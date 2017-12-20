@@ -23,6 +23,8 @@ $app->group(["prefix" => "api/v2"], function ($app) {
     $app->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
     $app->patch('requests/{id}/withdraw-interest', 'RequestController@withdrawInterest');
     $app->get("requests/in-progress/{id}", "SessionController@getAllSessions");
+    $app->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
+    $app->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
 });
 /**
  * Routes for skills

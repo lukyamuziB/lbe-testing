@@ -61,6 +61,11 @@ class Request extends Model
         "mentee_name" => "required|string",
         "match_date" => "numeric|required"
     ];
+
+    public static $acceptOrRejectMentorRules = [
+        "mentorId" => "required|string",
+        "mentorName" => "required|string",
+    ];
     
     public function session()
     {

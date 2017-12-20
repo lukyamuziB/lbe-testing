@@ -27,13 +27,11 @@ class RequestsTableSeeder extends Seeder
                     $faker->randomElement(
                         ['-KesEogCwjq6lkOzKmLI', '-KXGy1MT1oimjQgFim7u']
                     ),
-                    'title' => $faker->sentence($nbWords = 6, $variableNbWords = true),
+                    'title' => $i === 16 ? "Lorem Ipsum" : $faker->sentence(6),
                     'description' => $faker->text($maxNbChars = 300),
                     'status_id' => ($i%2 === 0 ? 1 : 2),
                     'interested' => (
-                        ($i === 20) ? json_encode(['-KesEogCwjq6lkOzKmLI'])
-                            : ($i === 18) ? json_encode(['-K_nkl19N6-EGNa0W8LF'])
-                            : null
+                        $i === 16 ? json_encode(['-K_nkl19N6-EGNa0W8LF']) : null
                     ),
                     'created_at' => $created_at,
                     'updated_at' => null,

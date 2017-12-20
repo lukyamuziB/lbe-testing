@@ -2,14 +2,16 @@
 namespace App\Http\Controllers\V2;
 
 use DB;
+use App\Exceptions\AccessDeniedException;
+use App\Exceptions\BadRequestException;
+use App\Exceptions\NotFoundException;
+use App\Models\UserSkill;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-
-use App\Exceptions\NotFoundException;
 use App\Exceptions\UnauthorizedException;
-use App\Exceptions\BadRequestException;
 use App\Exceptions\ConflictException;
-
 use App\Models\Status;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestCancellationReason;
@@ -66,7 +68,7 @@ class RequestController extends Controller
      */
     private function buildPoolFilterParams($request)
     {
-    
+
         $params = [];
 
         $params["user"] = $request->user()->uid;
@@ -85,7 +87,7 @@ class RequestController extends Controller
         if ($skills = $this->getRequestParams($request, "skills")) {
             $params["skills"] = explode(",", $skills);
         }
-        
+
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
         }
@@ -311,6 +313,97 @@ class RequestController extends Controller
         $mentorshipRequest->save();
 
         return $this->respond(Response::HTTP_OK);
+    }
+    
+    /**
+     * Accept a mentor who has shown interest in users mentorship request.
+     *
+     * @param Request $request - Request object
+     * @param integer $mentorshipRequestId - mentorship request id with interested mentor
+     *
+     * @throws NotFoundException if mentorship request is not found
+     *
+     * @return Response object
+     */
+    public function acceptInterestedMentor(Request $request, $mentorshipRequestId)
+    {
+        $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
+
+        $this->validateBeforeAcceptOrRejectMentor($request, $mentorshipRequest);
+
+        $interestedMentorId = $request->get("mentorId");
+
+        $mentorshipRequest->mentor_id = $interestedMentorId;
+        $mentorshipRequest->match_date = Carbon::now();
+        $mentorshipRequest->status_id = Status::MATCHED;
+        $mentorshipRequest->save();
+
+        return $this->respond(Response::HTTP_OK, $mentorshipRequest);
+    }
+
+    /**
+     * Reject a mentor who has shown interest in user's mentorship request
+     *
+     * @param Request $request - Request object
+     * @param integer $mentorshipRequestId - mentorship request id with interested mentor
+     *
+     * @throws NotFoundException if mentorship request is not found
+     *
+     * @return Response object
+     */
+    public function rejectInterestedMentor(Request $request, $mentorshipRequestId)
+    {
+        $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
+
+        $this->validateBeforeAcceptOrRejectMentor($request, $mentorshipRequest);
+
+        $allInterestedMentors = $mentorshipRequest->interested ?? [];
+        $interestedMentorId = $request->get("mentorId");
+
+        $interestedMentorIndex = array_search($interestedMentorId, $allInterestedMentors);
+        array_splice($allInterestedMentors, $interestedMentorIndex, 1);
+        $mentorshipRequest->interested =
+            count($allInterestedMentors) > 0 ? $allInterestedMentors : null;
+        $mentorshipRequest->save();
+
+        return $this->respond(Response::HTTP_OK, $mentorshipRequest);
+    }
+
+    /**
+     * Check validity of request in accept and reject interested mentor functions, if not
+     * throw Exception
+     *
+     * @param Request $request - Request object
+     * @param MentorshipRequest $mentorshipRequest - A mentorship request object
+     *
+     * @throws BadRequestException - if mentorship request is not open
+     * @throws AccessDeniedException - if user does not own the mentorship request
+     * @throws NotFoundException - if interested mentor given is not an interested mentor
+     *
+     * @return void
+     */
+    private function validateBeforeAcceptOrRejectMentor(Request $request, MentorshipRequest $mentorshipRequest)
+    {
+        $this->validate($request, MentorshipRequest::$acceptOrRejectMentorRules);
+
+        if (!($mentorshipRequest)) {
+            throw new NotFoundException("The mentorship request was not found");
+        }
+
+        if (!$mentorshipRequest->status_id === Status::OPEN) {
+            throw new BadRequestException("Operation can only be performed on open requests");
+        }
+
+        $currentUser = $request->user();
+        if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
+            throw new AccessDeniedException("You do not have permission to perform this operation");
+        }
+
+        $interestedMentorId = $request->get("mentorId");
+        $allInterestedMentors = $mentorshipRequest->interested ?? [];
+        if (!(in_array($interestedMentorId, $allInterestedMentors))) {
+            throw new NotFoundException("The fellow is not an interested mentor");
+        }
     }
 
     /**
