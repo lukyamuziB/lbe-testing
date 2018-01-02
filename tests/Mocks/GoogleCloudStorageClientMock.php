@@ -2,14 +2,14 @@
 
 namespace Test\Mocks;
 
-use App\Clients\GoogleCloudStorageClient;
+use App\Interfaces\GoogleCloudStorageInterface;
 
 /**
  * Class GoogleCloudObjectMock
  *
  * @package Test\Mocks
  */
-class GoogleCloudStorageClientMock extends GoogleCloudStorageClient
+class GoogleCloudStorageClientMock implements GoogleCloudStorageInterface
 {
 
     /**

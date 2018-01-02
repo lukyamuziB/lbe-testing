@@ -20,11 +20,12 @@ $app->group(["prefix" => "api/v2"], function ($app) {
     $app->get("requests/history", "RequestController@getUserHistory");
     $app->get("requests/in-progress", "RequestController@getRequestsInProgress");
     $app->get("requests/pending", "RequestController@getPendingPool");
-    $app->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
-    $app->patch('requests/{id}/withdraw-interest', 'RequestController@withdrawInterest');
+    $app->patch("requests/{id}/cancel-request", "RequestController@cancelRequest");
+    $app->patch("requests/{id}/withdraw-interest", "RequestController@withdrawInterest");
     $app->get("requests/in-progress/{id}", "SessionController@getAllSessions");
     $app->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
     $app->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
+    $app->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
 });
 /**
  * Routes for skills
