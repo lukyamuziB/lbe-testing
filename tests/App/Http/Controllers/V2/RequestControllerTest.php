@@ -22,6 +22,48 @@ class RequestControllerTest extends TestCase
         "mentorId" => "wrongMentorId",
         "mentorName" => "Test Admin",
     ];
+    
+    const REQUESTS_URI = "/api/v2/requests";
+
+    private $validRequest = [
+        "title" => "Angular 2 and PHP",
+        "description" => "I need a mentor to help me level up in Angular 2 and PHP",
+        "duration" => "3",
+        "pairing" => [
+            "start_time" => "01:00",
+            "end_time" => "03:00",
+            "days" => [
+                "monday"
+            ],
+            "timezone" => "WAT"
+        ],
+        "primary" => ["1"],
+        "secondary" => ["1"],
+        "location" => "Lagos",
+        "status_id" => 1,
+        "isMentor" => true,
+    ];
+
+    private $invalidResponse = [
+        "title" => [
+            "The title field is required."
+        ],
+        "description" => [
+            "The description field is required."
+        ],
+        "duration" => [
+            "The duration field is required."
+        ],
+        "pairing.start_time" => [
+            "The pairing.start time field is required."
+        ],
+        "pairing.end_time" => [
+            "The pairing.end time field is required."
+        ],
+        "pairing.timezone" => [
+            "The pairing.timezone field is required."
+        ]
+    ];
 
     private function makeUser($identifier, $role = "Fellow")
     {
@@ -130,7 +172,7 @@ class RequestControllerTest extends TestCase
         $this->get("/api/v2/requests/in-progress");
 
         $this->assertResponseOk();
-        
+
         $response = json_decode($this->response->getContent());
 
         $this->assertResponseStatus(200);
@@ -380,6 +422,73 @@ class RequestControllerTest extends TestCase
         $this->assertEquals(
             $response->message,
             "You do not have permission to perform this operation"
+        );
+    }
+
+    /**
+     * Test to create a valid mentor mentorship request
+     *
+     * @return {void}
+     */
+    public function testCreateMentorRequestSuccess()
+    {
+        unset($this->validRequest["isMentor"]);
+        $this->post(self::REQUESTS_URI, $this->validRequest);
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(201);
+        $this->assertEquals($this->validRequest["title"], $response->title);
+        $this->assertEquals($this->validRequest["description"], $response->description);
+        $this->assertEquals($this->validRequest["duration"], $response->duration);
+        $this->assertEquals(
+            $this->validRequest["pairing"]["start_time"],
+            $response->pairing->start_time
+        );
+        $this->assertEquals(
+            $this->validRequest["pairing"]["end_time"],
+            $response->pairing->end_time
+        );
+        $this->assertEquals(
+            $this->validRequest["pairing"]["days"][0],
+            $response->pairing->days[0]
+        );
+        $this->assertEquals($this->validRequest["location"], $response->location);
+        $this->assertEquals($this->validRequest["status_id"], $response->status_id);
+        $this->assertEquals(1, $response->status_id);
+        $this->assertEquals(21, $response->id);
+        $response = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey("mentee_id", $response);
+    }
+
+    /**
+     * Test should fail if the user does not provide the necessary fields
+     * required to create a mentorship request
+     *
+     * @return {void}
+     */
+    public function testCreateRequestFailureForMissingRequiredFields()
+    {
+        $partialRequest = ["title", "description", "duration"];
+        $partialRequest = array_fill_keys($partialRequest, "");
+        $pairing = ["start_time" => "", "end_time" => ""];
+        $invalidRequest = array_merge($partialRequest, $pairing);
+        $this->post(self::REQUESTS_URI, $invalidRequest);
+        $this->assertResponseStatus(422);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals($this->invalidResponse["title"][0], $response->title[0]);
+        $this->assertEquals($this->invalidResponse["description"][0], $response->description[0]);
+        $this->assertEquals($this->invalidResponse["duration"][0], $response->duration[0]);
+        $response = (array)$response;
+        $this->assertEquals(
+            $this->invalidResponse["pairing.start_time"][0],
+            $response["pairing.start_time"][0]
+        );
+        $this->assertEquals(
+            $this->invalidResponse["pairing.end_time"][0],
+            $response["pairing.end_time"][0]
+        );
+        $this->assertEquals(
+            $this->invalidResponse["pairing.timezone"][0],
+            $response["pairing.timezone"][0]
         );
     }
 }

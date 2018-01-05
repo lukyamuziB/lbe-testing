@@ -26,6 +26,7 @@ $app->group(["prefix" => "api/v2"], function ($app) {
     $app->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
     $app->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
     $app->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
+    $app->post("requests", "RequestController@createRequest");
 });
 /**
  * Routes for skills

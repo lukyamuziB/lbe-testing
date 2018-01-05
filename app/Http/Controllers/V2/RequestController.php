@@ -13,6 +13,7 @@ use Illuminate\Http\Response;
 use App\Exceptions\UnauthorizedException;
 use App\Exceptions\ConflictException;
 use App\Models\Status;
+use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestCancellationReason;
 use App\Utility\SlackUtility;
@@ -424,6 +425,44 @@ class RequestController extends Controller
     }
 
     /**
+     * Creates a new Mentorship request and saves it in the request table
+     *
+     * @param Request $request - request object
+     *
+     * @throws InternalServerErrorException
+     *
+     * @return object Response object of created request
+     */
+    public function createRequest(Request $request)
+    {
+        $this->validate($request, MentorshipRequest::$rules);
+        $user = $request->user();
+
+        $requestDetails = $this->removePrimarySecondaryFields($request->all());
+        $requestDetails["status_id"] = Status::OPEN;
+
+        if ($request->exists("isMentor") && $request->input("isMentor")) {
+            $requestDetails["mentor_id"] = $user->uid;
+        } else {
+            $requestDetails["mentee_id"] = $user->uid;
+        }
+
+        $result = DB::transaction(function () use ($request, $requestDetails) {
+            $createdRequest = MentorshipRequest::create($requestDetails);
+
+            $primary = $request->input("primary");
+            $this->mapRequestToSkill($createdRequest->id, $primary, "primary");
+
+            $secondary = $request->input("secondary");
+            $this->mapRequestToSkill($createdRequest->id, $secondary, "secondary");
+
+            return $createdRequest;
+        });
+
+        return $this->respond(Response::HTTP_CREATED, $result);
+    }
+
+    /**
      * Calculate and attach the rating of each request Object
      *
      * @param object $mentorshipRequests - mentorship requests
@@ -523,5 +562,49 @@ class RequestController extends Controller
             $skills[] = $result;
         }
         return $skills;
+    }
+
+    /**
+     * Filter incoming request body to remove object property
+     * containing primary and secondary skills
+     *
+     * @param  object $request
+     *
+     * @return object
+     */
+    private function removePrimarySecondaryFields($request)
+    {
+        return array_filter(
+            $request,
+            function ($key) {
+                return $key !== "primary" && $key !== "secondary";
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
+    /**
+     * Maps the skills in the request body by type and
+     * saves them in the request_skills table
+     *
+     * @param integer $requestId the id of the request
+     * @param array $skills skill to map
+     * @param string $type the type of skill to map
+     *
+     * @return void
+     */
+    private function mapRequestToSkill($requestId, $skills, $type)
+    {
+        if ($skills) {
+            foreach ($skills as $skill) {
+                RequestSkill::create(
+                    [
+                        "request_id" => $requestId,
+                        "skill_id" => $skill,
+                        "type" => $type
+                    ]
+                );
+            }
+        }
     }
 }
