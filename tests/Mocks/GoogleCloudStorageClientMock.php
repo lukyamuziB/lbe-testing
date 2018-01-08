@@ -11,7 +11,6 @@ use App\Interfaces\GoogleCloudStorageInterface;
  */
 class GoogleCloudStorageClientMock implements GoogleCloudStorageInterface
 {
-
     /**
      * Get file by name.
      *

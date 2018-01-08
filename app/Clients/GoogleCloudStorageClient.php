@@ -2,6 +2,7 @@
 
 namespace App\Clients;
 
+use App\Interfaces\GoogleCloudStorageInterface;
 use Google\Cloud\Storage\StorageClient;
 
 /**
@@ -9,7 +10,7 @@ use Google\Cloud\Storage\StorageClient;
  *
  * @package App\Clients
  */
-class GoogleCloudStorageClient
+class GoogleCloudStorageClient implements GoogleCloudStorageInterface
 {
     protected $bucket;
 

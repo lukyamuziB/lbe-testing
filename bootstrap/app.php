@@ -92,6 +92,7 @@ $app->register(App\Providers\SlackServiceProvider::class);
 $app->register(\App\Providers\FreckleServiceProvider::class);
 $app->register(App\Providers\SlackUsersRepositoryProvider::class);
 $app->register(App\Providers\GoogleClientServiceProvider::class);
+$app->register(App\Providers\GoogleStorageClientServiceProvider::class);
 $app->configure('cors');
 $app->configure('mail');
 $app->configure('redis');

@@ -5,6 +5,7 @@ use App\Clients\GoogleCloudStorageClient;
 use App\Exceptions\AccessDeniedException;
 use App\Exceptions\BadRequestException;
 use App\Exceptions\NotFoundException;
+use App\Interfaces\GoogleCloudStorageInterface;
 use App\Models\File;
 use App\Models\Session;
 use App\Utility\FilesUtility;
@@ -21,18 +22,15 @@ class SessionController extends Controller
 {
     use RESTActions;
 
-    protected $googleCloudStorageClient;
     protected $filesUtility;
 
     /**
      * SessionController constructor.
      *
-     * @param GoogleCloudStorageClient $googleCloudStorageClient
      * @param FilesUtility $filesUtility
      */
-    public function __construct(GoogleCloudStorageClient $googleCloudStorageClient, FilesUtility $filesUtility)
+    public function __construct(FilesUtility $filesUtility)
     {
-        $this->googleCloudStorageClient = $googleCloudStorageClient;
         $this->filesUtility = $filesUtility;
     }
 

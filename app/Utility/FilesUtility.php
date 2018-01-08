@@ -1,14 +1,14 @@
 <?php
 namespace App\Utility;
 
-use App\Clients\GoogleCloudStorageClient;
+use App\Interfaces\GoogleCloudStorageInterface;
 use Carbon\Carbon;
 
 class FilesUtility
 {
     protected $googleCloudStorageClient;
 
-    public function __construct(GoogleCloudStorageClient $googleCloudStorageClient)
+    public function __construct(GoogleCloudStorageInterface $googleCloudStorageClient)
     {
         $this->googleCloudStorageClient = $googleCloudStorageClient;
     }
