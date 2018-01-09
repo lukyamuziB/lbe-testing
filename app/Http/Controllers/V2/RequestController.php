@@ -17,7 +17,7 @@ use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestCancellationReason;
 use App\Utility\SlackUtility;
-use App\Clients\AISClient;
+use App\Models\User;
 
 /**
  * Class RequestController
@@ -29,12 +29,10 @@ class RequestController extends Controller
     use RESTActions;
 
     protected $slackUtility;
-    protected $aisClient;
 
-    public function __construct(SlackUtility $slackUtility, AISClient $aisClient)
+    public function __construct(SlackUtility $slackUtility)
     {
         $this->slackUtility = $slackUtility;
-        $this->aisClient = $aisClient;
     }
 
     /**
@@ -164,9 +162,6 @@ class RequestController extends Controller
         $myRequestsThatNoOneHasShownInterestIn = [];
 
         foreach ($requests as $request) {
-            $userInfo = $this->aisClient->getUserById($request->mentee_id);
-            $request->userName = $userInfo['name'];
-
             if ($request->interested) {
                 if (in_array($userId, $request->interested)) {
                     $requestsIamInterestedIn[] = $request;
@@ -508,7 +503,6 @@ class RequestController extends Controller
         foreach ($requests as $request) {
             $formattedRequest = (object) [
                 "id" => $request->id,
-                "userName" => $request->userName ?? "",
                 "mentee_id" => $request->mentee_id,
                 "mentor_id" => $request->mentor_id,
                 "title" => $request->title,
@@ -522,6 +516,8 @@ class RequestController extends Controller
                 "request_skills" => $this->formatRequestSkills($request->requestSkills),
                 "rating" => $request->rating ?? null,
                 "created_at" => $this->formatTime($request->created_at),
+                "mentee" => (object) ["fullname" => $request->mentee->fullname ?? ""],
+                "mentor" => (object) ["fullname" => $request->mentor->fullname ?? ""]
             ];
             $formattedRequests[] = $formattedRequest;
         }

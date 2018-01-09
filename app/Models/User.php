@@ -32,4 +32,21 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         "slack_id" => "string",
         "email" => "required|string"
     ];
+
+    /**
+     * Returns the user's fullname based on the email address
+     *
+     * @return string $fullname - user's fullname
+     */
+    public function getFullnameAttribute()
+    {
+        $emailUsername = explode("@", $this->attributes["email"])[0];
+
+        $names = explode(".", $emailUsername);
+
+        $lastName = isset($names[1]) ? " " . ucfirst($names[1]) : "";
+        $fullname = ucfirst($names[0]) . $lastName;
+
+        return $fullname;
+    }
 }
