@@ -304,7 +304,7 @@ class RequestControllerTest extends TestCase
         )->requests;
         $this->assertEquals($mentorshipRequests[$randomNumber]->status_id, 1);
     }
-    
+
     /**
      * Test interested mentor is accepted succesfully
      *
@@ -428,7 +428,7 @@ class RequestControllerTest extends TestCase
     /**
      * Test to create a valid mentor mentorship request
      *
-     * @return {void}
+     * @return void
      */
     public function testCreateMentorRequestSuccess()
     {
@@ -463,7 +463,7 @@ class RequestControllerTest extends TestCase
      * Test should fail if the user does not provide the necessary fields
      * required to create a mentorship request
      *
-     * @return {void}
+     * @return void
      */
     public function testCreateRequestFailureForMissingRequiredFields()
     {
@@ -490,5 +490,69 @@ class RequestControllerTest extends TestCase
             $this->invalidResponse["pairing.timezone"][0],
             $response["pairing.timezone"][0]
         );
+    }
+    /**
+     * Test should fail when the user tries to indicate interest in his/her own request
+     *
+     * @return void
+     */
+    public function testUpdateInterestFailureForIndicatingInOwnRequest()
+    {
+        $this->patch('/api/v2/requests/15/indicate-interest');
+        $this->assertResponseStatus(400);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals(
+            "You can't indicate interest in your own request.",
+            $response->message
+        );
+    }
+
+    /**
+     * Test should fail when the user tries to indicate interest in non-existing request
+     *
+     * @return void
+     */
+    public function testUpdateInterestFailureForNonExistingRequest()
+    {
+        $this->patch('/api/v2/requests/500/indicate-interest');
+        $this->assertResponseStatus(404);
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(
+            "Mentorship Request not found.",
+            $response->message
+        );
+    }
+
+    /**
+     * Test should fail when the user tries to indicate interest in a request
+     * he/she already indicated interest
+     *
+     * @return void
+     */
+    public function testUpdateInterestFailureForAlreadyIndicatedInterest()
+    {
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->patch('/api/v2/requests/15/indicate-interest');
+        $this->patch('/api/v2/requests/15/indicate-interest');
+        $this->assertResponseStatus(409);
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(
+            "You have already indicated interest in this request.",
+            $response->message
+        );
+    }
+
+    /**
+     * Test the user can indicate interest in request if all requirements are met
+     *
+     * @return void
+     */
+    public function testUpdateInterestSuccess()
+    {
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->patch('/api/v2/requests/15/indicate-interest');
+        $this->assertResponseStatus(200);
     }
 }

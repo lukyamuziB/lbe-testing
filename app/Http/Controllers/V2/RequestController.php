@@ -209,6 +209,42 @@ class RequestController extends Controller
     }
 
     /**
+     * Update mentorship request when a user indicates interest
+     * by updating the request interested property
+     *
+     * @param Request $request - the request object
+     * @param $id - the mentorship request ID
+     *
+     * @throws NotFoundException | BadRequestException
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function indicateInterest(Request $request, $id)
+    {
+        $currentUser = $request->user();
+        $mentorshipRequest = MentorshipRequest::find(intval($id));
+
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        $mentorshipRequest->interested = $mentorshipRequest->interested ?? [];
+
+        if ($currentUser->uid === $mentorshipRequest->mentee_id) {
+            throw new BadRequestException("You can't indicate interest in your own request.");
+        }
+
+        if (in_array($currentUser->uid, $mentorshipRequest->interested)) {
+            throw new ConflictException("You have already indicated interest in this request.");
+        }
+
+        $mentorshipRequest->interested = array_merge($mentorshipRequest->interested, [$currentUser->uid]);
+        $mentorshipRequest->save();
+
+        return $this->respond(Response::HTTP_OK);
+    }
+
+    /**
      * Cancels a request for a mentorship that a logged in user requested
      * by setting the request status to cancelled
      *
