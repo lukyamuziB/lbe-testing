@@ -55,6 +55,7 @@ $app->group(["prefix" => "api/v2"], function ($app) {
     $app->delete("sessions/{id}/files/{fileId}", "SessionController@deleteSessionFile");
     $app->patch("sessions/{id}/attach", "SessionController@attachSessionFile");
     $app->patch("sessions/{id}/detach", "SessionController@detachSessionFile");
+    $app->get("/requests/{id}/sessions/dates", "SessionController@getSessionDates");
 });
 
 /**

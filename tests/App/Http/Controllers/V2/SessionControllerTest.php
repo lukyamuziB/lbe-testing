@@ -98,4 +98,30 @@ class SessionControllerTest extends \TestCase
         $this->delete("/api/v2/sessions/19/files/1");
         $this->assertResponseStatus(200);
     }
+
+    /**
+     * Test that a user can successfully get all missed, upcoming and completed sessions for
+     * a request by id.
+     *
+     * @return void
+     */
+    public function testGetSessionDatesSuccess()
+    {
+        $this->get("api/v2/requests/2/sessions/dates");
+        $this->assertResponseStatus(200);
+        $response = json_decode($this->response->getContent());
+        $this->assertObjectHasAttribute("date", $response[0]);
+        $this->assertEquals("missed", $response[0]->status);
+    }
+
+    /**
+     * Test not found exception is returned if request is unavailable.
+     *
+     * @return void
+     */
+    public function testGetSessionDatesFailureNotFound()
+    {
+        $this->get("api/v2/requests/50/sessions/dates");
+        $this->assertResponseStatus(404);
+    }
 }

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\V2;
 
-use App\Clients\GoogleCloudStorageClient;
 use App\Exceptions\BadRequestException;
 use App\Exceptions\NotFoundException;
 use App\Utility\FilesUtility;
-use Google\Cloud\Core\Timestamp;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\File;

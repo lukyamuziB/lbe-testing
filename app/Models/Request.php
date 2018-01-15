@@ -323,4 +323,18 @@ class Request extends Model
             ->get();
         return ($unmatchedRequests);
     }
+
+    /**
+     * Get logged sessions dates given a request id.
+     *
+     * @return array - session dates.
+     */
+    public function getLoggedSessionDates()
+    {
+        $loggedSessionsDates = Session::where("request_id", $this->id)
+            ->where(["mentee_approved" => true, "mentor_approved" => true])
+            ->pluck("date")
+            ->all();
+        return $loggedSessionsDates;
+    }
 }
