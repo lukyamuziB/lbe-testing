@@ -1,6 +1,8 @@
 machine:
+  pre:
+    - sudo apt-get update; USE_PRECOMPILE=true sudo -E circleci-install php 7.1.4
   php:
-    version: 7.0.7
+    version: 7.1.4
   environment:
     APP_ENV: testing
     POSTGRES_USER: ubuntu

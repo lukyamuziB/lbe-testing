@@ -110,11 +110,11 @@ $app->configure('notifications');
 |
 */
 
-$app->group(['namespace' => 'App\Http\Controllers\V1'], function ($app) {
+$app->router->group(['namespace' => 'App\Http\Controllers\V1'], function ($router) {
     require __DIR__.'/../routes/V1/web.php';
 });
 
-$app->group(['namespace' => 'App\Http\Controllers\V2'], function ($app) {
+$app->router->group(['namespace' => 'App\Http\Controllers\V2'], function ($router) {
     require __DIR__.'/../routes/V2/web.php';
 });
 

@@ -11,93 +11,93 @@
 |
 */
 
-$app->get('/', function () use ($app) {
-    return $app->version();
+$router->get('/', function () use ($router) {
+    return $router->app->version();
 });
 
 /**
  * Routes for resource requests
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('requests', 'RequestController@all');
-    $app->get('requests/{id}', 'RequestController@get');
-    $app->post('requests', 'RequestController@add');
-    $app->put('requests/{id}', 'RequestController@update');
-    $app->patch('requests/{id}/update-interested', 'RequestController@updateInterested');
-    $app->patch('requests/{id}/update-mentor', 'RequestController@updateMentor');
-    $app->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
-    $app->delete('requests/{id}', 'RequestController@remove');
-    $app->put("requests/{id}/extend-mentorship", "RequestController@requestExtension");
-    $app->patch("requests/{id}/approve-extension", "RequestController@approveExtensionRequest");
-    $app->patch("requests/{id}/reject-extension", "RequestController@rejectExtensionRequest");
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('requests', 'RequestController@all');
+    $router->get('requests/{id}', 'RequestController@get');
+    $router->post('requests', 'RequestController@add');
+    $router->put('requests/{id}', 'RequestController@update');
+    $router->patch('requests/{id}/update-interested', 'RequestController@updateInterested');
+    $router->patch('requests/{id}/update-mentor', 'RequestController@updateMentor');
+    $router->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
+    $router->delete('requests/{id}', 'RequestController@remove');
+    $router->put("requests/{id}/extend-mentorship", "RequestController@requestExtension");
+    $router->patch("requests/{id}/approve-extension", "RequestController@approveExtensionRequest");
+    $router->patch("requests/{id}/reject-extension", "RequestController@rejectExtensionRequest");
 });
 
 /**
  * Routes for resource skills
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('skills', 'SkillController@all');
-    $app->get('skills/{id}', 'SkillController@get');
-    $app->post('skills', 'SkillController@add');
-    $app->put('skills/{id}', 'SkillController@put');
-    $app->delete('skills/{id}', 'SkillController@remove');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('skills', 'SkillController@all');
+    $router->get('skills/{id}', 'SkillController@get');
+    $router->post('skills', 'SkillController@add');
+    $router->put('skills/{id}', 'SkillController@put');
+    $router->delete('skills/{id}', 'SkillController@remove');
 });
 
 /**
  * Routes for status
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('status', 'StatusController@all');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('status', 'StatusController@all');
 });
 
 /**
  * Routes for user information
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('users/{id}', 'UserController@get');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('users/{id}', 'UserController@get');
 });
 
 /**
  * Routes for reports
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('reports', 'ReportController@all');
-    $app->get('reports/unmatched-requests', 'ReportController@getUnmatchedRequests');
-    $app->get('reports/inactive-mentorships', 'ReportController@getInactiveMentorshipsReport');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('reports', 'ReportController@all');
+    $router->get('reports/unmatched-requests', 'ReportController@getUnmatchedRequests');
+    $router->get('reports/inactive-mentorships', 'ReportController@getInactiveMentorshipsReport');
 });
 
 /**
  * Routes for messages
  */
-$app->group(['prefix' => 'api/v1/messages'], function ($app) {
-    $app->post('slack/send', 'SlackController@sendMessage');
+$router->group(['prefix' => 'api/v1/messages'], function ($router) {
+    $router->post('slack/send', 'SlackController@sendMessage');
 });
 
 /**
  * Routes for sessions
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('sessions/{id}', 'SessionController@getSessionsReport');
-    $app->post('sessions', 'SessionController@logSession');
-    $app->patch('sessions/{id}/approve', 'SessionController@approveSession');
-    $app->patch('sessions/{id}/reject', 'SessionController@rejectSession');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('sessions/{id}', 'SessionController@getSessionsReport');
+    $router->post('sessions', 'SessionController@logSession');
+    $router->patch('sessions/{id}/approve', 'SessionController@approveSession');
+    $router->patch('sessions/{id}/reject', 'SessionController@rejectSession');
 });
 
 /**
  * Routes for resource session-rating
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->post('ratings', 'RatingController@rateSession');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->post('ratings', 'RatingController@rateSession');
 });
 
 /**
  * Routes for notification
  */
-$app->group(['prefix' => 'api/v1'], function ($app) {
-    $app->get('notifications', 'NotificationController@all');
-    $app->post('notifications', 'NotificationController@add');
-    $app->put('notifications/{id}', 'NotificationController@put');
-    $app->delete('notifications/{id}', 'NotificationController@delete');
-    $app->get('user/{user_id}/settings', 'NotificationController@getNotificationsByUserId');
-    $app->put('user/{user_id}/settings/{id}', 'NotificationController@updateUserSettings');
+$router->group(['prefix' => 'api/v1'], function ($router) {
+    $router->get('notifications', 'NotificationController@all');
+    $router->post('notifications', 'NotificationController@add');
+    $router->put('notifications/{id}', 'NotificationController@put');
+    $router->delete('notifications/{id}', 'NotificationController@delete');
+    $router->get('user/{user_id}/settings', 'NotificationController@getNotificationsByUserId');
+    $router->put('user/{user_id}/settings/{id}', 'NotificationController@updateUserSettings');
 });

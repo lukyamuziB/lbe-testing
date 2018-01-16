@@ -9,60 +9,60 @@
 | and give it the Closure to call when that URI is requested.
 |
 */
-$app->get("/", function () use ($app) {
-    return $app->version();
+$router->get("/", function () use ($router) {
+    return $router->app->version();
 });
 /**
  * Routes for  requests
  */
-$app->group(["prefix" => "api/v2"], function ($app) {
-    $app->get("requests/pool", "RequestController@getRequestsPool");
-    $app->get("requests/history", "RequestController@getUserHistory");
-    $app->get("requests/in-progress", "RequestController@getRequestsInProgress");
-    $app->get("requests/pending", "RequestController@getPendingPool");
-    $app->patch("requests/{id}/cancel-request", "RequestController@cancelRequest");
-    $app->patch("requests/{id}/withdraw-interest", "RequestController@withdrawInterest");
-    $app->patch("requests/{id}/indicate-interest", "RequestController@indicateInterest");
-    $app->get("requests/in-progress/{id}", "SessionController@getAllSessions");
-    $app->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
-    $app->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
-    $app->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
-    $app->post("requests", "RequestController@createRequest");
+$router->group(["prefix" => "api/v2"], function ($router) {
+    $router->get("requests/pool", "RequestController@getRequestsPool");
+    $router->get("requests/history", "RequestController@getUserHistory");
+    $router->get("requests/in-progress", "RequestController@getRequestsInProgress");
+    $router->get("requests/pending", "RequestController@getPendingPool");
+    $router->patch("requests/{id}/cancel-request", "RequestController@cancelRequest");
+    $router->patch("requests/{id}/withdraw-interest", "RequestController@withdrawInterest");
+    $router->patch("requests/{id}/indicate-interest", "RequestController@indicateInterest");
+    $router->get("requests/in-progress/{id}", "SessionController@getAllSessions");
+    $router->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
+    $router->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
+    $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
+    $router->post("requests", "RequestController@createRequest");
 });
 /**
  * Routes for skills
  */
-$app->group(["prefix" => "api/v2"], function ($app) {
-    $app->get("skills/request-skills", "SkillController@getSkillsWithRequests");
-    $app->post("users/{userId}/skills", "SkillController@addUserSkill");
-    $app->delete("users/{userId}/skills/{skillId}", "SkillController@deleteUserSkill");
+$router->group(["prefix" => "api/v2"], function ($router) {
+    $router->get("skills/request-skills", "SkillController@getSkillsWithRequests");
+    $router->post("users/{userId}/skills", "SkillController@addUserSkill");
+    $router->delete("users/{userId}/skills/{skillId}", "SkillController@deleteUserSkill");
 });
 /**
  * Routes for users
  */
-$app->group(["prefix" => "api/v2"], function ($app) {
-    $app->get("users", "UserController@getUsersByIds");
-    $app->get("users/{id}", "UserController@get");
-    $app->post("users/{userId}/skills", "UserController@addUserSkill");
-    $app->delete("users/{userId}/skills/{skillId}", "UserController@deleteUserSkill");
+$router->group(["prefix" => "api/v2"], function ($router) {
+    $router->get("users", "UserController@getUsersByIds");
+    $router->get("users/{id}", "UserController@get");
+    $router->post("users/{userId}/skills", "UserController@addUserSkill");
+    $router->delete("users/{userId}/skills/{skillId}", "UserController@deleteUserSkill");
 });
 
 /**
  * Routes for sessions
  */
-$app->group(["prefix" => "api/v2"], function ($app) {
-    $app->post("sessions/{id}/files", "SessionController@uploadSessionFile");
-    $app->delete("sessions/{id}/files/{fileId}", "SessionController@deleteSessionFile");
-    $app->patch("sessions/{id}/attach", "SessionController@attachSessionFile");
-    $app->patch("sessions/{id}/detach", "SessionController@detachSessionFile");
-    $app->get("/requests/{id}/sessions/dates", "SessionController@getSessionDates");
+$router->group(["prefix" => "api/v2"], function ($router) {
+    $router->post("sessions/{id}/files", "SessionController@uploadSessionFile");
+    $router->delete("sessions/{id}/files/{fileId}", "SessionController@deleteSessionFile");
+    $router->patch("sessions/{id}/attach", "SessionController@attachSessionFile");
+    $router->patch("sessions/{id}/detach", "SessionController@detachSessionFile");
+    $router->get("/requests/{id}/sessions/dates", "SessionController@getSessionDates");
 });
 
 /**
  * Routes for files manipulation
  */
-$app->group(["prefix" => "api/v2"], function ($app) {
-    $app->get("files/{id}", "FilesController@downloadFile");
-    $app->post("files", "FilesController@uploadFile");
-    $app->delete("files/{id}", "FilesController@deleteFile");
+$router->group(["prefix" => "api/v2"], function ($router) {
+    $router->get("files/{id}", "FilesController@downloadFile");
+    $router->post("files", "FilesController@uploadFile");
+    $router->delete("files/{id}", "FilesController@deleteFile");
 });
