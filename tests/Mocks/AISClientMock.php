@@ -131,6 +131,19 @@ class AISClientMock extends AISClient
                 "roles" => "fellow",
                 "placement" => ["client" => "Available", "status" =>"Available"],
                 "level" => "D1"
+            ],
+            [
+                "id" => "-KcYSwKNhJbZtOkk9ciS",
+                "email" => "temi.lajumoke@andela.com",
+                "name" => "Temi Lajumoke",
+                "location" => "Kampala",
+                "picture" => "picture",
+                "first_name" => "Temi",
+                "last_name" => "Lajumoke",
+                "cohort" => "cohort2",
+                "roles" => "fellow",
+                "placement" => ["client" => "Available", "status" =>"Available"],
+                "level" => "D1"
             ]
         ];
     }
@@ -149,10 +162,12 @@ class AISClientMock extends AISClient
         $user = array_values(array_filter($this->model, function ($user) use ($id) {
                 return $user["id"] === $id;
         }));
-        if (count($user)>0) {
+
+        if (count($user) > 0) {
             return $user[0];
         }
-        throw new NotFoundException("user not found");
+
+        throw new NotFoundException("User not found.");
     }
 
     /**

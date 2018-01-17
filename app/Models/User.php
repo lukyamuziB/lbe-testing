@@ -49,4 +49,24 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
         return $fullname;
     }
+
+    /**
+     * Gets the skills of the current user object based on the UserSkills model
+     *
+     * @return array $skills - the skills belonging to the user object
+     */
+    public function getSkills()
+    {
+        $userSkills = UserSkill::with("skill")->where("user_id", $this->user_id)->get();
+
+        $skills = [];
+        foreach ($userSkills as $skill) {
+            $skills[] = (object)[
+                "id" => $skill->skill_id,
+                "name" => $skill->skill->name
+            ];
+        }
+
+        return $skills;
+    }
 }

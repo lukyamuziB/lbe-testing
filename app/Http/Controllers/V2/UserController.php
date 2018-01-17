@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V2;
 
+use App\Repositories\SlackUsersRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Clients\AISClient;
@@ -23,10 +24,12 @@ class UserController extends Controller
 {
     use RESTActions;
     private $aisClient;
+    private $slackUsersRepository;
 
-    public function __construct(AISClient $aisClient)
+    public function __construct(AISClient $aisClient, SlackUsersRepository $slackUsersRepository)
     {
         $this->aisClient = $aisClient;
+        $this->slackUsersRepository = $slackUsersRepository;
     }
 
     /**
@@ -40,10 +43,17 @@ class UserController extends Controller
      */
     public function get($id)
     {
-        $user = User::find($id);
+        $aisUser = $this->aisClient->getUserById($id);
+        $slackUser = $this->slackUsersRepository->getByEmail($aisUser["email"]);
 
-        if (!$user) {
-            throw new NotFoundException("User not found.");
+        $lenkenUser = User::find($aisUser["id"]);
+
+        if (!$lenkenUser) {
+            $lenkenUser = User::create([
+                "user_id" => $aisUser["id"],
+                "email" => $aisUser["email"],
+                "slack_id" => $slackUser->id ?? ""
+                ]);
         }
 
         $requestCount = $this->getMenteeRequestCount($id);
@@ -52,7 +62,9 @@ class UserController extends Controller
 
         $ratingDetails = Rating::getRatingDetails($id);
 
-        $user = $this->getUserInfo($id);
+        $user = $this->formatUserInfo($aisUser);
+
+        $user["skills"] = $lenkenUser->getSkills();
         $user["requestCount"] = $requestCount;
         $user["loggedHours"] = $sessionDetails["totalHours"];
         $user["totalSessions"] = $sessionDetails["totalSessions"];
@@ -112,6 +124,14 @@ class UserController extends Controller
     {
         $userDetails = $this->aisClient->getUserById($id);
 
+        $user = $this->formatUserInfo($userDetails);
+        $user["skills"] = $this->getUserSkills($id);
+
+        return $user;
+    }
+
+    private function getUserSkills($id)
+    {
         $userSkills = UserSkill::with("skill")->where("user_id", $id)->get();
 
         $skills = [];
@@ -122,12 +142,7 @@ class UserController extends Controller
             ];
         }
 
-        $skills = array_values($skills);
-
-        $user = $this->formatUserInfo($userDetails);
-        $user["skills"] = $skills;
-
-        return $user;
+        return $skills;
     }
 
     /**

@@ -41,7 +41,8 @@ class AISClient
     {
         try {
             $response = $this->client->request(
-                'GET', $this->api_url.'/users/'.$id,
+                'GET',
+                $this->api_url.'/users/'.$id,
                 [
                 "headers" => ["api-token" => $this->authorization_token],
                 "verify" => false
@@ -50,7 +51,7 @@ class AISClient
             $user = json_decode($response->getbody(), true);
             return $user;
         } catch (ClientException $exception) {
-                throw new NotFoundException("user not found");
+                throw new NotFoundException("User not found.");
         }
     }
 

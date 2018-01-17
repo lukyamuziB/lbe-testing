@@ -24,6 +24,21 @@ class SlackUsersRepositoryMock extends SlackUsersRepository
                 "handle" => "@amao",
                 "fullname" => "Inumidun Amao"
             ],
+            "CC323" => (object)[
+                "id" => "CC322",
+                "email" => "temi.lajumoke@andela.com",
+                "handle" => "@temilaj",
+                "fullname" => "Temi Lajumoke"
+            ],
         ];
+    }
+
+    public function getByEmail($email)
+    {
+        $user = array_values(array_filter($this->model, function ($user) use ($email) {
+            return $user->email === $email;
+        }));
+
+        return $user[0];
     }
 }

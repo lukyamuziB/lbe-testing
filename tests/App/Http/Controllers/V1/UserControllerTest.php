@@ -69,7 +69,7 @@ class UserControllerTest extends TestCase
             
             $response = json_decode($this->response->getContent());
             
-            $this->assertEquals("user not found", $response->message);
+            $this->assertEquals("User not found.", $response->message);
     }
 
     /**

@@ -49,6 +49,8 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $this->app->instance("App\Clients\AISClient", $ais_client_mock);
 
+        $this->app->instance("App\Repositories\SlackUsersRepository", $slack_user_repository_mock);
+
         Mail::fake();
     }
 

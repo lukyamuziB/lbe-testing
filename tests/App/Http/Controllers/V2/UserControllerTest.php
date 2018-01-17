@@ -29,6 +29,88 @@ class UserControllerTest extends \TestCase
     }
 
     /**
+     * Test for get user details successfully
+     *
+     * @return void
+     */
+    public function testGetUserDetailsSuccess()
+    {
+
+        $this->get("/api/v2/users/-KcYSwKNhJbZtOkk9ciS");
+
+        $this->assertResponseStatus(200);
+
+        $response = $this->response->getContent();
+
+        $this->assertNotEmpty($response);
+
+        $this->assertContains("id", $response);
+
+        $this->assertContains("email", $response);
+
+        $this->assertContains("name", $response);
+
+        $this->assertContains("picture", $response);
+
+        $this->assertContains("firstName", $response);
+
+        $this->assertContains("cohort", $response);
+
+        $this->assertContains("roles", $response);
+
+        $this->assertContains("rating", $response);
+
+        $this->assertContains("skills", $response);
+
+        $this->assertContains("totalSessions", $response);
+
+        $this->assertContains("requestCount", $response);
+
+        $this->assertContains("placement", $response);
+
+        $this->assertContains("location", $response);
+    }
+
+    /**
+     * Test for get user details with invalid ID
+     *
+     * @return void
+     */
+    public function testGetUserDetailsFailure()
+    {
+        $this->get("/api/v2/users/-KXGy1MTimjQgFim7uh");
+
+        $this->assertResponseStatus(404);
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals("User not found.", $response->message);
+    }
+
+    /**
+     * Test for get user details successfully
+     *
+     * @return void
+     */
+    public function testGetUsersByIdsSuccess()
+    {
+
+        $this->get("/api/v2/users?ids=-K_nkl19N6-EGNa0W8LF,-KXGy1MimjQgFim7u");
+
+        $this->assertResponseStatus(200);
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotEmpty($response);
+
+        $this->assertAttributeContains("Adebayo Adesanya", "name", $response[0]);
+
+        $this->assertAttributeContains("Inumidun Amao", "name", $response[1]);
+
+        $this->assertCount(2, $response);
+    }
+
+    /**
      * Test to add new user skill
      *
      * @return void
@@ -101,87 +183,5 @@ class UserControllerTest extends \TestCase
         $this->assertResponseStatus(404);
         $response = json_decode($this->response->getContent());
         $this->assertEquals("User skill does not exist.", $response->message);
-    }
-
-    /**
-     * Test for get user details successfully
-     *
-     * @return void
-     */
-    public function testGetUserDetailsSuccess()
-    {
-        
-        $this->get("/api/v2/users/-KXGy1MimjQgFim7u");
-
-        $this->assertResponseStatus(200);
-        
-        $response = $this->response->getContent();
-        
-        $this->assertNotEmpty($response);
-        
-        $this->assertContains("id", $response);
-
-        $this->assertContains("email", $response);
-
-        $this->assertContains("name", $response);
-
-        $this->assertContains("picture", $response);
-
-        $this->assertContains("firstName", $response);
-
-        $this->assertContains("cohort", $response);
-
-        $this->assertContains("roles", $response);
-
-        $this->assertContains("rating", $response);
-
-        $this->assertContains("skills", $response);
-
-        $this->assertContains("totalSessions", $response);
-
-        $this->assertContains("requestCount", $response);
-
-        $this->assertContains("placement", $response);
-
-        $this->assertContains("location", $response);
-    }
-
-    /**
-     * Test for get user details with invalid ID
-     *
-     * @return void
-     */
-    public function testGetUserDetailsFailure()
-    {
-            $this->get("/api/v2/users/-KXGy1MTimjQgFim7uh");
-
-            $this->assertResponseStatus(404);
-            
-            $response = json_decode($this->response->getContent());
-            
-            $this->assertEquals("User not found.", $response->message);
-    }
-
-    /**
-     * Test for get user details successfully
-     *
-     * @return void
-     */
-    public function testGetUsersByIdsSuccess()
-    {
-
-        $this->get("/api/v2/users?ids=-K_nkl19N6-EGNa0W8LF,-KXGy1MimjQgFim7u");
-
-        $this->assertResponseStatus(200);
-
-        $response = json_decode($this->response->getContent());
-
-        $this->assertNotEmpty($response);
-
-        $this->assertAttributeContains("Adebayo Adesanya", "name", $response[0]);
-
-        $this->assertAttributeContains("Inumidun Amao", "name", $response[1]);
-
-        $this->assertCount(2, $response);
     }
 }
