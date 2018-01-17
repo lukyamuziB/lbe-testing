@@ -41,9 +41,12 @@ $app->withEloquent();
 |
 */
 
-$app->singleton(
+$app->instance(
     Illuminate\Contracts\Debug\ExceptionHandler::class,
-    App\Exceptions\Handler::class
+    new Nord\Lumen\ChainedExceptionHandler\ChainedExceptionHandler(
+        new App\Exceptions\Handler(),
+        [new Nord\Lumen\NewRelic\NewRelicExceptionHandler()]
+    )
 );
 
 $app->singleton(
@@ -65,6 +68,7 @@ $app->singleton(
 $app->middleware([
     App\Http\Middleware\ExampleMiddleware::class,
     \Barryvdh\Cors\HandleCors::class,
+    Nord\Lumen\NewRelic\NewRelicMiddleware::class,
 ]);
 
 $app->routeMiddleware([
@@ -93,6 +97,7 @@ $app->register(\App\Providers\FreckleServiceProvider::class);
 $app->register(App\Providers\SlackUsersRepositoryProvider::class);
 $app->register(App\Providers\GoogleClientServiceProvider::class);
 $app->register(App\Providers\GoogleStorageClientServiceProvider::class);
+$app->register(Nord\Lumen\NewRelic\NewRelicServiceProvider::class);
 $app->configure('cors');
 $app->configure('mail');
 $app->configure('redis');

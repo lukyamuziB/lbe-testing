@@ -20,7 +20,9 @@
         "doctrine/dbal": "^2.5",
         "google/apiclient": "^2.2",
         "google/auth": "^1.0",
-        "google/cloud-storage": "^1.2"
+        "google/cloud-storage": "^1.2",
+        "nordsoftware/lumen-newrelic": "^1.1",
+        "nordsoftware/lumen-chained-exception-handler": "^1.0"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
