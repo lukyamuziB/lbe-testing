@@ -203,12 +203,13 @@ class SessionControllerTest extends TestCase
      */
     public function testLogSessionFailureAlreadyLogged()
     {
+        $sessionDate = Carbon::today()->subMonths(5)->next(Carbon::MONDAY)->addWeek();
         $this->post("/api/v1/sessions", [
             "request_id" => 19,
             "user_id" => "-K_nkl19N6-EGNa0W8LF",
-            "date" => Carbon::now()->timestamp,
-            "start_time" => Carbon::now()->addHour(10),
-            "end_time" => Carbon::now()->addHour(12)
+            "date" => $sessionDate->timestamp,
+            "start_time" => $sessionDate->addHours(13),
+            "end_time" => $sessionDate->addHours(14)
         ]);
 
         $this->assertResponseStatus(409);

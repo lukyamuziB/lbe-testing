@@ -313,7 +313,7 @@ class RequestControllerTest extends TestCase
     public function testAcceptInterestedMentorSuccess()
     {
         $this->patch(
-            "/api/v2/requests/17/accept-mentor",
+            "/api/v2/requests/19/accept-mentor",
             $this->validAcceptOrRejectMentorData
         );
 
@@ -375,7 +375,7 @@ class RequestControllerTest extends TestCase
     public function testRejectInterestedMentorSuccess()
     {
         $this->patch(
-            "/api/v2/requests/17/reject-mentor",
+            "/api/v2/requests/19/reject-mentor",
             $this->validAcceptOrRejectMentorData
         );
 

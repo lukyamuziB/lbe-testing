@@ -7,6 +7,12 @@ return [
         ]
     ],
 
+    "testing" => [
+        "new_request_channels" => [
+            "lenken-connect"
+        ]
+    ],
+
     "staging" => [
         "new_request_channels" => [
             "lenken-connect"

@@ -1014,7 +1014,6 @@ class RequestController extends Controller
 
         $appEnvironment = getenv('APP_ENV');
         $slackChannel = Config::get("slack.{$appEnvironment}.new_request_channels");
-
         $this->slackUtility->sendMessage($slackChannel, $slackMessage);
     }
 }

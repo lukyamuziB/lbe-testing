@@ -113,12 +113,11 @@ class InactiveMentorshipNotificationCommand extends Command
             foreach ($sessions as $session) {
                 if ($session['date'] > $expectedAntepenultimateSessionDate) {
                     // proves at least one session is logged within the last 3 scheduled sessions
-                    return true;
+                    return false;
                 }
             }
         }
-
-        return false;
+        return true;
     }
 
     /**
