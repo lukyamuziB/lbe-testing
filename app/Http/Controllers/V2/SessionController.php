@@ -68,33 +68,11 @@ class SessionController extends Controller
      */
     public function getAllSessions($id)
     {
-        $sessions = Session::select(
-            'id',
-            'request_id as requestID',
-            'date',
-            'start_time as startTime',
-            'end_time as endTime',
-            'mentee_approved as menteeApproved',
-            'mentor_approved as mentorApproved',
-            'mentee_logged_at as menteeLoggedAt',
-            'mentor_logged_at as mentorLoggedAt'
-        )
-            ->where("request_id", $id)
+        $sessions = Session::where("request_id", $id)
+            ->with("files")
             ->get();
 
-        $response = [];
-        foreach ($sessions as $session) {
-            $sessionFiles = $session->files()->get();
-
-            foreach ($sessionFiles as &$sessionFile) {
-                $sessionFile->url = $this->filesUtility->getFileUrl($sessionFile->generated_name, $sessionFile->name);
-            }
-            $session->files = $sessionFiles;
-
-            $response[] = $session;
-        }
-
-        return $this->respond(Response::HTTP_OK, $response);
+        return $this->respond(Response::HTTP_OK, $sessions);
     }
 
     /**
