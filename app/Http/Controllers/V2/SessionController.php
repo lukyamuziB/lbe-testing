@@ -38,17 +38,18 @@ class SessionController extends Controller
      * @param Request $request - request object
      * @param $id - session id
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse and the file object
      *
      */
     public function uploadSessionFile(Request $request, $id)
     {
         $uploadedFile = $request->file("file");
-        $fileName = $uploadedFile->getClientOriginalName();
+        $optionalFileName = $request->input('name');
+
+        $fileName = $optionalFileName ?? $uploadedFile->getClientOriginalName();
 
         $file = new File();
         $file->name = $fileName;
-
         $file->generated_name = $this->filesUtility->storeFile($uploadedFile);
 
         $file->save();
@@ -56,8 +57,9 @@ class SessionController extends Controller
         $session = Session::find($id);
         $session->files()->save($file);
 
-        return $this->respond(Response::HTTP_CREATED);
+        return $this->respond(Response::HTTP_CREATED, $file);
     }
+
 
     /**
      * Fetch all file details belonging to a session.
@@ -74,6 +76,7 @@ class SessionController extends Controller
 
         return $this->respond(Response::HTTP_OK, $sessions);
     }
+
 
     /**
      * Delete a session file from cloud storage.
