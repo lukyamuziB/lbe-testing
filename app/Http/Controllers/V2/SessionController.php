@@ -1,11 +1,15 @@
 <?php
 namespace App\Http\Controllers\V2;
 
+use DB;
+use Exception;
+use App\Exceptions\AccessDeniedException;
 use App\Exceptions\BadRequestException;
 use App\Exceptions\NotFoundException;
 use App\Models\File;
 use App\Models\Session;
 use App\Models\Request as MentorshipRequest;
+use App\Models\SessionComment;
 use App\Utility\FilesUtility;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -62,17 +66,69 @@ class SessionController extends Controller
 
 
     /**
-     * Fetch all file details belonging to a session.
+     * Get all sessions of a request from the day the session started
+     * to today and the next upcoming session
      *
-     * @param $id - request id
+     * @param $requestId - mentorship request id
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws NotFoundException
+     *
+     * @return object - HttpResponse object
      */
-    public function getAllSessions($id)
+    public function getRequestSessions($requestId)
     {
-        $sessions = Session::where("request_id", $id)
-            ->with("files")
-            ->get();
+        $request = MentorshipRequest::find($requestId);
+        if (!$request) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        $mentorshipEndDate = Carbon::parse($request->match_date)->addMonth($request->duration);
+        $mentorshipStartDate = Carbon::parse($request->match_date);
+        $pairingDays = $request->pairing["days"];
+
+        $sessions = [];
+
+        $allSessionDates = $this->generateAllSessionDates(
+            $mentorshipStartDate,
+            $mentorshipEndDate,
+            $pairingDays
+        );
+
+        $loggedSessions = $request->getLoggedSessions();
+        $today = Carbon::now();
+
+        foreach ($allSessionDates as $sessionDate) {
+            if (Carbon::parse($sessionDate)->lte($today)) {
+                $session = Session::findSessionByDate($loggedSessions, $sessionDate);
+
+                if (count((array)$session) > 0) {
+                    $sessions[] = (object)[
+                        "date" => $sessionDate,
+                        "status" => ($session->mentee_approved && $session->mentor_approved) ? "completed" : "missed",
+                        "mentee_logged" => $session->mentee_approved,
+                        "mentor_logged" => $session->mentor_approved,
+                        "files"=>$session->files
+                    ];
+                } else {
+                    $sessions[] = (object)[
+                        "date" => $sessionDate,
+                        "status" => "missed",
+                        "mentee_logged" => false,
+                        "mentor_logged" => false,
+                        "files"=>[]
+                    ];
+                }
+            } else {
+                $sessions[] = (object)[
+                    "date" => $sessionDate,
+                    "status" => "upcoming",
+                    "mentee_logged" => false,
+                    "mentor_logged" => false,
+                    "files"=>[]
+                ];
+                break;
+            }
+        }
 
         return $this->respond(Response::HTTP_OK, $sessions);
     }
@@ -191,13 +247,14 @@ class SessionController extends Controller
         );
 
         $loggedSessionsDates = $requestDetails->getLoggedSessionDates();
+        $today = Carbon::now();
 
         foreach ($allSessionDates as $sessionDate) {
             if (in_array($sessionDate, $loggedSessionsDates)) {
                 $sessionsDates[] = (Object)["date" => $sessionDate, "status" => "completed"];
-            } elseif (Carbon::parse($sessionDate)->lt(Carbon::now())) {
+            } elseif (Carbon::parse($sessionDate)->lte($today)) {
                 $sessionsDates[] = (Object)["date" => $sessionDate, "status" => "missed"];
-            } elseif (Carbon::parse($sessionDate)->gt(Carbon::now())) {
+            } elseif (Carbon::parse($sessionDate)->gt($today)) {
                 $sessionsDates[] = (Object)["date" => $sessionDate, "status" => "upcoming"];
             }
         }
@@ -223,5 +280,83 @@ class SessionController extends Controller
             }
         }
         return $allSessionDates;
+    }
+
+    /**
+     * Log a session for a Mentorship Request.
+     *
+     * @param Request $request - HttpRequest object
+     *
+     * @throws AccessDeniedException|NotFoundException
+     *
+     * @return object - session object that has just been logged
+     */
+    public function logSession(Request $request, $requestId)
+    {
+        $mentorshipRequest = MentorshipRequest::find(intval($requestId));
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        $date = $request->input("date");
+        $startTime = $request->input("start_time");
+        $endTime = $request->input("end_time");
+        $timezone = $mentorshipRequest->pairing["timezone"];
+        $sessionDate = Carbon::createFromTimestamp($date, $timezone);
+
+        $loggedSession = Session::getSessionByRequestIdAndDate(
+            $requestId,
+            $sessionDate
+        );
+
+        if (count($loggedSession) > 0) {
+            return $this->respond(
+                Response::HTTP_CONFLICT,
+                ["message" => "Session already logged."]
+            );
+        }
+
+        $userId = $request->user()->uid;
+        $approvalStatus = [];
+
+        if ($userId === $mentorshipRequest->mentor_id) {
+            $approvalStatus["mentor_approved"] = true;
+            $approvalStatus["mentor_logged_at"] = Carbon::now($timezone);
+        } elseif ($userId === $mentorshipRequest->mentee_id) {
+            $approvalStatus["mentee_approved"] = true;
+            $approvalStatus["mentee_logged_at"] = Carbon::now($timezone);
+        } else {
+            return $this->respond(
+                Response::HTTP_FORBIDDEN,
+                ["message" => "You do not have permission to log a session for this request."]
+            );
+        }
+
+        $result = DB::transaction(
+            function () use ($requestId, $sessionDate, $startTime, $endTime, $approvalStatus, $request, $userId) {
+                $session = Session::create(
+                    array_merge(
+                        [
+                            "request_id" => $requestId,
+                            "date" => $sessionDate->format('Y-m-d'),
+                            "start_time" => $startTime,
+                            "end_time" => $endTime
+                        ],
+                        $approvalStatus
+                    )
+                );
+
+                if ($comment = $request->input("comment")) {
+                    $session->comment = SessionComment::create([
+                        "user_id" => $userId,
+                        "session_id" => $session->id,
+                        "comment" => $comment
+                    ]);
+                }
+
+                return $session;
+            }
+        );
+        return $this->respond(Response::HTTP_CREATED, $result);
     }
 }

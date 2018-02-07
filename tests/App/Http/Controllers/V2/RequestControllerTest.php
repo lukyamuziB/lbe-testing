@@ -287,11 +287,6 @@ class RequestControllerTest extends TestCase
         $fileDetails = ["file" => UploadedFile::fake()->create("test.doc", 1000)];
         $this->call("POST", "/api/v2/sessions/19/files", [], [], $fileDetails, []);
         $this->assertResponseStatus(201);
-        $this->get("/api/v2/requests/in-progress/19");
-        $this->assertResponseStatus(200);
-        $result = json_decode($this->response->getContent());
-        $file = $result[0]->files[0];
-        $this->assertEquals($file->name, "test.doc");
     }
 
     public function testGetOpenRequestsOnlySuccess()

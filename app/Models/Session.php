@@ -42,6 +42,26 @@ class Session extends Model
     }
 
     /**
+     * Defines Foreign Key Relationship to the session model
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function files()
+    {
+        return $this->belongsToMany("App\Models\File", "session_file", "session_id", "file_id");
+    }
+
+    /**
+     * Defines Foreign Key Relationship to the RatingComment model
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function comments()
+    {
+        return $this->hasMany("App\Models\SessionComment");
+    }
+
+    /**
      * Gets unapproved sessions, whose request status is matched, that were logged
      * by one of the participants before the specified time
      *
@@ -57,7 +77,7 @@ class Session extends Model
             ->whereIn(
                 "request_id",
                 Request::select("id")
-                ->where("status_id", STATUS::MATCHED)
+                    ->where("status_id", STATUS::MATCHED)
                     ->get()->toArray()
             )
             ->where(
@@ -91,25 +111,25 @@ class Session extends Model
         $sessionDetails = [];
 
         $sessions = Session::select("start_time", "end_time")
-                         ->where("mentor_approved", true)
-                         ->where("mentee_approved", true)
-                         ->whereIn(
-                             "request_id",
-                             Request::select("id")
-                             ->where("mentor_id", $userId)
-                                 ->get()->toArray()
-                         )->get();
+            ->where("mentor_approved", true)
+            ->where("mentee_approved", true)
+            ->whereIn(
+                "request_id",
+                Request::select("id")
+                    ->where("mentor_id", $userId)
+                    ->get()->toArray()
+            )->get();
 
         $sessionDetails["totalSessions"] = count($sessions);
 
 
         foreach ($sessions as $session) {
             $timeDifference = abs(
-                strtotime($session->start_time)
-                - strtotime($session->end_time)
-            )
+                    strtotime($session->start_time)
+                    - strtotime($session->end_time)
+                )
                 / 3600;
-                        
+
             $totalHours += $timeDifference;
         }
 
@@ -119,12 +139,33 @@ class Session extends Model
     }
 
     /**
-     * Defines Foreign Key Relationship to the session model
+     * Find and get a session from the array of sessions based on the date.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @param $sessions - array of all logged sessions.
+     * @param $date - session date.
+     *
+     * @return object - the logged session
      */
-    public function files()
+    public static function findSessionByDate($sessions, $date)
     {
-        return $this->belongsToMany("App\Models\File", "session_file", "session_id", "file_id");
+        $formattedSessionDate = Carbon::parse($date);
+
+        return $sessions->first(function ($value, $key) use ($formattedSessionDate) {
+            return Carbon::parse($value->date)->eq($formattedSessionDate);
+        });
+    }
+
+    /**
+     * Get session that has already been logged by a request id and a given date
+     *
+     * @param Number $requestId - id of the mentorship request
+     * @param $date
+     * @return Array - containing the session object that was logged at that date
+     */
+    public static function getSessionByRequestIdAndDate($requestId, $date)
+    {
+        return Session::where("request_id", $requestId)
+            ->whereDate('date', $date)
+            ->get();
     }
 }

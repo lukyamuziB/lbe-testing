@@ -69,4 +69,14 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
         return $skills;
     }
+
+    /**
+     * Defines Foreign Key Relationship to the SessionComment model
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function comments()
+    {
+        return $this->hasMany("App\Models\SessionComment");
+    }
 }

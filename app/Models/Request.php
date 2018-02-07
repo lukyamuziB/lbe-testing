@@ -71,6 +71,17 @@ class Request extends Model
     {
         return $this->hasMany("App\Models\Session", "request_id");
     }
+
+    /**
+     * Defines Foreign Key Relationship to the RatingComment model
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function comments()
+    {
+        return $this->hasMany(SessionComment::class);
+    }
+
     /**
      * Defines Foreign Key Relationship to the user model
      *
@@ -335,6 +346,34 @@ class Request extends Model
             ->where(["mentee_approved" => true, "mentor_approved" => true])
             ->pluck("date")
             ->all();
-        return $loggedSessionsDates;
+        return $this->formatLoggedSessionDates($loggedSessionsDates);
     }
+
+    /**
+     * Format logged sessions dates.
+     *
+     * @return array - formatted logged session dates.
+     */
+    public function formatLoggedSessionDates($loggedSessionDates)
+    {
+        $formattedLoggedSessionDates = array_map(function ($loggedSessionDate) {
+            return Carbon::parse($loggedSessionDate)->toDateString();
+        }, $loggedSessionDates);
+
+        return $formattedLoggedSessionDates;
+    }
+
+    /**
+     * Get all logged sessions.
+     *
+     * @return array - logged sessions.
+     */
+    public function getLoggedSessions()
+    {
+        $sessions = Session::with('files')->where("request_id", $this->id)
+            ->get(["date", "mentee_approved", "mentor_approved"]);
+
+        return $sessions;
+    }
+
 }

@@ -23,7 +23,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->patch("requests/{id}/cancel-request", "RequestController@cancelRequest");
     $router->patch("requests/{id}/withdraw-interest", "RequestController@withdrawInterest");
     $router->patch("requests/{id}/indicate-interest", "RequestController@indicateInterest");
-    $router->get("requests/in-progress/{id}", "SessionController@getAllSessions");
+    $router->get("requests/{id}/sessions", "SessionController@getRequestSessions");
     $router->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
     $router->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
     $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
@@ -55,7 +55,14 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->delete("sessions/{id}/files/{fileId}", "SessionController@deleteSessionFile");
     $router->patch("sessions/{id}/attach", "SessionController@attachSessionFile");
     $router->patch("sessions/{id}/detach", "SessionController@detachSessionFile");
-    $router->get("/requests/{id}/sessions/dates", "SessionController@getSessionDates");
+});
+
+/**
+ * Routes for request sessions
+ */
+$router->group(["prefix" => "api/v2"], function ($router) {
+    $router->get("requests/{id}/sessions/dates", "SessionController@getSessionDates");
+    $router->post("requests/{id}/sessions", "SessionController@logSession");
 });
 
 /**
