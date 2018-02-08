@@ -370,8 +370,8 @@ class Request extends Model
      */
     public function getLoggedSessions()
     {
-        $sessions = Session::with('files')->where("request_id", $this->id)
-            ->get(["date", "mentee_approved", "mentor_approved"]);
+        $sessions = Session::with("files")->where("request_id", $this->id)
+            ->get();
 
         return $sessions;
     }
