@@ -7,6 +7,7 @@ use App\Models\Status;
 use App\Models\Request as MentorshipRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -15,36 +16,44 @@ class ReportController extends Controller
     /**
      * Gets statistics of mentorship requests based on status
      *
-     * @param object $mentorshipRequests - all requests
+     * @param Request $request - HttpRequest object
+     *
      * @throws AccessDeniedException
      *
      * @return object - request statuses statistics
      */
     public function getRequestsStatusStatistics(Request $request)
     {
-            if ($request->user()->role !== "Admin") {
-                throw new AccessDeniedException("you do not have permission to perform this action");
-            }
+        if ($request->user()->role !== "Admin") {
+            throw new AccessDeniedException("you do not have permission to perform this action");
+        }
 
-            $params = [];
+        $params = [];
 
-            if ($location = $this->getRequestParams($request, "locations")) {
-                $params["locations"] = explode(",", $location);
-            }
+        if ($location = $this->getRequestParams($request, "locations")) {
+            $params["locations"] = explode(",", $location);
+        }
 
-            $mentorshipRequests = MentorshipRequest::buildPoolFilterQuery($params)
-                ->get();
+        if ($startDate = $this->getRequestParams($request, "start_date")) {
+            $params["startDate"] = Carbon::createFromFormat("d-m-Y", $startDate);
+        }
 
-            $response["totalRequests"] = count($mentorshipRequests);
+        if ($endDate = $this->getRequestParams($request, "end_date")) {
+            $params["endDate"] = Carbon::createFromFormat("d-m-Y", $endDate);
+        }
 
-            $requestsCount = $this->getRequestStatusCount($mentorshipRequests);
+        $mentorshipRequests = MentorshipRequest::buildPoolFilterQuery($params)->get();
 
-            $response["totalMatchedRequests"] = $requestsCount["matched"];
-            $response["totalCompletedRequests"] = $requestsCount["completed"];
-            $response["totalOpenRequests"] = $requestsCount["open"];
-            $response["totalCancelledRequests"] = $requestsCount["cancelled"];
+        $response["total"] = count($mentorshipRequests);
 
-            return $this->respond(Response::HTTP_OK, $response);
+        $requestsCount = $this->getRequestStatusCount($mentorshipRequests);
+
+        $response["matched"] = $requestsCount["matched"];
+        $response["completed"] = $requestsCount["completed"];
+        $response["open"] = $requestsCount["open"];
+        $response["cancelled"] = $requestsCount["cancelled"];
+
+        return $this->respond(Response::HTTP_OK, $response);
     }
 
     /**

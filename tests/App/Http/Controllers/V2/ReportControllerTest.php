@@ -52,11 +52,11 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         
-        $this->assertEquals(20, $response->totalRequests);
-        $this->assertEquals(10, $response->totalOpenRequests);
-        $this->assertEquals(10, $response->totalMatchedRequests);
-        $this->assertEquals(0, $response->totalCancelledRequests);
-        $this->assertEquals(0, $response->totalCompletedRequests);
+        $this->assertEquals(20, $response->total);
+        $this->assertEquals(10, $response->open);
+        $this->assertEquals(10, $response->matched);
+        $this->assertEquals(0, $response->cancelled);
+        $this->assertEquals(0, $response->completed);
     }
 
     /**
@@ -89,4 +89,20 @@ class ReportControllerTest extends TestCase
             $response->message
         );
     }
+
+    /**
+     * Test to check if the date range filter is accurate.
+     */
+    public function testGetRequestDateRangeStatusCountSuccess()
+    {
+        $this->get("/api/v2/requests/status-statistics?start_date=01-01-2017&end_date=01-02-2018");
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals(10, $response->total);
+        $this->assertEquals(5, $response->open);
+        $this->assertEquals(5, $response->matched);
+        $this->assertEquals(0, $response->cancelled);
+        $this->assertEquals(0, $response->completed);
+    }
+
 }

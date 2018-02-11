@@ -8,6 +8,7 @@ use App\Models\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use TestCase;
+use Carbon\Carbon;
 
 class RequestControllerTest extends TestCase
 {
@@ -91,7 +92,7 @@ class RequestControllerTest extends TestCase
      *
      * @return void
      */
-    private function createRequest($menteeId, $interested, $statusId)
+    private function createRequest($menteeId, $interested, $statusId, $createdAt = "2017-09-19 20:55:24")
     {
         Request::create(
             [
@@ -99,7 +100,7 @@ class RequestControllerTest extends TestCase
                 "title" => "Javascript",
                 "description" => "Learn Javascript",
                 "status_id" => $statusId,
-                "created_at" => "2017-09-19 20:55:24",
+                "created_at" => $createdAt,
                 "match_date" => null,
                 "interested" => [$interested],
                 "duration" => 2,
@@ -550,4 +551,20 @@ class RequestControllerTest extends TestCase
         $this->patch('/api/v2/requests/15/indicate-interest');
         $this->assertResponseStatus(200);
     }
+
+    /**
+     * Test to check if the date range filter is accurate.
+     */
+    public function testGetRequestDateRangePoolSuccess()
+    {
+        $startDate = Carbon::now()->format("d-m-Y");
+        $this->createRequest("-KXGy1MT1oimjQgFim7u", "-K_nkl19N6-EGNa0W8LF", 1, Carbon::now());
+        $endDate = Carbon::now()->format("d-m-Y");
+
+        $this->get("api/v2/requests/pool?limit=5&page=1&status=&startDate=" . $startDate . "&endDate=" . $endDate);
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals($response->pagination->totalCount, 1);
+    }
+
 }

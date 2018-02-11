@@ -91,6 +91,15 @@ class RequestController extends Controller
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
         }
+
+        if ($startDate = $this->getRequestParams($request, "startDate")) {
+            $params["startDate"] = Carbon::createFromFormat("d-m-Y", $startDate);
+        }
+
+        if ($endDate = $this->getRequestParams($request, "endDate")) {
+            $params["endDate"] = Carbon::createFromFormat("d-m-Y", $endDate);
+        }
+
         return $params;
     }
 

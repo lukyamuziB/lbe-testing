@@ -288,6 +288,12 @@ class Request extends Model
             function ($query) use ($params) {
                 return $query->whereIn("status_id", $params["status"]);
             }
+        )
+        ->when(
+            isset($params["startDate"]) && isset($params["endDate"]),
+            function ($query) use ($params) {
+                return $query->whereBetween("created_at", [$params["startDate"], $params["endDate"]]);
+            }
         );
 
 
