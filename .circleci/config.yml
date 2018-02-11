@@ -1,0 +1,58 @@
+version: 2
+jobs:
+  build:
+    working_directory: /tmp/lenken
+    docker:
+      - image: circleci/php:7.1-browsers
+        environment:
+          APP_ENV: testing
+          POSTGRES_HOST: "127.0.0.1"
+          CIRCLE_PROJECT_USERNAME: andela
+          CIRCLE_PROJECT_REPONAME: lenken-server
+          TEST_DATABASE_URL: postgresql://ubuntu@localhost/circle_test?sslmode=disable
+          IMG_TAG: $(echo $CIRCLE_SHA1 | cut -c -7)
+      - image: circleci/postgres:9.6
+        environment:
+          POSTGRES_USER: ubuntu
+          POSTGRES_DB: circle_test
+          POSTGRES_PASSWORD: ""
+      - image: redis
+    steps:
+      - run:
+          name: Install PHP extensions
+          command: |
+              sudo apt-get install -y libpq-dev
+              sudo docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql
+              sudo docker-php-ext-install pdo pdo_pgsql pgsql
+      - run:
+          name: Install Composer
+          command: curl -sS https://getcomposer.org/installer | sudo php  -- --install-dir=/usr/local/bin --filename=composer
+      - checkout
+      - restore_cache:
+          keys:
+            - composer-cache-{{ checksum "composer.json" }}
+            - composer-cache-
+      - run:
+          name: Composer Install Dependencies
+          command: composer install --prefer-dist --no-interaction
+      - save_cache:
+          key: composer-cache-{{ checksum "composer.json" }}
+          paths:
+            - vendor
+      - run:
+          name: Composer Test
+          command: composer test
+      - run:
+          name: Test Coverage Reporter
+          command: CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN vendor/bin/test-reporter
+  # deploy:
+  #  staging:
+  #    branch: develop
+  #    heroku:
+  #      appname: lenken-api-staging
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
