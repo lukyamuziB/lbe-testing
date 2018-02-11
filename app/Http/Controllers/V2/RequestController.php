@@ -51,8 +51,8 @@ class RequestController extends Controller
             ->paginate($limit);
         $response["requests"] = $this->formatRequestData($mentorshipRequests);
         $response["pagination"] = [
-            "totalCount" => $mentorshipRequests->total(),
-            "pageSize" => $mentorshipRequests->perPage()
+            "total_count" => $mentorshipRequests->total(),
+            "page_size" => $mentorshipRequests->perPage()
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
@@ -135,8 +135,8 @@ class RequestController extends Controller
         $sortedRequests = $this->sortUserRequests($openRequests, $userId);
 
         $response = [
-            "awaitingResponse" => $this->formatRequestData($sortedRequests["awaitingResponse"]),
-            "awaitingYou" => $this->formatRequestData($sortedRequests["awaitingYou"])
+            "awaiting_response" => $this->formatRequestData($sortedRequests["awaiting_response"]),
+            "awaiting_you" => $this->formatRequestData($sortedRequests["awaiting_you"])
         ];
 
         return $this->respond(Response::HTTP_OK, $response);
@@ -153,8 +153,8 @@ class RequestController extends Controller
     private function sortUserRequests($requests, $userId)
     {
         $sortedRequests = [
-            "awaitingResponse" => [],
-            "awaitingYou" => []
+            "awaiting_response" => [],
+            "awaiting_you" => []
         ];
         $requestsIamInterestedIn = [];
         $myRequestsThatNoOneHasShownInterestIn = [];
@@ -166,14 +166,14 @@ class RequestController extends Controller
                 }
 
                 if ($request->mentee_id == $userId) {
-                    $sortedRequests["awaitingYou"][] = $request;
+                    $sortedRequests["awaiting_you"][] = $request;
                 }
             } elseif (empty($request->interested) && $request->mentee_id == $userId) {
                 $myRequestsThatNoOneHasShownInterestIn[] = $request;
             }
         }
 
-        $sortedRequests["awaitingResponse"] = array_merge(
+        $sortedRequests["awaiting_response"] = array_merge(
             $myRequestsThatNoOneHasShownInterestIn,
             $requestsIamInterestedIn
         );
@@ -255,7 +255,7 @@ class RequestController extends Controller
     {
         $currentUser = $request->user();
         $mentorshipRequest = $this->validateRequestBeforeCancellation($id, $currentUser);
-        
+
         $mentorshipRequest->status_id = Status::CANCELLED;
         $cancellationReason = $request->input("reason");
         $result = DB::transaction(
@@ -321,7 +321,7 @@ class RequestController extends Controller
         $requestTitle = $mentorshipRequest->title;
         $creationDate = $mentorshipRequest->created_at;
         $recipientSlackID = $mentorshipRequest->mentee->slack_id;
-        $slackMessage = "Your Mentorship Request `$requestTitle` 
+        $slackMessage = "Your Mentorship Request `$requestTitle`
             opened on `$creationDate` has been cancelled \nREASON: `$cancellationReason`.";
         $this->slackUtility->sendMessage([$recipientSlackID], $slackMessage);
     }
@@ -361,7 +361,7 @@ class RequestController extends Controller
 
         return $this->respond(Response::HTTP_OK);
     }
-    
+
     /**
      * Accept a mentor who has shown interest in users mentorship request.
      *
@@ -545,7 +545,7 @@ class RequestController extends Controller
                 "interested" => $request->interested,
                 "match_date" => $request->match_date,
                 "location" => $request->location,
-                "duration" => $request->duration,
+                "duration" => (int)$request->duration,
                 "pairing" => $request->pairing,
                 "request_skills" => $this->formatRequestSkills($request->requestSkills),
                 "rating" => $request->rating ?? null,

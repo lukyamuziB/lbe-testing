@@ -22,7 +22,7 @@ class RequestControllerTest extends TestCase
         "mentorId" => "wrongMentorId",
         "mentorName" => "Test Admin",
     ];
-    
+
     const REQUESTS_URI = "/api/v2/requests";
 
     private $validRequest = [
@@ -153,12 +153,12 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals(
             "-KXGy1MT1oimjQgFim7u",
-            $response->awaitingResponse[10]->mentee_id
+            $response->awaiting_response[10]->mentee_id
         );
 
         $this->assertContains(
             "-K_nkl19N6-EGNa0W8LF",
-            $response->awaitingYou[0]->interested
+            $response->awaiting_you[0]->interested
         );
     }
 
