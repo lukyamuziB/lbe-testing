@@ -564,7 +564,7 @@ class RequestControllerTest extends TestCase
         $this->get("api/v2/requests/pool?limit=5&page=1&status=&startDate=" . $startDate . "&endDate=" . $endDate);
         $response = json_decode($this->response->getContent());
 
-        $this->assertEquals($response->pagination->totalCount, 1);
+        $this->assertEquals($response->pagination->total_count, 1);
     }
 
 }

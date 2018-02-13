@@ -65,6 +65,9 @@
         ],
         "test": "phpunit --debug --coverage-clover build/logs/clover.xml"
     },
+    "config": {
+        "process-timeout": 600
+    },
     "minimum-stability": "dev",
     "prefer-stable": true
 }
