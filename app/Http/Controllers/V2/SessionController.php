@@ -8,6 +8,7 @@ use App\Exceptions\BadRequestException;
 use App\Exceptions\NotFoundException;
 use App\Models\File;
 use App\Models\Session;
+use App\Models\Rating;
 use App\Models\Request as MentorshipRequest;
 use App\Models\SessionComment;
 use App\Utility\FilesUtility;
@@ -333,7 +334,16 @@ class SessionController extends Controller
         }
 
         $result = DB::transaction(
-            function () use ($requestId, $sessionDate, $startTime, $endTime, $approvalStatus, $request, $userId) {
+            function () use (
+                $requestId,
+                $sessionDate,
+                $startTime,
+                $endTime,
+                $approvalStatus,
+                $request,
+                $userId,
+                $mentorshipRequest
+            ) {
                 $session = Session::create(
                     array_merge(
                         [
@@ -352,6 +362,18 @@ class SessionController extends Controller
                         "session_id" => $session->id,
                         "comment" => $comment
                     ]);
+                }
+
+                if (($rating_values = $request->input('rating_values')) &&
+                    $mentorshipRequest->mentee_id === $userId) {
+                    $session->rating = Rating::create(
+                        [
+                            "user_id" => $userId,
+                            "session_id" => $session->id,
+                            "values" => json_encode($rating_values),
+                            "scale" => $request->input('rating_scale')
+                        ]
+                    );
                 }
 
                 return $session;

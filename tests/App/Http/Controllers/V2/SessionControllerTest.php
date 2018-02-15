@@ -202,6 +202,44 @@ class SessionControllerTest extends \TestCase
     }
 
     /**
+     * Test that a user can log a mentorship session.
+     *
+     * @return void
+     */
+    public function testLogSessionWithRatingSuccess()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->post(
+            "/api/v2/requests/10/sessions",
+            [
+                "date" => Carbon::now()
+                    ->timezone('Africa/Lagos')->subHour(24)->timestamp,
+                "start_time" => Carbon::now()
+                    ->timezone('Africa/Lagos')->subHour(22),
+                "end_time" => Carbon::now()->timezone('Africa/Lagos')->subHour(24),
+                "comment" => "It was a cool session",
+                "rating_values" => (object)[
+                    "teaching" => "5",
+                    "availability" => "4",
+                    "reliability" => "4",
+                    "knowledge" => "5",
+                    "usefulness" => "3"
+                ],
+                "rating_scale" => "5"
+            ]
+        );
+
+        $this->assertResponseStatus(201);
+
+        $response = json_decode($this->response->getContent());
+        $this->assertObjectHasAttribute("date", $response);
+        $this->assertObjectHasAttribute("start_time", $response);
+        $this->assertObjectHasAttribute("end_time", $response);
+        $this->assertObjectHasAttribute("comment", $response);
+        $this->assertObjectHasAttribute("rating", $response);
+    }
+
+    /**
      * Test that a user can log a session that is already logged.
      *
      * @return void
