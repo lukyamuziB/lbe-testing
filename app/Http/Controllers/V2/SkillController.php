@@ -25,4 +25,16 @@ class SkillController extends Controller
 
         return $this->respond(Response::HTTP_OK, $skills);
     }
+
+    /**
+     * Retrieve  all skills in the database with request skills
+     *
+     * @return json - JSON object containing skill(s)
+     */
+    public function getSkills()
+    {
+        $skills = Skill::with(["requestSkills"])
+            ->orderBy("created_at", "desc")->get();
+        return $this->respond(Response::HTTP_OK, $skills);
+    }
 }
