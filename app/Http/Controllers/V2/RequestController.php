@@ -139,7 +139,9 @@ class RequestController extends Controller
     public function getPendingPool(Request $request)
     {
         $userId = $request->user()->uid;
-        $openRequests = MentorshipRequest::where("status_id", STATUS::OPEN)->get();
+        $openRequests = MentorshipRequest::where("status_id", STATUS::OPEN)
+                                            ->orderBy('created_at', 'desc')
+                                            ->get();
 
         $sortedRequests = $this->sortUserRequests($openRequests, $userId);
 
