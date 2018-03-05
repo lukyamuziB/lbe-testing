@@ -37,6 +37,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->get("skills/request-skills", "SkillController@getSkillsWithRequests");
     $router->post("users/{userId}/skills", "SkillController@addUserSkill");
     $router->delete("users/{userId}/skills/{skillId}", "SkillController@deleteUserSkill");
+    $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
 });
 /**
  * Routes for users

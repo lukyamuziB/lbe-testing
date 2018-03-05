@@ -8,11 +8,11 @@ use App\Models\Request as MentorshipRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
+use App\Exceptions\BadRequestException;
 
 class ReportController extends Controller
 {
     use RESTActions;
-
     /**
      * Gets statistics of mentorship requests based on status
      *
@@ -69,7 +69,7 @@ class ReportController extends Controller
         $requestStatusCount["completed"] = 0;
         $requestStatusCount["cancelled"] = 0;
         $requestStatusCount["matched"] = 0;
- 
+
         foreach ($mentorshipRequests as $mentorshipRequest) {
             if ($mentorshipRequest->status_id == Status::OPEN) {
                 $requestStatusCount["open"]++;

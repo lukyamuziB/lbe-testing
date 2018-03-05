@@ -66,7 +66,7 @@ class Request extends Model
         "mentorId" => "required|string",
         "mentorName" => "required|string",
     ];
-    
+
     public function session()
     {
         return $this->hasMany("App\Models\Session", "request_id");
@@ -91,7 +91,7 @@ class Request extends Model
     {
         return $this->belongsTo("App\Models\User", "mentee_id");
     }
-    
+
     /**
      * Defines Foreign Key Relationship to the user model
      *
@@ -101,7 +101,7 @@ class Request extends Model
     {
         return $this->belongsTo("App\Models\User", "mentor_id");
     }
-    
+
     /**
      * Defines Foreign Key Relationship to the skill model
      *
@@ -116,7 +116,7 @@ class Request extends Model
     {
         return $this->hasMany("App\Models\Session");
     }
-    
+
     /**
      * Defines Foreign Key Relationship to the cancelledRequest model
      *
@@ -205,13 +205,13 @@ class Request extends Model
             }
         )
         ->when(
-            isset($params["date"]),
+            isset($params["startDate"]) && isset($params["endDate"]),
             function ($query) use ($params) {
-                $date = Request::getTimeStamp($params["date"]);
-                if ($params["date"]) {
-                    return $query
-                            ->where("created_at", ">=", $date);
-                }
+                return $query
+                    ->where([
+                        ["created_at", ">=", $params["startDate"]],
+                        ["created_at", "<", $params["endDate"]]
+                    ]);
                 return $query;
             }
         )
@@ -236,10 +236,10 @@ class Request extends Model
                 return $query->where("location", $params["location"]);
             }
         );
-        
+
         return $mentorshipRequests;
     }
-    
+
     /**
      * Returns the mentorship request based on the params
      *
@@ -320,7 +320,7 @@ class Request extends Model
             ->with("requestSkills.skill", "mentee")
             ->whereDate("created_at", "<=", $thresholdDate)
             ->orderBy("created_at", "asc");
-    
+
         return $unmatchedRequests;
     }
 
@@ -381,5 +381,4 @@ class Request extends Model
 
         return $sessions;
     }
-
 }

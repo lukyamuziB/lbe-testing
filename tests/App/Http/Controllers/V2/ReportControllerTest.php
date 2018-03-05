@@ -3,6 +3,7 @@
 namespace Test\App\Http\Controllers\V2;
 
 use App\Models\User;
+use App\Http\Controllers\V2\SkillController;
 use TestCase;
 use Carbon\Carbon;
 
@@ -51,7 +52,7 @@ class ReportControllerTest extends TestCase
         $this->get("/api/v2/requests/status-statistics");
 
         $response = json_decode($this->response->getContent());
-        
+
         $this->assertEquals(20, $response->total);
         $this->assertEquals(10, $response->open);
         $this->assertEquals(10, $response->matched);
@@ -104,5 +105,4 @@ class ReportControllerTest extends TestCase
         $this->assertEquals(0, $response->cancelled);
         $this->assertEquals(0, $response->completed);
     }
-
 }

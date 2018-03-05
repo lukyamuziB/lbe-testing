@@ -17,7 +17,7 @@ class ReportController extends Controller
 {
     use RESTActions;
     protected $aisClient;
-    
+
     /**
      * ReportController constructor.
      *
@@ -27,7 +27,7 @@ class ReportController extends Controller
     {
         $this->aisClient = $aisClient;
     }
-    
+
     /**
      * Gets all Mentorship Requests by location and period
      *
@@ -44,23 +44,21 @@ class ReportController extends Controller
             }
             // initialize params object
             $params = [];
-            
+
             if ($period = $this->getRequestParams($request, "period")) {
                 $params["date"] = $period;
             }
-            
+
             if ($location = $this->getRequestParams($request, "location")) {
                 $params["location"] = $location;
             }
-            
+
             $mentorshipRequests = MentorshipRequest::buildQuery($params)
                 ->get();
 
             // Build the response object
             $response["skillsCount"] = $this->getSkillCount($mentorshipRequests);
-            $response["totalRequests"] = MentorshipRequest::buildQuery(
-                $params
-            )->count();
+            $response["totalRequests"] = count($mentorshipRequests);
 
             // Get request counts for all statuses
             $requestsCount = $this->getAllStatusRequestsCounts($mentorshipRequests);
@@ -105,7 +103,7 @@ class ReportController extends Controller
         $endDate = $request->input("end_date") ?
             Carbon::createFromFormat("Y-m-d", $request->input("end_date")):
             Carbon::today();
-        
+
         // loop through the given period to get week dates
         $weekDates = [];
         for ($weekDate = $startDate; $weekDate->lte($endDate); $weekDate->addWeek()) {
@@ -159,11 +157,11 @@ class ReportController extends Controller
     private function getAverageTimeToMatch($request)
     {
         $params = [];
-        
+
         if ($period = $this->getRequestParams($request, "period")) {
             $params["date"] = $period;
         }
-        
+
         if ($location = $this->getRequestParams($request, "location")) {
             $params["location"] = $location;
         }
@@ -172,7 +170,7 @@ class ReportController extends Controller
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
         }
-        
+
         $averageTime = MentorshipRequest::buildQuery($params)
             ->groupBy('status_id')
             ->select(
@@ -182,7 +180,7 @@ class ReportController extends Controller
         $days = 0;
         if (count($averageTime->get()) > 0) {
             /*
-            1970-01-01 is added to get only the number of seconds 
+            1970-01-01 is added to get only the number of seconds
             contained in ($averageTime->average_time) and
             excluding the number of seconds since 1970-01-01
             */
@@ -191,7 +189,7 @@ class ReportController extends Controller
             $timeStamp = strtotime("1970-01-01 ".$averageTimeValue);
             $days = round(($timeStamp/86400));
         }
-        
+
         return (!$days) ? 0 : $days . "day(s)";
     }
 
@@ -242,7 +240,7 @@ class ReportController extends Controller
         $requestStatusCount['completed'] = 0;
         $requestStatusCount['cancelled'] = 0;
         $requestStatusCount['matched'] = 0;
- 
+
         foreach ($mentorshipRequests as $mentorshipRequest) {
             if ($mentorshipRequest->status_id == Status::OPEN) {
                 $requestStatusCount['open']++;
@@ -259,7 +257,7 @@ class ReportController extends Controller
         }
         return $requestStatusCount;
     }
-    
+
     /**
      * Gets unmatched requests
      *
