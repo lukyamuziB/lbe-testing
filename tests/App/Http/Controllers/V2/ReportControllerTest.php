@@ -98,9 +98,9 @@ class ReportControllerTest extends TestCase
         $this->get("/api/v2/requests/status-statistics?start_date=01-01-2017&end_date=01-02-2018");
         $response = json_decode($this->response->getContent());
 
-        $this->assertEquals(10, $response->total);
+        $this->assertEquals(11, $response->total);
         $this->assertEquals(5, $response->open);
-        $this->assertEquals(5, $response->matched);
+        $this->assertEquals(6, $response->matched);
         $this->assertEquals(0, $response->cancelled);
         $this->assertEquals(0, $response->completed);
     }

@@ -10,7 +10,6 @@ class SessionControllerTest extends \TestCase
 {
 
     protected $fileDetails;
-
     /**
      * Test setup.
      *
@@ -53,6 +52,19 @@ class SessionControllerTest extends \TestCase
     }
 
     /**
+     * Test that session can be created.
+     *
+     */
+    public function testCreateSessionSuccess()
+    {
+        $this->post("/api/v2/requests/2/sessions", ['date' => Carbon::now()->toDateString()]);
+
+        $this->assertResponseStatus(201);
+        $response = json_decode($this->response->getContent());
+        $this->assertObjectHasAttribute("id", $response);
+    }
+
+    /**
      * Test that a user can attach a file to a session.
      *
      */
@@ -67,7 +79,7 @@ class SessionControllerTest extends \TestCase
      * Test that a user cannot attach a file that does not exist.
      *
      */
-    public function testAttachSessionFileFailureNonExistentFile()
+    public function testAttachSessionFileFailureForNonExistentFile()
     {
         $this->patch("/api/v2/sessions/19/attach", ["fileId" => 7]);
 
@@ -90,7 +102,7 @@ class SessionControllerTest extends \TestCase
      * Test that a user cannot attach a file that does not exist.
      *
      */
-    public function testDetachSessionFileFailureNonExistentFile()
+    public function testDetachSessionFileFailureForNonExistentFile()
     {
         $this->patch("/api/v2/sessions/19/detach", ["fileId" => 7]);
 
@@ -103,8 +115,21 @@ class SessionControllerTest extends \TestCase
      */
     public function testUploadSessionFileSuccess()
     {
-        $this->call("POST", "/api/v2/sessions/19/files", [], [], $this->fileDetails, []);
+        $this->call(
+            "POST",
+            "/api/v2/sessions/19/files",
+            ["name" => "any name",
+                "date" => Carbon::now()->toDateString(),
+            ],
+            [],
+            $this->fileDetails,
+            []
+        );
+
         $this->assertResponseStatus(201);
+        $response = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey("file", $response);
+        $this->assertArrayHasKey("session_id", $response);
     }
 
     /**
@@ -179,22 +204,28 @@ class SessionControllerTest extends \TestCase
      */
     public function testLogSessionSuccess()
     {
+        $this->post("/api/v2/requests/2/sessions", ["date" => Carbon::now()->toDateString()]);
+
+        $session = json_decode($this->response->getContent());
+        $sessionId = $session->id;
+
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
-        $this->post(
-            "/api/v2/requests/10/sessions",
+
+        $this->patch(
+            "/api/v2/requests/2/sessions/$sessionId",
             [
                 "date" => Carbon::now()
                     ->timezone('Africa/Lagos')->subHour(24)->timestamp,
-                "start_time" => Carbon::now()
-                    ->timezone('Africa/Lagos')->subHour(22),
-                "end_time" => Carbon::now()->timezone('Africa/Lagos')->subHour(24),
+                "start_time" => "17:00",
+                "end_time" => "19:00",
                 "comment" => "It was a cool session"
             ]
         );
 
         $this->assertResponseStatus(201);
-
         $response = json_decode($this->response->getContent());
+
+
         $this->assertObjectHasAttribute("date", $response);
         $this->assertObjectHasAttribute("start_time", $response);
         $this->assertObjectHasAttribute("end_time", $response);
@@ -208,15 +239,20 @@ class SessionControllerTest extends \TestCase
      */
     public function testLogSessionWithRatingSuccess()
     {
+
+        $this->post("/api/v2/requests/2/sessions", ["date" => Carbon::now()->toDateString()]);
+
+        $sessionResponse = json_decode($this->response->getContent());
+        $sessionId =$sessionResponse->id;
+
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
-        $this->post(
-            "/api/v2/requests/10/sessions",
+        $this->patch(
+            "/api/v2/requests/2/sessions/$sessionId",
             [
                 "date" => Carbon::now()
                     ->timezone('Africa/Lagos')->subHour(24)->timestamp,
-                "start_time" => Carbon::now()
-                    ->timezone('Africa/Lagos')->subHour(22),
-                "end_time" => Carbon::now()->timezone('Africa/Lagos')->subHour(24),
+                "start_time" => "17:00",
+                "end_time" => "19:00",
                 "comment" => "It was a cool session",
                 "rating_values" => (object)[
                     "teaching" => "5",
@@ -230,7 +266,6 @@ class SessionControllerTest extends \TestCase
         );
 
         $this->assertResponseStatus(201);
-
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("date", $response);
         $this->assertObjectHasAttribute("start_time", $response);
@@ -240,58 +275,26 @@ class SessionControllerTest extends \TestCase
     }
 
     /**
-     * Test that a user can log a session that is already logged.
-     *
-     * @return void
-     */
-    public function testLogSessionFailureForAlreadyloggedSession()
-    {
-        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
-        $sessionDate = Carbon::now()
-            ->timezone('Africa/Lagos')->subHour(24)->timestamp;
-        $this->post(
-            "/api/v2/requests/10/sessions",
-            [
-                "date" => $sessionDate,
-                "start_time" => Carbon::now()
-                    ->timezone('Africa/Lagos')->subHour(22),
-                "end_time" => Carbon::now()->timezone('Africa/Lagos')->subHour(24),
-                "comment" => "It was a cool session"
-            ]
-        );
-
-        $this->post(
-            "/api/v2/requests/10/sessions",
-            [
-                "date" => $sessionDate,
-                "start_time" => Carbon::now()
-                    ->timezone('Africa/Lagos')->subHour(22),
-                "end_time" => Carbon::now()->timezone('Africa/Lagos')->subHour(24),
-                "comment" => "It was a cool session"
-            ]
-        );
-
-        $response = json_decode($this->response->getContent());
-        $this->assertResponseStatus(409);
-        $this->assertEquals("Session already logged.", $response->message);
-    }
-
-    /**
      * Test that a user can't log a session of a request he/she doesn't belong.
      *
      * @return void
      */
     public function testLogSessionFailureForSessionNotBelongsToUser()
     {
+        $this->post("/api/v2/requests/2/sessions", ['date' => Carbon::now()->toDateString()]);
+
+        $sessionResponse = json_decode($this->response->getContent());
+        $sessionId =$sessionResponse->id;
+
         $this->makeUser("-L-x840rIAXXGQWFHmMs");
-        $this->post(
-            "/api/v2/requests/10/sessions",
+        $this->patch(
+            "/api/v2/requests/10/sessions/$sessionId",
             [
+                "session_id" => 1,
                 "date" => Carbon::now()
                     ->timezone('Africa/Lagos')->subHour(24)->timestamp,
-                "start_time" => Carbon::now()
-                    ->timezone('Africa/Lagos')->subHour(22),
-                "end_time" => Carbon::now()->timezone('Africa/Lagos')->subHour(24),
+                "start_time" => "17:00",
+                "end_time" => "19:00",
                 "comment" => "Not your session bro!"
             ]
         );

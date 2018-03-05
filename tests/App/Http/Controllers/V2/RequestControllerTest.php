@@ -286,8 +286,21 @@ class RequestControllerTest extends TestCase
     public function testAllGetSessionFilesSuccess()
     {
         $fileDetails = ["file" => UploadedFile::fake()->create("test.doc", 1000)];
-        $this->call("POST", "/api/v2/sessions/19/files", [], [], $fileDetails, []);
+        $this->call(
+            "POST",
+            "/api/v2/sessions/19/files",
+            [
+                'name' => "any name",
+                'date' => Carbon::now()->toDateString(),
+            ],
+            [],
+            $fileDetails,
+            []
+        );
         $this->assertResponseStatus(201);
+        $response = json_decode($this->response->getContent(), true);
+        $this->assertArrayHasKey("file", $response);
+        $this->assertArrayHasKey("session_id", $response);
     }
 
     public function testGetOpenRequestsOnlySuccess()

@@ -63,7 +63,8 @@ $router->group(["prefix" => "api/v2"], function ($router) {
  */
 $router->group(["prefix" => "api/v2"], function ($router) {
     $router->get("requests/{id}/sessions/dates", "SessionController@getSessionDates");
-    $router->post("requests/{id}/sessions", "SessionController@logSession");
+    $router->patch("requests/{id}/sessions/{sessionId}", "SessionController@logSession");
+    $router->post("requests/{id}/sessions", "SessionController@createSession");
 });
 
 /**

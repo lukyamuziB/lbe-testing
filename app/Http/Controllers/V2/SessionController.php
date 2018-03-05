@@ -2,7 +2,6 @@
 namespace App\Http\Controllers\V2;
 
 use DB;
-use Exception;
 use App\Exceptions\AccessDeniedException;
 use App\Exceptions\BadRequestException;
 use App\Exceptions\NotFoundException;
@@ -41,30 +40,59 @@ class SessionController extends Controller
      * Add new files that belong to a session.
      *
      * @param Request $request - request object
-     * @param $id - session id
      *
-     * @return \Illuminate\Http\JsonResponse and the file object
+     *
+     * @return \Illuminate\Http\JsonResponse and the file object with sessionId
      *
      */
-    public function uploadSessionFile(Request $request, $id)
+    public function uploadSessionFile(Request $request, $sessionId)
     {
         $uploadedFile = $request->file("file");
         $optionalFileName = $request->input('name');
+        $sessionId = (int)$sessionId;
+
 
         $fileName = $optionalFileName ?? $uploadedFile->getClientOriginalName();
-
         $file = new File();
         $file->name = $fileName;
         $file->generated_name = $this->filesUtility->storeFile($uploadedFile);
-
         $file->save();
 
-        $session = Session::find($id);
+        $session = Session::find($sessionId);
         $session->files()->save($file);
 
-        return $this->respond(Response::HTTP_CREATED, $file);
+        $response = [
+            "file"=> $file,
+            "session_id"=> $session->id,
+        ];
+
+        return $this->respond(Response::HTTP_CREATED, $response);
     }
 
+    /**
+     * Creates a session given request and requestId
+     *
+     * @param Request $request - request object
+     * @param $requestId - request id
+     *
+     * @return \Illuminate\Http\JsonResponse and the session object
+     */
+    public function createSession(Request $request, $requestId)
+    {
+        $sessionDate = date($request->input("date"));
+        $requestId = (int)$requestId;
+
+        $request = MentorshipRequest::find($requestId);
+
+        $session = new Session();
+        $session->request_id = $requestId;
+        $session->date = $sessionDate;
+        $session->start_time = Carbon::parse($sessionDate. $request->pairing['start_time']);
+        $session->end_time = Carbon::parse($sessionDate. $request->pairing['end_time']);
+        $session->save();
+
+        return $this->respond(Response::HTTP_CREATED, $session);
+    }
 
     /**
      * Get all sessions of a request from the day the session started
@@ -104,7 +132,10 @@ class SessionController extends Controller
 
                 if (count((array)$session) > 0) {
                     $sessions[] = (object)[
+                        "id" => $session->id,
                         "date" => $sessionDate,
+                        "start_time" => $session->start_time,
+                        "end_time" => $session->end_time,
                         "status" => ($session->mentee_approved && $session->mentor_approved) ? "completed" : "missed",
                         "mentee_logged" => $session->mentee_approved,
                         "mentor_logged" => $session->mentor_approved,
@@ -112,6 +143,7 @@ class SessionController extends Controller
                     ];
                 } else {
                     $sessions[] = (object)[
+                        "id" => null,
                         "date" => $sessionDate,
                         "status" => "missed",
                         "mentee_logged" => false,
@@ -121,6 +153,7 @@ class SessionController extends Controller
                 }
             } else {
                 $sessions[] = (object)[
+                    "id" => null,
                     "date" => $sessionDate,
                     "status" => "upcoming",
                     "mentee_logged" => false,
@@ -133,8 +166,7 @@ class SessionController extends Controller
 
         return $this->respond(Response::HTTP_OK, $sessions);
     }
-
-
+    
     /**
      * Delete a session file from cloud storage.
      *
@@ -287,39 +319,27 @@ class SessionController extends Controller
      * Log a session for a Mentorship Request.
      *
      * @param Request $request - HttpRequest object
+     * @param $requestId - request id
+     * @param $sessionId - session id
      *
-     * @throws AccessDeniedException|NotFoundException
+     * @throws NotFoundException | AccessDeniedException
      *
      * @return object - session object that has just been logged
      */
-    public function logSession(Request $request, $requestId)
+    public function logSession(Request $request, $sessionId, $requestId)
     {
         $mentorshipRequest = MentorshipRequest::find(intval($requestId));
         if (!$mentorshipRequest) {
             throw new NotFoundException("Mentorship Request not found.");
         }
 
-        $date = $request->input("date");
+        $sessionId = (int)$sessionId;
         $startTime = $request->input("start_time");
         $endTime = $request->input("end_time");
         $timezone = $mentorshipRequest->pairing["timezone"];
-        $sessionDate = Carbon::createFromTimestamp($date, $timezone);
-
-        $loggedSession = Session::getSessionByRequestIdAndDate(
-            $requestId,
-            $sessionDate
-        );
-
-        if (count($loggedSession) > 0) {
-            return $this->respond(
-                Response::HTTP_CONFLICT,
-                ["message" => "Session already logged."]
-            );
-        }
 
         $userId = $request->user()->uid;
         $approvalStatus = [];
-
         if ($userId === $mentorshipRequest->mentor_id) {
             $approvalStatus["mentor_approved"] = true;
             $approvalStatus["mentor_logged_at"] = Carbon::now($timezone);
@@ -327,58 +347,47 @@ class SessionController extends Controller
             $approvalStatus["mentee_approved"] = true;
             $approvalStatus["mentee_logged_at"] = Carbon::now($timezone);
         } else {
-            return $this->respond(
-                Response::HTTP_FORBIDDEN,
-                ["message" => "You do not have permission to log a session for this request."]
-            );
+            throw new AccessDeniedException("You do not have permission to log a session for this request.");
         }
 
+        $sessionToLog = Session::find($sessionId);
+
+        $sessionApproval = array_merge(
+            [
+                "start_time" => $startTime,
+                "end_time" => $endTime,
+            ],
+            $approvalStatus
+        );
+
         $result = DB::transaction(
-            function () use (
-                $requestId,
-                $sessionDate,
-                $startTime,
-                $endTime,
-                $approvalStatus,
-                $request,
-                $userId,
-                $mentorshipRequest
-            ) {
-                $session = Session::create(
-                    array_merge(
-                        [
-                            "request_id" => $requestId,
-                            "date" => $sessionDate->format('Y-m-d'),
-                            "start_time" => $startTime,
-                            "end_time" => $endTime
-                        ],
-                        $approvalStatus
-                    )
-                );
+            function () use ($request, $userId, $mentorshipRequest, $sessionToLog, $sessionApproval) {
+                $sessionToLog->update($sessionApproval);
 
                 if ($comment = $request->input("comment")) {
-                    $session->comment = SessionComment::create([
+                    $sessionToLog->comment = SessionComment::create([
                         "user_id" => $userId,
-                        "session_id" => $session->id,
+                        "session_id" => $sessionToLog->id,
                         "comment" => $comment
                     ]);
                 }
 
                 if (($rating_values = $request->input('rating_values')) &&
                     $mentorshipRequest->mentee_id === $userId) {
-                    $session->rating = Rating::create(
+                    $sessionToLog->rating = Rating::create(
                         [
                             "user_id" => $userId,
-                            "session_id" => $session->id,
+                            "session_id" => $sessionToLog->id,
                             "values" => json_encode($rating_values),
                             "scale" => $request->input('rating_scale')
                         ]
                     );
                 }
 
-                return $session;
+                return $sessionToLog;
             }
         );
+
         return $this->respond(Response::HTTP_CREATED, $result);
     }
 }
