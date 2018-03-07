@@ -43,12 +43,22 @@ class RequestController extends Controller
     public function getRequestsPool(Request $request)
     {
         // Get all request params
+        $userId = $request->user()->uid;
+
         $limit = $request->input("limit") ?
         intval($request->input("limit")) : 20;
+
         $params = $this->buildPoolFilterParams($request);
+
         $mentorshipRequests  = MentorshipRequest::buildPoolFilterQuery($params)
+            ->whereNotIn("id", function ($query) use ($userId) {
+                $query->select("id")
+                ->from(with(new MentorshipRequest)->getTable())
+                ->whereRaw("interested::jsonb @> to_jsonb('".$userId."'::text)");
+            })
             ->orderBy("created_at", "desc")
             ->paginate($limit);
+
         $response["requests"] = $this->formatRequestData($mentorshipRequests);
         $response["pagination"] = [
             "total_count" => $mentorshipRequests->total(),
