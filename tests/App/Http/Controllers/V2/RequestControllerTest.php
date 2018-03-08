@@ -154,12 +154,12 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals(
             "-KXGy1MT1oimjQgFim7u",
-            $response->awaiting_response[10]->mentee_id
+            $response[1]->mentee_id
         );
 
         $this->assertContains(
             "-K_nkl19N6-EGNa0W8LF",
-            $response->awaiting_you[0]->interested
+            $response[0]->interested
         );
     }
 

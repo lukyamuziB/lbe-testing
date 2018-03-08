@@ -149,57 +149,14 @@ class RequestController extends Controller
     public function getPendingPool(Request $request)
     {
         $userId = $request->user()->uid;
-        $openRequests = MentorshipRequest::where("status_id", STATUS::OPEN)
-                                            ->orderBy('created_at', 'desc')
-                                            ->get();
-
-        $sortedRequests = $this->sortUserRequests($openRequests, $userId);
-
-        $response = [
-            "awaiting_response" => $this->formatRequestData($sortedRequests["awaiting_response"]),
-            "awaiting_you" => $this->formatRequestData($sortedRequests["awaiting_you"])
-        ];
-
-        return $this->respond(Response::HTTP_OK, $response);
-    }
-
-    /**
-     * Sort the user requests
-     *
-     * @param Model  $mentorshipRequests - requests object
-     * @param string $userId             - id for currently logged in user
-     *
-     * @return array $sortedRequests - request that have been sorted.
-     */
-    private function sortUserRequests($requests, $userId)
-    {
-        $sortedRequests = [
-            "awaiting_response" => [],
-            "awaiting_you" => []
-        ];
-        $requestsIamInterestedIn = [];
-        $myRequestsThatNoOneHasShownInterestIn = [];
-
-        foreach ($requests as $request) {
-            if ($request->interested) {
-                if (in_array($userId, $request->interested)) {
-                    $requestsIamInterestedIn[] = $request;
-                }
-
-                if ($request->mentee_id == $userId) {
-                    $sortedRequests["awaiting_you"][] = $request;
-                }
-            } elseif (empty($request->interested) && $request->mentee_id == $userId) {
-                $myRequestsThatNoOneHasShownInterestIn[] = $request;
-            }
-        }
-
-        $sortedRequests["awaiting_response"] = array_merge(
-            $myRequestsThatNoOneHasShownInterestIn,
-            $requestsIamInterestedIn
-        );
-
-        return $sortedRequests;
+        $requests = MentorshipRequest::where("mentee_id", $userId)
+        ->where("status_id", 1)
+        ->whereNotNull("interested")
+        ->orWhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
+        ->where("status_id", 1)
+        ->get();
+        $formattedRequest =  $this->formatRequestData($requests, $userId);
+        return $this->respond(Response::HTTP_OK, $formattedRequest);
     }
 
     /**
@@ -552,10 +509,14 @@ class RequestController extends Controller
      *
      * @return array - array of formatted requests
      */
-    private function formatRequestData($requests)
+    private function formatRequestData($requests, $userId = null)
     {
         $formattedRequests = [];
         foreach ($requests as $request) {
+            $pending_status = "you";
+            if ($userId && in_array( $userId, $request->interested)) {
+                $pending_status = $request->mentee->fullname;
+            }
             $formattedRequest = (object) [
                 "id" => $request->id,
                 "mentee_id" => $request->mentee_id,
@@ -572,7 +533,8 @@ class RequestController extends Controller
                 "rating" => $request->rating ?? null,
                 "created_at" => $this->formatTime($request->created_at),
                 "mentee" => (object) ["fullname" => $request->mentee->fullname ?? ""],
-                "mentor" => (object) ["fullname" => $request->mentor->fullname ?? ""]
+                "mentor" => (object) ["fullname" => $request->mentor->fullname ?? ""],
+                "awaited_user" => $pending_status,
             ];
             $formattedRequests[] = $formattedRequest;
         }
