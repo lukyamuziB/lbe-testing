@@ -1,10 +1,10 @@
 <?php
 
-require_once __DIR__.'/../vendor/autoload.php';
-require_once __DIR__.'/../app/Helpers/GoogleCalendarHelper.php';
+require_once __DIR__."/../vendor/autoload.php";
+require_once __DIR__."/../app/Helpers/GoogleCalendarHelper.php";
 
 try {
-    (new Dotenv\Dotenv(__DIR__.'/../'))->load();
+    (new Dotenv\Dotenv(__DIR__."/../"))->load();
 } catch (Dotenv\Exception\InvalidPathException $e) {
     //
 }
@@ -21,10 +21,10 @@ try {
 */
 
 $app = new Laravel\Lumen\Application(
-    realpath(__DIR__.'/../')
+    realpath(__DIR__."/../")
 );
 
-$app->instance('path.storage', app()->basePath() . DIRECTORY_SEPARATOR . 'storage');
+$app->instance("path.storage", app()->basePath() . DIRECTORY_SEPARATOR . "storage");
 
 $app->withFacades();
 
@@ -72,8 +72,8 @@ $app->middleware([
 ]);
 
 $app->routeMiddleware([
-    'auth' => App\Http\Middleware\Authenticate::class,
-    'cors' => \Barryvdh\Cors\HandleCors::class,
+    "auth" => App\Http\Middleware\Authenticate::class,
+    "cors" => \Barryvdh\Cors\HandleCors::class,
 ]);
 
 /*
@@ -88,6 +88,7 @@ $app->routeMiddleware([
 */
 
 $app->register(App\Providers\AppServiceProvider::class);
+$app->register(App\Providers\EventServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(\Illuminate\Redis\RedisServiceProvider::class);
 $app->register(Barryvdh\Cors\ServiceProvider::class);
@@ -98,11 +99,12 @@ $app->register(App\Providers\SlackUsersRepositoryProvider::class);
 $app->register(App\Providers\GoogleClientServiceProvider::class);
 $app->register(App\Providers\GoogleStorageClientServiceProvider::class);
 $app->register(Nord\Lumen\NewRelic\NewRelicServiceProvider::class);
-$app->configure('cors');
-$app->configure('mail');
-$app->configure('redis');
-$app->configure('slack');
-$app->configure('notifications');
+$app->configure("cors");
+$app->configure("mail");
+$app->configure("redis");
+$app->configure("slack");
+$app->configure("notifications");
+$app->configure("services");
 
 /*
 |--------------------------------------------------------------------------
@@ -115,12 +117,12 @@ $app->configure('notifications');
 |
 */
 
-$app->router->group(['namespace' => 'App\Http\Controllers\V1'], function ($router) {
-    require __DIR__.'/../routes/V1/web.php';
+$app->router->group(["namespace" => "App\Http\Controllers\V1"], function ($router) {
+    require __DIR__."/../routes/V1/web.php";
 });
 
-$app->router->group(['namespace' => 'App\Http\Controllers\V2'], function ($router) {
-    require __DIR__.'/../routes/V2/web.php';
+$app->router->group(["namespace" => "App\Http\Controllers\V2"], function ($router) {
+    require __DIR__."/../routes/V2/web.php";
 });
 
 return $app;

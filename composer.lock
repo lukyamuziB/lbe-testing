@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "76f049dab0cd94f0a4b7fd2820cb1fc8",
+    "content-hash": "2d1ddc3851faec92ecdb2886fcd85dc4",
     "packages": [
         {
             "name": "barryvdh/laravel-cors",
@@ -1876,16 +1876,16 @@
         },
         {
             "name": "illuminate/mail",
-            "version": "v5.5.28",
+            "version": "v5.5.34",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/mail.git",
-                "reference": "bd657af5d7e33c98a7d5822506969accf3b7183f"
+                "reference": "e0742c7337a807bcb7a1398a603f5eb769c47d07"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/mail/zipball/bd657af5d7e33c98a7d5822506969accf3b7183f",
-                "reference": "bd657af5d7e33c98a7d5822506969accf3b7183f",
+                "url": "https://api.github.com/repos/illuminate/mail/zipball/e0742c7337a807bcb7a1398a603f5eb769c47d07",
+                "reference": "e0742c7337a807bcb7a1398a603f5eb769c47d07",
                 "shasum": ""
             },
             "require": {
@@ -1925,7 +1925,7 @@
             ],
             "description": "The Illuminate Mail package.",
             "homepage": "https://laravel.com",
-            "time": "2017-12-14T13:29:55+00:00"
+            "time": "2018-01-05T00:24:48+00:00"
         },
         {
             "name": "illuminate/pagination",
