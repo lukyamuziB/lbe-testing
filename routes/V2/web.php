@@ -12,6 +12,7 @@
 $router->get("/", function () use ($router) {
     return $router->app->version();
 });
+
 /**
  * Routes for  requests
  */
@@ -26,7 +27,9 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->get("requests/{id}/sessions", "SessionController@getRequestSessions");
     $router->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
     $router->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
-    $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
+    $router->group(["middleware" => "admin"], function ($router) {
+        $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
+    });
     $router->post("requests", "RequestController@createRequest");
 });
 /**
@@ -37,7 +40,9 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->get("skills/request-skills", "SkillController@getSkillsWithRequests");
     $router->post("users/{userId}/skills", "SkillController@addUserSkill");
     $router->delete("users/{userId}/skills/{skillId}", "SkillController@deleteUserSkill");
-    $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
+    $router->group(["middleware" => "admin"], function ($router) {
+        $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
+    });
 });
 /**
  * Routes for users

@@ -90,10 +90,6 @@ class ReportController extends Controller
      */
     public function getInactiveMentorshipsReport(Request $request)
     {
-        if ($request->user()->role !== "Admin") {
-            throw new AccessDeniedException("You do not have permission to perform this action");
-        }
-
         $startDate = $request->input("start_date");
         if (!$startDate) {
             throw new BadRequestException("Start date is required to get report.");

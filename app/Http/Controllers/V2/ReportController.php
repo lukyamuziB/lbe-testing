@@ -24,10 +24,6 @@ class ReportController extends Controller
      */
     public function getRequestsStatusStatistics(Request $request)
     {
-        if ($request->user()->role !== "Admin") {
-            throw new AccessDeniedException("you do not have permission to perform this action");
-        }
-
         $params = [];
 
         if ($location = $this->getRequestParams($request, "locations")) {

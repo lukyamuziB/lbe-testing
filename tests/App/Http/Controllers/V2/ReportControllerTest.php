@@ -86,7 +86,7 @@ class ReportControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(403);
         $this->assertEquals(
-            "you do not have permission to perform this action",
+            "You do not have permission to perform this action.",
             $response->message
         );
     }

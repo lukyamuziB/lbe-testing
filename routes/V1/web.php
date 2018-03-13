@@ -63,7 +63,9 @@ $router->group(['prefix' => 'api/v1'], function ($router) {
 $router->group(['prefix' => 'api/v1'], function ($router) {
     $router->get('reports', 'ReportController@all');
     $router->get('reports/unmatched-requests', 'ReportController@getUnmatchedRequests');
-    $router->get('reports/inactive-mentorships', 'ReportController@getInactiveMentorshipsReport');
+    $router->group([ 'middleware' => 'admin'], function ($router) {
+        $router->get('reports/inactive-mentorships', 'ReportController@getInactiveMentorshipsReport');
+    });
 });
 
 /**
