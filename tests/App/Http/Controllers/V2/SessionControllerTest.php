@@ -306,4 +306,89 @@ class SessionControllerTest extends \TestCase
             $response->message
         );
     }
+
+    /**
+     * Test that a mentee can confirm a session successfully
+     *
+     * @return void
+     */
+    public function testConfirmSessionSuccessForMentee()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->patch(
+            "/api/v2/sessions/10/confirm",
+            [
+                "comment" => "Confirmado, amigo!",
+                "ratings" => (object)[
+                    "teaching" => "5",
+                    "availability" => "4",
+                    "reliability" => "4",
+                    "knowledge" => "5",
+                    "usefulness" => "3"
+                ],
+                "rating_scale" => "5"
+            ]
+        );
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+        $this->assertObjectHasAttribute("comment", $response);
+        $this->assertObjectHasAttribute("ratings", $response);
+        $this->assertEquals(true, $response->mentee_approved);
+        $this->assertEquals(true, $response->mentor_approved);
+    }
+
+    /**
+     * Test that a mentor can confirm a session successfully
+     *
+     * @return void
+     */
+    public function testConfirmSessionSuccessForMentor()
+    {
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->patch(
+            "/api/v2/sessions/15/confirm",
+            [
+                "comment" => "Confirmado, amigo!",
+            ]
+        );
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+        $this->assertObjectHasAttribute("comment", $response);
+        $this->assertEquals(true, $response->mentee_approved);
+        $this->assertEquals(true, $response->mentor_approved);
+    }
+
+    /**
+     * Test that a user cannot re-confirm a confirmed session
+     *
+     * @return void
+     */
+    public function testConfirmSessionFailureForAlreadyConfirmedSession()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->patch("/api/v2/sessions/1/confirm");
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(409);
+        $this->assertEquals("Session already confirmed.", $response->message);
+    }
+
+    /**
+     * Test that a user can confirm a session successfully
+     *
+     * @return void
+     */
+    public function testConfirmSessionFailureForSessionNotBelongsToUser()
+    {
+        $this->makeUser("-Z_nkl19N6-EGNa0W8LF");
+        $this->patch("/api/v2/sessions/10/confirm");
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(401);
+        $this->assertEquals("You do not have permission to confirm this session.", $response->message);
+    }
 }

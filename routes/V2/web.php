@@ -63,6 +63,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->delete("sessions/{id}/files/{fileId}", "SessionController@deleteSessionFile");
     $router->patch("sessions/{id}/attach", "SessionController@attachSessionFile");
     $router->patch("sessions/{id}/detach", "SessionController@detachSessionFile");
+    $router->patch("sessions/{id}/confirm", "SessionController@confirmSession");
 });
 
 /**

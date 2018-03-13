@@ -2,6 +2,8 @@
 namespace App\Http\Controllers\V2;
 
 use DB;
+use App\Exceptions\ConflictException;
+use App\Exceptions\UnauthorizedException;
 use App\Exceptions\AccessDeniedException;
 use App\Exceptions\BadRequestException;
 use App\Exceptions\NotFoundException;
@@ -389,5 +391,81 @@ class SessionController extends Controller
         );
 
         return $this->respond(Response::HTTP_CREATED, $result);
+    }
+
+    /**
+     * Confirms a logged session.
+     *
+     * @param Request $request - HTTP Request object
+     * @param $id - ID of the session to be confirmed
+     *
+     * @throws NotFoundException|ConflictException|AccessDeniedException|UnauthorizedException
+     *
+     * @return \Illuminate\Http\JsonResponse - Confirm session object
+     */
+    public function confirmSession(Request $request, $id)
+    {
+        $session = Session::with('request')->find((int)$id);
+
+        if (!$session) {
+            throw new NotFoundException("Session not found.");
+        }
+
+        $userId = $request->user()->uid;
+        $timezone = $session->request->pairing["timezone"];
+        $menteeId = $session->request->mentee_id;
+        $mentorId = $session->request->mentor_id;
+        $userRole = $userId === $mentorId ? "mentor" : "mentee";
+        $confirmation = [];
+
+        if ($userId !== $session->request[$userRole . "_id"]) {
+            throw new UnauthorizedException("You do not have permission to confirm this session.");
+        }
+
+        if ($session[$userRole . "_approved"]) {
+            throw new ConflictException("Session already confirmed.");
+        }
+
+        $confirmation[$userRole . "_approved"] = true;
+        $confirmation[$userRole . "_logged_at"] = Carbon::now($timezone);
+
+        $result = DB::transaction(
+            function () use (
+                $userId,
+                $request,
+                $confirmation,
+                $menteeId,
+                $session
+            ) {
+                $session->update($confirmation);
+
+                if ($comment = $request->input("comment")) {
+                    $session->comment = SessionComment::create(
+                        [
+                            "user_id" => $userId,
+                            "session_id" => $session->id,
+                            "comment" => $comment
+                        ]
+                    );
+                }
+
+                if (($ratings = $request->input("ratings"))
+                    && $menteeId === $userId
+                ) {
+                    $session->ratings = Rating::create(
+                        [
+                            "user_id" => $userId,
+                            "session_id" => $session->id,
+                            "values" => json_encode($ratings),
+                            "scale" => $request->input("rating_scale")
+                        ]
+                    );
+                }
+
+                return $session;
+            }
+        );
+
+        return $this->respond(Response::HTTP_OK, $result);
     }
 }
