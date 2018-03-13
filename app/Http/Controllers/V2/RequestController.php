@@ -489,6 +489,10 @@ class RequestController extends Controller
             $secondary = $request->input("secondary");
             $this->mapRequestToSkill($createdRequest->id, $secondary, "secondary");
 
+            $requestSkills = RequestSkill::where("request_id", $createdRequest->id)->with("skill")->get();
+            $requestSkills = $this->formatRequestSkills($requestSkills);
+            $createdRequest->request_skills = $requestSkills;
+
             return $createdRequest;
         });
 
