@@ -579,4 +579,20 @@ class RequestControllerTest extends TestCase
         $this->assertEquals($response->pagination->total_count, 1);
     }
 
+    /**
+     * Test to check if the date range filter is accurate.
+     */
+    public function testGetAllRequestsDateRangeSuccess()
+    {
+        $startDate = Carbon::now()->format("d-m-Y");
+        $this->createRequest("-KXGy1MT1oimjQgFim7u", "-K_nkl19N6-EGNa0W8LF", 1, Carbon::now());
+        $endDate = Carbon::now()->format("d-m-Y");
+
+        $this->get("api/v2/requests?limit=5&page=1&status=&startDate="
+          . $startDate . "&endDate=" . $endDate);
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals($response->pagination->total_count, 1);
+    }
+
 }

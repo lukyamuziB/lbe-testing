@@ -18,6 +18,7 @@ $router->get("/", function () use ($router) {
  */
 $router->group(["prefix" => "api/v2"], function ($router) {
     $router->get("requests/pool", "RequestController@getRequestsPool");
+    $router->get("requests", "RequestController@getAllRequests");
     $router->get("requests/history", "RequestController@getUserHistory");
     $router->get("requests/in-progress", "RequestController@getRequestsInProgress");
     $router->get("requests/pending", "RequestController@getPendingPool");

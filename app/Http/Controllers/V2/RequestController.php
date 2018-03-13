@@ -34,9 +34,9 @@ class RequestController extends Controller
     }
 
     /**
-     * Gets Mentorship Requests
+     * Gets All Mentorship Requests which a user has not indicated interest in
      *
-     * @param Request $request - request  object
+     * @param Request $request - request object
      *
      * @return Array $response - A formatted array of Mentorship Requests
      */
@@ -56,6 +56,32 @@ class RequestController extends Controller
                 ->from(with(new MentorshipRequest)->getTable())
                 ->whereRaw("interested::jsonb @> to_jsonb('".$userId."'::text)");
             })
+            ->orderBy("created_at", "desc")
+            ->paginate($limit);
+
+        $response["requests"] = $this->formatRequestData($mentorshipRequests);
+        $response["pagination"] = [
+            "total_count" => $mentorshipRequests->total(),
+            "page_size" => $mentorshipRequests->perPage()
+        ];
+
+        return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    /**
+     * Gets All Mentorship Requests
+     *
+     * @param Request $request - request  object
+     *
+     * @return Array $response - A formatted array of Mentorship Requests
+     */
+    public function getAllRequests(Request $request)
+    {
+        $limit = $request->input("limit") ?
+        intval($request->input("limit")) : 20;
+        $params = $this->buildPoolFilterParams($request);
+
+        $mentorshipRequests = MentorshipRequest::buildPoolFilterQuery($params)
             ->orderBy("created_at", "desc")
             ->paginate($limit);
 
