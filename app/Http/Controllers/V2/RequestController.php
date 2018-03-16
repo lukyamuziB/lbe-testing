@@ -15,7 +15,6 @@ use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestCancellationReason;
 use App\Utility\SlackUtility;
-use App\Models\User;
 
 /**
  * Class RequestController
@@ -38,7 +37,7 @@ class RequestController extends Controller
      *
      * @param Request $request - request object
      *
-     * @return Array $response - A formatted array of Mentorship Requests
+     * @return array $response - A formatted array of Mentorship Requests
      */
     public function getRequestsPool(Request $request)
     {
@@ -99,7 +98,7 @@ class RequestController extends Controller
      *
      * @param Request $request - request object
      *
-     * @return Array $response - An associative array containing
+     * @return array $response - An associative array containing
      * query string data from request url
      */
     private function buildPoolFilterParams($request)
@@ -181,7 +180,9 @@ class RequestController extends Controller
         ->orWhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
         ->where("status_id", 1)
         ->get();
-        $formattedRequest =  $this->formatRequestData($requests, $userId);
+
+        $formattedRequest =  $this->formatRequestData($requests);
+        $this->appendAwaitedUser($formattedRequest, $userId);
         return $this->respond(Response::HTTP_OK, $formattedRequest);
     }
 
@@ -503,8 +504,6 @@ class RequestController extends Controller
      * Calculate and attach the rating of each request Object
      *
      * @param object $mentorshipRequests - mentorship requests
-     *
-     * @return {void}
      */
     private function appendRating(&$mentorshipRequests)
     {
@@ -539,14 +538,10 @@ class RequestController extends Controller
      *
      * @return array - array of formatted requests
      */
-    private function formatRequestData($requests, $userId = null)
+    private function formatRequestData($requests)
     {
         $formattedRequests = [];
         foreach ($requests as $request) {
-            $pending_status = "you";
-            if ($userId && in_array( $userId, $request->interested)) {
-                $pending_status = $request->mentee->fullname;
-            }
             $formattedRequest = (object) [
                 "id" => $request->id,
                 "mentee_id" => $request->mentee_id,
@@ -563,12 +558,28 @@ class RequestController extends Controller
                 "rating" => $request->rating ?? null,
                 "created_at" => $this->formatTime($request->created_at),
                 "mentee" => (object) ["fullname" => $request->mentee->fullname ?? ""],
-                "mentor" => (object) ["fullname" => $request->mentor->fullname ?? ""],
-                "awaited_user" => $pending_status,
+                "mentor" => (object) ["fullname" => $request->mentor->fullname ?? ""]
             ];
             $formattedRequests[] = $formattedRequest;
         }
         return $formattedRequests;
+    }
+
+    /**
+     * Append the user being awaited
+     *
+     * @param array $requests - mentorship requests
+     * @param String $userId - id of current user
+     */
+    private function appendAwaitedUser($requests, $userId)
+    {
+        foreach ($requests as $request) {
+            $awaitedUser = "you";
+            if (in_array($userId, $request->interested)) {
+                $awaitedUser = $request->mentee->fullname;
+            }
+            $request->awaited_user = $awaitedUser;
+        }
     }
 
     /**

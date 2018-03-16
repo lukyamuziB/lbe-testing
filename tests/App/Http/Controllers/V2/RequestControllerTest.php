@@ -4,11 +4,13 @@ namespace Test\App\Http\Controllers\V2;
 
 use App\Models\User;
 use App\Models\Request;
+use App\Http\Controllers\V2\RequestController;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use TestCase;
 use Carbon\Carbon;
+use App\Utility\SlackUtility;
 
 class RequestControllerTest extends TestCase
 {
@@ -577,6 +579,35 @@ class RequestControllerTest extends TestCase
         $this->get("api/v2/requests/pool?limit=5&page=1&status=&startDate=" . $startDate . "&endDate=" . $endDate);
         $response = json_decode($this->response->getContent());
         $this->assertEquals($response->pagination->total_count, 1);
+    }
+
+    /**
+     * Test to check if awaiting_user is appended to requests.
+     *
+     * @return void
+     */
+    public function testAppendAwaitedUser()
+    {
+        $method = new \ReflectionMethod('\App\Http\Controllers\V2\RequestController', 'appendAwaitedUser');
+        $method->setAccessible(true);
+        $slackMock = $this->createMock(SlackUtility::class);
+        $requestController = new RequestController($slackMock);
+        $request = [
+            (object) [
+                "interested" => [],
+                "mentee" => (object)["fullname"=> "tester"],
+            ]
+        ];
+        $userId = "-KesEogCwjq6lkOzKmLI";
+        $result = [
+            (object) [
+                "interested" => [],
+                "mentee" => (object)["fullname"=> "tester"],
+                "awaited_user" => "you"
+            ]
+        ];
+        $method->invoke($requestController, $request, $userId);
+        $this->assertEquals($request, $result);
     }
 
     /**
