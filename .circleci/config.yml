@@ -45,14 +45,46 @@ jobs:
       - run:
           name: Test Coverage Reporter
           command: CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN vendor/bin/test-reporter
-  # deploy:
-  #  staging:
-  #    branch: develop
-  #    heroku:
-  #      appname: lenken-api-staging
-
+  deploy_to_staging:
+    working_directory: /tmp/lenken
+    docker:
+      - image: google/cloud-sdk
+    steps: 
+      - checkout
+      - run:
+          name: Add GCloud Key to JSON file
+          command: | 
+              echo $GCLOUD_SERVICE_KEY_TESTING > ${HOME}/auth_lenken_app.json
+      - run:
+          name: Deploy to Staging GCP VMs
+          command: .circleci/deploy_lenken.sh
+  deploy_to_production:
+    working_directory: /tmp/lenken
+    docker:
+      - image: google/cloud-sdk
+    steps: 
+      - checkout
+      - run:
+          name: Add GCloud key to JSON file
+          command: | 
+              echo $GCLOUD_SERVICE_KEY_TESTING > ${HOME}/auth_lenken_app.json
+      - run:
+          name: Deploy to Production GCP VMs
+          command: .circleci/deploy_lenken_production.sh
 workflows:
   version: 2
   build-and-deploy:
     jobs:
       - build
+      - deploy_to_staging:
+          requires:
+            - build
+          filters:
+            branches:
+              only: develop
+      - deploy_to_production:
+          requires:
+            - build
+          filters:
+            branches:
+              only: production
