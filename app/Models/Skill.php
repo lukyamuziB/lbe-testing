@@ -16,7 +16,6 @@ class Skill extends Model
 
     public static $rules = [
        "name" => "required|string",
-       "active" => "boolean"
     ];
 
     public function userSkills()

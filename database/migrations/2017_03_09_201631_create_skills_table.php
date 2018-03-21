@@ -17,10 +17,6 @@ class CreateSkillsTable extends Migration
             $table->increments('id');
             $table->string('name');
         });
-
-        Schema::table('skills', function (Blueprint $table) {
-            $table->boolean('active')->default(1);
-        });
     }
 
     /**

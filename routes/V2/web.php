@@ -37,13 +37,15 @@ $router->group(["prefix" => "api/v2"], function ($router) {
  * Routes for skills
  */
 $router->group(["prefix" => "api/v2"], function ($router) {
-    $router->get("skills", "SkillController@getSkills");
     $router->get("skills/request-skills", "SkillController@getSkillsWithRequests");
     $router->post("users/{userId}/skills", "SkillController@addUserSkill");
     $router->delete("users/{userId}/skills/{skillId}", "SkillController@deleteUserSkill");
+    $router->get("skills", "SkillController@getSkills");
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
+        $router->patch("skills/{skillId}/update-status", "SkillController@updateSkillStatus");
     });
+    $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
 });
 /**
  * Routes for users

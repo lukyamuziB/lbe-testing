@@ -5,9 +5,11 @@ use App\Models\Skill;
 use App\Exceptions\Exception;
 use Illuminate\Http\Response;
 use App\Exceptions\AccessDeniedException;
+use App\Exceptions\NotFoundException;
 use App\Models\Request as MentorshipRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Exceptions\ConflictException;
 use App\Exceptions\BadRequestException;
 
 /**
@@ -32,14 +34,24 @@ class SkillController extends Controller
     }
 
     /**
-     * Retrieve  all skills in the database with request skills
+     * Retrieve all skills in the database including the ones that have been
+     * soft deleted with requestSkills.
+     *
+     * @param Request $request - HTTP Request object
      *
      * @return json - JSON object containing skill(s)
      */
-    public function getSkills()
+    public function getSkills(Request $request)
     {
-        $skills = Skill::with(["requestSkills"])
+        $isTrashed = $request->input("isTrashed");
+
+        if (strval($isTrashed) === "true") {
+            $skills = Skill::withTrashed()->with(["requestSkills"])
             ->orderBy("created_at", "desc")->get();
+        } else {
+            $skills = Skill::all();
+        }
+
         return $this->respond(Response::HTTP_OK, $skills);
     }
 
@@ -106,5 +118,39 @@ class SkillController extends Controller
         }
 
         return $eachSkillWithStatusCount;
+    }
+
+    /**
+     * It enables or disables a skill based on the status property set.
+     *
+     * @param integer $id - Unique ID of a particular skill.
+     *
+     * @throws BadRequestException | NotFoundException.
+     *
+     * @return object response of success or error message.
+     */
+    public function updateSkillStatus(Request $request, $id)
+    {
+        $status = $request->input('status');
+
+        if ($status === null) {
+            throw new BadRequestException("Invalid parameters.");
+        }
+
+        $skill = Skill::withTrashed()->find($id);
+
+        if (!$skill) {
+            throw new NotFoundException("Skill not found.");
+        }
+
+        if ($status === "active") {
+            $skill->restore();
+        } elseif ($status === "inactive") {
+            $skill->delete();
+        } else {
+            throw new BadRequestException("Invalid parameters.");
+        }
+
+        return $this->respond(Response::HTTP_OK);
     }
 }

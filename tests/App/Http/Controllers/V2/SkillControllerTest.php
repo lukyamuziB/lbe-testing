@@ -43,6 +43,20 @@ class SkillControllerTest extends TestCase
         $this->assertCount(50, $response);
     }
 
+    /**
+     * Test get all skill with trashed skills success
+     *
+     * @return void
+     */
+    public function testAllSkillsWithTrashedSuccess()
+    {
+        $this->get("/api/v2/skills?isTrashed=true");
+
+        $this->assertResponseOk();
+        $response = json_decode($this->response->getContent());
+        $this->assertCount(50, $response);
+    }
+
 
     /**
      * Test to return skill status count for all locations
@@ -132,5 +146,45 @@ class SkillControllerTest extends TestCase
         ];
 
         $this->assertEquals($method->invoke($skillObject, $request), $result);
+    }
+
+    /**
+     * Test that a skill can be disabled
+     *
+     * @return void
+     */
+    public function testUpdateSkillStatusSuccess()
+    {
+        $this->patch("/api/v2/skills/3/update-status", ["status" => "inactive"]);
+
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test skill update failure
+     *
+     * @return void
+     */
+    public function testUpdateSkillStatusFailureForDisabledSkill()
+    {
+        $this->patch("/api/v2/skills/400/update-status", ["status" => "inactive"]);
+
+        $this->assertResponseStatus(404);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Skill not found.", $response->message);
+    }
+
+    /**
+     * Test skill update failure
+     *
+     * @return void
+     */
+    public function testUpdateSkillStatusForInvalidParameters()
+    {
+        $this->patch("/api/v2/skills/30/update-status", ["status" => null]);
+
+        $this->assertResponseStatus(400);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Invalid parameters.", $response->message);
     }
 }
