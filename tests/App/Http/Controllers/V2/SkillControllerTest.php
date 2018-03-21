@@ -3,6 +3,7 @@
 namespace Test\App\Http\Controllers\V2;
 
 use App\Models\User;
+use App\Models\Skill;
 use App\Http\Controllers\V2\SkillController;
 use TestCase;
 use Carbon\Carbon;
@@ -12,6 +13,11 @@ use Carbon\Carbon;
  */
 class SkillControllerTest extends TestCase
 {
+    /**
+     * Create users for each test case
+     *
+     * @return null
+     */
     public function setUp()
     {
         parent::setUp();
@@ -60,6 +66,8 @@ class SkillControllerTest extends TestCase
 
     /**
      * Test to return skill status count for all locations
+     *
+     * @return void
      */
     public function testGetSkillStatusCountForAllLocations()
     {
@@ -80,8 +88,10 @@ class SkillControllerTest extends TestCase
     }
 
      /**
-     * Test to return skill status count for start and end date query parameters
-     */
+      * Test to return skill status count for start and end date query parameters
+      *
+      * @return void
+      */
     public function testGetSkillStatusCountForStartAndEndDate()
     {
         $this->get(
@@ -94,8 +104,11 @@ class SkillControllerTest extends TestCase
     }
 
      /**
-     * Test to return skill status count for when the start date is more than the end date
-     */
+      * Test to return skill status count for when the start date
+      * is more than the end date
+      *
+      * @return void
+      */
     public function testGetSkillStatusCountForStartDateMoreThanEndDate()
     {
         $this->get(
@@ -111,6 +124,8 @@ class SkillControllerTest extends TestCase
 
     /**
      * Test private method getEachSkillStatusCount
+     *
+     * @return void
      */
     public function testGetEachSkillStatusCount()
     {
@@ -186,5 +201,52 @@ class SkillControllerTest extends TestCase
         $this->assertResponseStatus(400);
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Invalid parameters.", $response->message);
+    }
+
+    /**
+     * Test to create skill successfully
+     *
+     * @return void
+     */
+    public function testAddSkillSuccess()
+    {
+        $this->post("/api/v2/skills", ["name" => "AI"]);
+
+        $this->assertResponseStatus(201);
+        $skill = json_decode($this->response->getContent());
+        $this->assertObjectHasAttribute("name", $skill);
+        $this->assertEquals("AI", $skill->name);
+    }
+
+    /**
+     * Test for creating duplicate skill
+     *
+     * @return void
+     */
+    public function testAddSkillFailureForDuplicates()
+    {
+        $skill = factory(Skill::class)->create(
+            [
+            'name' => 'AI'
+            ]
+        );
+        $this->post("/api/v2/skills", ["name" => "AI"]);
+        $this->assertResponseStatus(409);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Skill already exists.", $response->message);
+    }
+
+    /**
+     * Test for creating skill with an empty field
+     *
+     * @return void
+     */
+    public function testAddSkillSkillFailureForEmptyNameField()
+    {
+        $this->post("/api/v2/skills", ["name" => ""]);
+
+        $this->assertResponseStatus(422);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("The name field is required.", $response->name[0]);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\V2;
 use App\Models\Skill;
 use App\Exceptions\Exception;
 use Illuminate\Http\Response;
-use App\Exceptions\AccessDeniedException;
 use App\Exceptions\NotFoundException;
 use App\Models\Request as MentorshipRequest;
 use Illuminate\Http\Request;
@@ -20,6 +19,30 @@ use App\Exceptions\BadRequestException;
 class SkillController extends Controller
 {
     use RESTActions;
+
+    /**
+     * Adds a new skill to the skills table
+     *
+     * @param Request $request - the request object
+     *
+     * @throws ConflictException
+     *
+     * @return Response object
+     */
+    public function addSkill(Request $request)
+    {
+        $this->validate($request, Skill::$rules);
+        
+        if (Skill::where('name','ilike', $request->name)->exists()) {
+            throw new ConflictException("Skill already exists.");
+        }
+        $skill = Skill::create(
+            [
+            "name" => $request->name
+            ]
+        );
+        return $this->respond(Response::HTTP_CREATED, $skill);
+    }
 
     /**
      * GET all skills that have at least one request
@@ -49,19 +72,21 @@ class SkillController extends Controller
             $skills = Skill::withTrashed()->with(["requestSkills"])
             ->orderBy("created_at", "desc")->get();
         } else {
-            $skills = Skill::all();
+            $skills = Skill::with(["requestSkills"])
+                ->orderBy("created_at", "desc")->get();
         }
 
         return $this->respond(Response::HTTP_OK, $skills);
     }
 
-    /** Gets status count for each skill requested by location and start date and end date
+    /**
+     * Gets status count for each skill requested by location and start date and end date
      *
      * @param Request $request - the request object
      *
-     * @throws AccessDeniedException | BadRequestException
+     * @throws BadRequestException
      *
-     * @return   Response object
+     * @return Response object
      */
     public function getSkillsAndStatusCount(Request $request)
     {
@@ -106,7 +131,7 @@ class SkillController extends Controller
 
         foreach ($mentorshipRequests as $mentorshipRequest) {
             $status = $mentorshipRequest->status->name;
-            
+
             foreach ($mentorshipRequest->requestSkills as $skill) {
                 $requestSkillWithStatus[$skill->skill->name][] = $status;
             }

@@ -44,6 +44,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
         $router->patch("skills/{skillId}/update-status", "SkillController@updateSkillStatus");
+        $router->post('skills', 'SkillController@addSkill');
     });
     $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
 });
