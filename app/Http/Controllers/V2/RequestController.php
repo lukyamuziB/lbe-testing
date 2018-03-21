@@ -179,6 +179,7 @@ class RequestController extends Controller
         ->whereNotNull("interested")
         ->orWhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
         ->where("status_id", 1)
+        ->orderBy("created_at", "desc")
         ->get();
 
         $formattedRequest =  $this->formatRequestData($requests);
