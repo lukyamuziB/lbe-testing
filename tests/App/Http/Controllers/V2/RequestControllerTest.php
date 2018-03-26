@@ -10,7 +10,6 @@ use App\Models\RequestType;
 use App\Http\Controllers\V2\RequestController;
 
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Auth;
 use TestCase;
 use Carbon\Carbon;
 use App\Utility\SlackUtility;
@@ -638,5 +637,4 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals($response->pagination->total_count, 1);
     }
-
 }

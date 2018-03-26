@@ -15,8 +15,7 @@ class FreckleServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('App\Clients\FreckleClient', function ($app)
-        {
+        $this->app->bind('App\Clients\FreckleClient', function ($app) {
             return new FreckleClient($app);
         });
     }

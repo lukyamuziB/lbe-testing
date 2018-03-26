@@ -65,7 +65,8 @@ class AISClient
     public function getUserByEmail($email)
     {
         $response = $this->client->request(
-            'GET', $this->api_url.'/users?emails='.$email,
+            'GET',
+            $this->api_url.'/users?emails='.$email,
             [
                 "headers" => ["api-token" => $this->authorization_token],
                 "verify" => false
@@ -88,7 +89,8 @@ class AISClient
     {
         $limit = count($emails);
         $response = $this->client->request(
-            'GET', $this->api_url.'/users?emails='.join(",", $emails).'&limit='.$limit,
+            'GET',
+            $this->api_url.'/users?emails='.join(",", $emails).'&limit='.$limit,
             [
                 "headers" => ["api-token" => $this->authorization_token],
                 "verify" => false
@@ -112,7 +114,8 @@ class AISClient
     public function getUsersByName($name, $limit = 10)
     {
         $response = $this->client->request(
-            'GET', $this->api_url.'/users?name='.$name.'&limit='.$limit,
+            'GET',
+            $this->api_url.'/users?name='.$name.'&limit='.$limit,
             [
                 "headers" => ["api-token" => $this->authorization_token],
                 "verify" => false

@@ -150,7 +150,6 @@ class InactiveMentorshipNotificationCommand extends Command
             if ($sessionIndex < 0) {
                 $sessionIndex = $sessionIndex + count($pairingDays);
                 $lastThreeSessionDays[] = $pairingDays[$sessionIndex];
-
             } else {
                 $lastThreeSessionDays[] = $pairingDays[$sessionIndex];
             }

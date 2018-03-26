@@ -2,9 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Http\App\Http\Controllers\SessionController;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Redis;
 use App\Models\Session;
 use App\Models\Rating;
 

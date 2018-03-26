@@ -5,11 +5,11 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Exception;
 
- /**
-  * Class DumpRequestTableCommand
-  *
-  * @package App\Console\Commands
-  */
+/**
+ * Class DumpRequestTableCommand
+ *
+ * @package App\Console\Commands
+ */
 class DumpRequestTableCommand extends Command
 {
     /**
@@ -37,6 +37,8 @@ class DumpRequestTableCommand extends Command
 
     /**
      * Execute the console command.
+     *
+     * @throws Exception
      *
      * @return mixed
      */

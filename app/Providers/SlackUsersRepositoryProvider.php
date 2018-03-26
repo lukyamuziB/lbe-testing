@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Providers;
 
 use App\Repositories\SlackUsersRepository;
@@ -24,7 +25,8 @@ class SlackUsersRepositoryProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind(
-            SlackUsersRepository::class, function () {
+            SlackUsersRepository::class,
+            function () {
                 return new SlackUsersRepository();
             }
         );

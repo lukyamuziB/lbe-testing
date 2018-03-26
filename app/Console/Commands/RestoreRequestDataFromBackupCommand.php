@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Models\Role;
 use App\Models\Status;
-use Exception;
 
  /**
   * Class DumpDatabaseCommand

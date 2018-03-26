@@ -14,7 +14,7 @@ class UserControllerTest extends \TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->be(		
+        $this->be(
             factory(User::class)->make(
                 [
                     "uid" => "-KXGy1MT1oimjQgFim7u",

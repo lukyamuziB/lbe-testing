@@ -19,10 +19,8 @@ use App\Models\Notification;
 
 use App\Models\Request;
 use App\Utility\SlackUtility;
-use App\Repositories\SlackUsersRepository;
 use App\Models\UserNotification;
 use App\Clients\AISClient;
-use App\Models\User;
 
 /**
  * Class UnmatchedRequestWithInterestCommand

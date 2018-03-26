@@ -13,10 +13,9 @@ class AddLocationColumn extends Migration
      */
     public function up()
     {
-        Schema::table('requests', function(Blueprint $table) {
+        Schema::table('requests', function (Blueprint $table) {
             $table->string('location');
         });
-
     }
 
     /**

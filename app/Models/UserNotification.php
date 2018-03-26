@@ -1,12 +1,12 @@
-<?php 
+<?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Exceptions\NotFoundException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class UserNotification extends Model {
-    
+class UserNotification extends Model
+{
+
     protected $table = "user_notifications";
     public $incrementing = false;
     protected $fillable = [
@@ -48,17 +48,17 @@ class UserNotification extends Model {
                 $query->select('id', 'description');
             }]
         )
-        ->where("user_id", $userId)
-        ->select("id", "slack", "email")
-        ->orderBy("id")
-        ->get();
-   
+            ->where("user_id", $userId)
+            ->select("id", "slack", "email")
+            ->orderBy("id")
+            ->get();
+
         if (Notification::count() > count($userSettings)) {
             $notifications = Notification::whereNotIn(
                 "id",
                 $userSettings->pluck("id")
             )->select("id", "default", "description")
-            ->orderBy("id")
+                ->orderBy("id")
                 ->get();
             $defaultSettings = [];
             foreach ($notifications as $notification) {
@@ -69,7 +69,7 @@ class UserNotification extends Model {
                     "slack" => $notification["default"] === "slack",
                 ];
             }
-            
+
             $userSettings = array_map(
                 function ($setting) {
                     $setting["description"] = $setting["notification"]["description"];
@@ -89,7 +89,7 @@ class UserNotification extends Model {
     /**
      * Get user notification setting by user_id and notification id
      *
-     * @param integer $userId         Unique ID used to identify the users
+     * @param integer $userId Unique ID used to identify the users
      * @param integer $notificationId Unique ID used to identify the notification
      *
      * @return UserNotification $userSetting a user's setting for notification
@@ -118,14 +118,14 @@ class UserNotification extends Model {
     /**
      * Get notification settings for multiple users
      *
-     * @param array  $userIds        user IDs
+     * @param array $userIds user IDs
      * @param string $notificationId the notification ID
      *
      * @return array
      */
     public static function getUsersSettingById($userIds, $notificationId)
     {
-        $usersSetting =  UserNotification::select("user_id", "email", "slack")
+        $usersSetting = UserNotification::select("user_id", "email", "slack")
             ->whereIn("user_id", $userIds)
             ->where("id", $notificationId)
             ->get()

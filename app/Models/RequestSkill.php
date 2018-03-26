@@ -2,7 +2,8 @@
 
 use Illuminate\Database\Eloquent\Model;
 
-class RequestSkill extends Model {
+class RequestSkill extends Model
+{
 
     protected $fillable = ["request_id", "skill_id", "type"];
 
