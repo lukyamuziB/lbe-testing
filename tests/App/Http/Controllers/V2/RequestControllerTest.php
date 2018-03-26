@@ -4,6 +4,9 @@ namespace Test\App\Http\Controllers\V2;
 
 use App\Models\User;
 use App\Models\Request;
+use App\Models\RequestUsers;
+use App\Models\Role;
+use App\Models\RequestType;
 use App\Http\Controllers\V2\RequestController;
 
 use Illuminate\Http\UploadedFile;
@@ -17,13 +20,13 @@ class RequestControllerTest extends TestCase
     private $cancellationReason = [
         "reason"=> "test cancellations reason."
     ];
-    private $validAcceptOrRejectMentorData = [
-        "mentorId" => "-K_nkl19N6-EGNa0W8LF",
-        "mentorName" => "Test Admin",
+    private $validAcceptOrRejectUserData = [
+        "interestedUserId" => "-KesEogCwjq6lkOzKmLI",
+        "interestedUserName" => "Test Admin",
     ];
-    private $invalidAcceptOrRejectMentorIdData = [
-        "mentorId" => "wrongMentorId",
-        "mentorName" => "Test Admin",
+    private $invalidAcceptOrRejectUserIdData = [
+        "interestedUserId" => "wrongUserId",
+        "interestedUserName" => "Test Admin",
     ];
 
     const REQUESTS_URI = "/api/v2/requests";
@@ -88,17 +91,18 @@ class RequestControllerTest extends TestCase
     /**
      * Creates a request with the status id provided as argument
      *
-     * @param string $menteeId   - The ID of the mentee.
+     * @param string $createdBy  - The ID of the user making a request
      * @param string $interested - The ID of the user interested
      * @param int    $statusId   - The status of the request.
      *
      * @return void
      */
-    private function createRequest($menteeId, $interested, $statusId, $createdAt = "2017-09-19 20:55:24")
+    private function createRequest($createdBy, $interested, $statusId, $createdAt = "2017-09-19 20:55:24")
     {
-        Request::create(
+        $createdRequest = Request::create(
             [
-                "mentee_id" => $menteeId,
+                "created_by" => $createdBy,
+                "request_type" => RequestType::SEEKING_MENTOR,
                 "title" => "Javascript",
                 "description" => "Learn Javascript",
                 "status_id" => $statusId,
@@ -115,6 +119,14 @@ class RequestControllerTest extends TestCase
                     ]
                 ),
                 "location" => "Nairobi"
+            ]
+        );
+
+        RequestUsers::create(
+            [
+                "user_id" => $createdBy,
+                "role_id" => Role::MENTEE,
+                "request_id" => $createdRequest->id
             ]
         );
     }
@@ -136,6 +148,7 @@ class RequestControllerTest extends TestCase
         $this->get("/api/v2/requests/history");
 
         $response = json_decode($this->response->getContent());
+
         $this->assertResponseStatus(200);
         $this->assertNotEmpty($response);
         $this->assertEquals(1, count($response));
@@ -152,16 +165,16 @@ class RequestControllerTest extends TestCase
         $this->get("/api/v2/requests/pending");
 
         $response = json_decode($this->response->getContent());
-        $this->assertResponseStatus(200);
 
+        $this->assertResponseStatus(200);
         $this->assertEquals(
             "-KXGy1MT1oimjQgFim7u",
-            $response[1]->mentee_id
+            $response[1]->user_id
         );
 
         $this->assertContains(
             "-K_nkl19N6-EGNa0W8LF",
-            $response[0]->interested
+            $response[1]->interested
         );
     }
 
@@ -259,10 +272,10 @@ class RequestControllerTest extends TestCase
     {
         $this->makeUser("-KXGy1MimjQgFim7u");
         $this->patch(
-            "/api/v1/requests/14/update-interested",
+            "/api/v2/requests/14/indicate-interest",
             [
                 "interested" => ["-KXGy1MimjQgFim7u"]
-                ]
+            ]
         );
         $this->patch("api/v2/requests/14/withdraw-interest");
         $this->assertResponseOk();
@@ -317,15 +330,15 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Test interested mentor is accepted succesfully
+     * Test interested user is accepted succesfully
      *
      * @return void
      */
-    public function testAcceptInterestedMentorSuccess()
+    public function testAcceptInterestedUserSuccess()
     {
         $this->patch(
-            "/api/v2/requests/19/accept-mentor",
-            $this->validAcceptOrRejectMentorData
+            "/api/v2/requests/19/accept-user",
+            $this->validAcceptOrRejectUserData
         );
 
         $response = json_decode($this->response->getContent());
@@ -333,40 +346,40 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(200);
 
         $this->assertEquals($response->status_id, 2);
-        $this->assertEquals($response->mentor_id, "-K_nkl19N6-EGNa0W8LF");
+
         $this->assertNotNull($response->match_date);
     }
 
     /**
-     * Test valid interested mentor id is required
+     * Test valid interested user id is required
      *
      * @return void
      */
-    public function testAcceptInterestedMentorFailureInvalidMentorId()
+    public function testAcceptInterestedUserFailureInvalidInterestedUserId()
     {
         $this->patch(
-            "/api/v2/requests/17/accept-mentor",
-            $this->invalidAcceptOrRejectMentorIdData
+            "/api/v2/requests/17/accept-user",
+            $this->invalidAcceptOrRejectUserIdData
         );
 
         $response = json_decode($this->response->getContent());
 
         $this->assertResponseStatus(404);
-        $this->assertEquals($response->message, "The fellow is not an interested mentor");
+        $this->assertEquals($response->message, "The fellow is not an interested user");
     }
 
 
     /**
-     * Test only requests owner can accept interested mentor
+     * Test only requests owner can accept interested user
      *
      * @return void
      */
-    public function testAcceptInterestedmentorFailureUnauthorizedUser()
+    public function testAcceptInterestedUserFailureUnauthorizedUser()
     {
         $this->makeUser("-Kv6NjpXJ_suEwaCsBzq");
         $this->patch(
-            "/api/v2/requests/17/accept-mentor",
-            $this->validAcceptOrRejectMentorData
+            "/api/v2/requests/17/accept-user",
+            $this->validAcceptOrRejectUserData
         );
 
         $response = json_decode($this->response->getContent());
@@ -379,15 +392,15 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Test interested mentor is rejected succesfully
+     * Test interested user is rejected succesfully
      *
      * @return void
      */
-    public function testRejectInterestedMentorSuccess()
+    public function testRejectInterestedUserSuccess()
     {
         $this->patch(
-            "/api/v2/requests/19/reject-mentor",
-            $this->validAcceptOrRejectMentorData
+            "/api/v2/requests/19/reject-user",
+            $this->validAcceptOrRejectUserData
         );
 
         $response = json_decode($this->response->getContent());
@@ -397,34 +410,34 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Test valid interested mentor id is required
+     * Test valid interested user id is required
      *
      * @return void
      */
-    public function testRejectInterestedMentorFailureInvalidMentorId()
+    public function testRejectInterestedUserFailureInvalidinterestedUserId()
     {
         $this->patch(
-            "/api/v2/requests/17/reject-mentor",
-            $this->invalidAcceptOrRejectMentorIdData
+            "/api/v2/requests/17/reject-user",
+            $this->invalidAcceptOrRejectUserIdData
         );
 
         $response = json_decode($this->response->getContent());
 
         $this->assertResponseStatus(404);
-        $this->assertEquals($response->message, "The fellow is not an interested mentor");
+        $this->assertEquals($response->message, "The fellow is not an interested user");
     }
 
     /**
-     * Test only owner of request can reject interested mentor
+     * Test only owner of request can reject interested user
      *
      * @return void
      */
-    public function testRejectInterestedMentorFailureUnauthorizedUser()
+    public function testRejectInterestedUserFailureUnauthorizedUser()
     {
         $this->makeUser("-Kv6NjpXJ_suEwaCsBzq");
         $this->patch(
-            "/api/v2/requests/17/reject-mentor",
-            $this->validAcceptOrRejectMentorData
+            "/api/v2/requests/17/reject-user",
+            $this->validAcceptOrRejectUserData
         );
 
         $response = json_decode($this->response->getContent());
@@ -467,7 +480,7 @@ class RequestControllerTest extends TestCase
         $this->assertEquals(1, $response->status_id);
         $this->assertEquals(21, $response->id);
         $response = json_decode($this->response->getContent(), true);
-        $this->assertArrayHasKey("mentee_id", $response);
+        $this->assertArrayHasKey("created_by", $response);
     }
 
     /**

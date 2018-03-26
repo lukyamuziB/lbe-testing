@@ -11,8 +11,6 @@ class Request extends Model
     protected $table = "requests";
 
     protected $fillable = [
-        "mentee_id",
-        "mentor_id",
         "title",
         "description",
         "status_id",
@@ -21,7 +19,9 @@ class Request extends Model
         "duration",
         "location",
         "created_at",
-        "interested"
+        "interested",
+        "created_by",
+        "request_type_id",
     ];
 
     protected $dates = [];
@@ -32,8 +32,6 @@ class Request extends Model
     ];
 
     public static $rules = [
-        "mentee_id" => "string",
-        "mentor_id" => "string",
         "title" => "required",
         "description" => "required",
         "status_id" => "numeric",
@@ -49,22 +47,13 @@ class Request extends Model
         "primary.*" => "numeric|min:1",
         "secondary.*" => "numeric|min:1",
         "location" => "string",
+        "created_by" => "string",
+        "request_type_id" => "numeric",
     ];
 
-    public static $mentee_rules = [
-        "interested" => "required|array",
-        "interested.*" => "string|regex:/\w+/",
-    ];
-
-    public static $mentor_update_rules = [
-        "mentor_id" => "required|string",
-        "mentee_name" => "required|string",
-        "match_date" => "numeric|required"
-    ];
-
-    public static $acceptOrRejectMentorRules = [
-        "mentorId" => "required|string",
-        "mentorName" => "required|string",
+    public static $acceptOrRejectUserRules = [
+        "interestedUserId" => "required|string",
+        "interestedUserName" => "required|string",
     ];
 
     public function session()
@@ -83,24 +72,31 @@ class Request extends Model
     }
 
     /**
-     * Defines Foreign Key Relationship to the user model
+     * Returns an object containing the mentor's details
      *
      * @return Object
      */
-    public function mentee()
+    public function getMentorAttribute()
     {
-        return $this->belongsTo("App\Models\User", "mentee_id");
+        return RequestUsers::with("user")
+                            ->where("request_id", $this->attributes["id"])
+                            ->where("role_id", Role::MENTOR)
+                            ->first()["user"];
     }
 
     /**
-     * Defines Foreign Key Relationship to the user model
+     * Returns an object containing the mentee's details
      *
      * @return Object
      */
-    public function mentor()
+    public function getMenteeAttribute()
     {
-        return $this->belongsTo("App\Models\User", "mentor_id");
+        return RequestUsers::with("user")
+                            ->where("request_id", $this->attributes["id"])
+                            ->where("role_id", Role::MENTEE)
+                            ->first()["user"];
     }
+
 
     /**
      * Defines Foreign Key Relationship to the skill model

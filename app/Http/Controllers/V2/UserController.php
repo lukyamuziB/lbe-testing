@@ -83,7 +83,7 @@ class UserController extends Controller
      */
     private function getMenteeRequestCount($userId)
     {
-        return MentorshipRequest::where("mentee_id", $userId)
+        return MentorshipRequest::where("created_by", $userId)
             ->count();
     }
 

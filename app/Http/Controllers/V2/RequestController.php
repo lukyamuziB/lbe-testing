@@ -13,6 +13,9 @@ use App\Exceptions\ConflictException;
 use App\Models\Status;
 use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
+use App\Models\RequestUsers;
+use App\Models\Role;
+use App\Models\RequestType;
 use App\Models\RequestCancellationReason;
 use App\Utility\SlackUtility;
 
@@ -50,13 +53,15 @@ class RequestController extends Controller
         $params = $this->buildPoolFilterParams($request);
 
         $mentorshipRequests  = MentorshipRequest::buildPoolFilterQuery($params)
-            ->whereNotIn("id", function ($query) use ($userId) {
-                $query->select("id")
-                ->from(with(new MentorshipRequest)->getTable())
-                ->whereRaw("interested::jsonb @> to_jsonb('".$userId."'::text)");
-            })
-            ->orderBy("created_at", "desc")
-            ->paginate($limit);
+                ->whereNotIn(
+                    "id", function ($query) use ($userId) {
+                        $query->select("id")
+                            ->from(with(new MentorshipRequest)->getTable())
+                            ->whereRaw("interested::jsonb @> to_jsonb('".$userId."'::text)");
+                    }
+                )
+                ->orderBy("created_at", "desc")
+                ->paginate($limit);
 
         $response["requests"] = $this->formatRequestData($mentorshipRequests);
         $response["pagination"] = [
@@ -148,24 +153,24 @@ class RequestController extends Controller
     public function getUserHistory(Request $request)
     {
         $userId = $request->user()->uid;
+
+        $usersRequestsHistoryIds = RequestUsers::select("request_id")
+                                            ->where("user_id", $userId)
+                                            ->get();
+
         $mentorshipRequests = MentorshipRequest::where("status_id", STATUS::COMPLETED)
-            ->where(
-                function ($query) use ($userId) {
-                    $query->where("mentor_id", $userId)
-                        ->orWhere("mentee_id", $userId);
-                }
-            )
-            ->with("session.rating")
-            ->with("requestSkills")
-            ->get();
+                                                    ->whereIn("id", $usersRequestsHistoryIds)
+                                                    ->with("session.rating")
+                                                    ->with("requestSkills")
+                                                    ->get();
         $this->appendRating($mentorshipRequests);
         $formattedRequests = $this->formatRequestData($mentorshipRequests);
         return $this->respond(Response::HTTP_OK, $formattedRequests);
     }
 
     /**
-     * Gets requests that are awaiting user to select mentor or mentee to select user
-     * as mentor
+     * Gets requests that are awaiting user to select mentor/mentee or
+     * to be selected as mentor/mentee
      *
      * @param Request $request - request object
      *
@@ -174,13 +179,13 @@ class RequestController extends Controller
     public function getPendingPool(Request $request)
     {
         $userId = $request->user()->uid;
-        $requests = MentorshipRequest::where("mentee_id", $userId)
-        ->where("status_id", 1)
-        ->whereNotNull("interested")
-        ->orWhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
-        ->where("status_id", 1)
-        ->orderBy("created_at", "desc")
-        ->get();
+        $requests = MentorshipRequest::where("created_by", $userId)
+                                        ->where("status_id", 1)
+                                        ->whereNotNull("interested")
+                                        ->orWhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
+                                        ->where("status_id", 1)
+                                        ->orderBy("created_at", "desc")
+                                        ->get();
 
         $formattedRequest =  $this->formatRequestData($requests);
         $this->appendAwaitedUser($formattedRequest, $userId);
@@ -198,15 +203,14 @@ class RequestController extends Controller
     {
         $userId = $request->user()->uid;
 
-        $requestsInProgress = MentorshipRequest::where(
-            function ($query) use ($userId) {
-                $query->where("mentor_id", $userId)
-                    ->orWhere("mentee_id", $userId);
-            }
-        )
-            ->where("status_id", STATUS::MATCHED)
-            ->orderBy("created_at", "desc")
-            ->get();
+        $usersCurrentRequestsIds = RequestUsers::select("request_id")
+                                                    ->where("user_id", $userId)
+                                                    ->get();
+
+        $requestsInProgress = MentorshipRequest::whereIn("id", $usersCurrentRequestsIds)
+                                                    ->where("status_id", STATUS::MATCHED)
+                                                    ->orderBy("created_at", "desc")
+                                                    ->get();
         $formattedRequestsInProgress = $this->formatRequestData($requestsInProgress);
 
         return $this->respond(Response::HTTP_OK, $formattedRequestsInProgress);
@@ -234,7 +238,7 @@ class RequestController extends Controller
 
         $mentorshipRequest->interested = $mentorshipRequest->interested ?? [];
 
-        if ($currentUser->uid === $mentorshipRequest->mentee_id) {
+        if ($currentUser->uid === $mentorshipRequest->created_by) {
             throw new BadRequestException("You can't indicate interest in your own request.");
         }
 
@@ -304,7 +308,7 @@ class RequestController extends Controller
             throw new NotFoundException("Mentorship Request not found.");
         }
 
-        if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->mentee_id) {
+        if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by) {
             throw new UnauthorizedException("You don't have permission to cancel this Mentorship Request.");
         }
 
@@ -326,7 +330,7 @@ class RequestController extends Controller
     {
         $requestTitle = $mentorshipRequest->title;
         $creationDate = $mentorshipRequest->created_at;
-        $recipientSlackID = $mentorshipRequest->mentee->slack_id;
+        $recipientSlackID = $mentorshipRequest->createdBy->slack_id;
         $slackMessage = "Your Mentorship Request `$requestTitle`
             opened on `$creationDate` has been cancelled \nREASON: `$cancellationReason`.";
         $this->slackUtility->sendMessage([$recipientSlackID], $slackMessage);
@@ -345,6 +349,7 @@ class RequestController extends Controller
     public function withdrawInterest(Request $request, $id)
     {
         $mentorshipRequest = MentorshipRequest::find(intval($id));
+
         if (!$mentorshipRequest) {
             throw new NotFoundException("Mentorship Request not found.");
         }
@@ -355,6 +360,7 @@ class RequestController extends Controller
         }
 
         $currentUserId = array_search($currentUser->uid, $mentorshipRequest->interested);
+
         $interested = $mentorshipRequest->interested;
         unset($interested[$currentUserId]);
 
@@ -369,61 +375,74 @@ class RequestController extends Controller
     }
 
     /**
-     * Accept a mentor who has shown interest in users mentorship request.
+     * Accept a user who has shown interest in users mentorship request.
      *
      * @param Request $request - Request object
-     * @param integer $mentorshipRequestId - mentorship request id with interested mentor
+     * @param integer $mentorshipRequestId - mentorship request id with interested user
      *
      * @throws NotFoundException if mentorship request is not found
      *
      * @return Response object
      */
-    public function acceptInterestedMentor(Request $request, $mentorshipRequestId)
+    public function acceptInterestedUser(Request $request, $mentorshipRequestId)
     {
         $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
 
-        $this->validateBeforeAcceptOrRejectMentor($request, $mentorshipRequest);
+        $this->validateBeforeAcceptOrRejectUser($request, $mentorshipRequest);
 
-        $interestedMentorId = $request->get("mentorId");
+        $interestedUserId = $request->get("interestedUserId");
 
-        $mentorshipRequest->mentor_id = $interestedMentorId;
         $mentorshipRequest->match_date = Carbon::now();
         $mentorshipRequest->status_id = Status::MATCHED;
         $mentorshipRequest->save();
 
+        if ($mentorshipRequest->request_type_id == RequestType::SEEKING_MENTEE) {
+            $roleId = Role::MENTOR;
+        } else {
+            $roleId = Role::MENTEE;
+        }
+
+        DB::table("request_users")->insert(
+            [
+                "user_id" => $interestedUserId,
+                "request_id" => $mentorshipRequestId,
+                "role_id" => $roleId
+            ]
+        );
+
         return $this->respond(Response::HTTP_OK, $mentorshipRequest);
     }
 
     /**
-     * Reject a mentor who has shown interest in user's mentorship request
+     * Reject a user who has shown interest in user's mentorship request
      *
-     * @param Request $request - Request object
-     * @param integer $mentorshipRequestId - mentorship request id with interested mentor
+     * @param Request $request             - Request object
+     * @param integer $mentorshipRequestId - mentorship request id with interested user
      *
      * @throws NotFoundException if mentorship request is not found
      *
      * @return Response object
      */
-    public function rejectInterestedMentor(Request $request, $mentorshipRequestId)
+    public function rejectInterestedUser(Request $request, $mentorshipRequestId)
     {
         $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
 
-        $this->validateBeforeAcceptOrRejectMentor($request, $mentorshipRequest);
+        $this->validateBeforeAcceptOrRejectUser($request, $mentorshipRequest);
 
-        $allInterestedMentors = $mentorshipRequest->interested ?? [];
-        $interestedMentorId = $request->get("mentorId");
+        $allInterestedUsers = $mentorshipRequest->interested ?? [];
+        $interestedUserId = $request->get("interestedUserId");
 
-        $interestedMentorIndex = array_search($interestedMentorId, $allInterestedMentors);
-        array_splice($allInterestedMentors, $interestedMentorIndex, 1);
-        $mentorshipRequest->interested =
-            count($allInterestedMentors) > 0 ? $allInterestedMentors : null;
+        $interestedUserIndex = array_search($interestedUserId, $allInterestedUsers);
+        array_splice($allInterestedUsers, $interestedUserIndex, 1);
+        $mentorshipRequest->interested
+            = count($allInterestedUsers) > 0 ? $allInterestedUsers : null;
         $mentorshipRequest->save();
 
         return $this->respond(Response::HTTP_OK, $mentorshipRequest);
     }
 
     /**
-     * Check validity of request in accept and reject interested mentor functions, if not
+     * Check validity of request in accept and reject interested user functions, if not
      * throw Exception
      *
      * @param Request $request - Request object
@@ -431,13 +450,13 @@ class RequestController extends Controller
      *
      * @throws BadRequestException - if mentorship request is not open
      * @throws AccessDeniedException - if user does not own the mentorship request
-     * @throws NotFoundException - if interested mentor given is not an interested mentor
+     * @throws NotFoundException - if interested user given is not an interested user
      *
      * @return void
      */
-    private function validateBeforeAcceptOrRejectMentor(Request $request, MentorshipRequest $mentorshipRequest)
+    private function validateBeforeAcceptOrRejectUser(Request $request, MentorshipRequest $mentorshipRequest)
     {
-        $this->validate($request, MentorshipRequest::$acceptOrRejectMentorRules);
+        $this->validate($request, MentorshipRequest::$acceptOrRejectUserRules);
 
         if (!($mentorshipRequest)) {
             throw new NotFoundException("The mentorship request was not found");
@@ -448,14 +467,14 @@ class RequestController extends Controller
         }
 
         $currentUser = $request->user();
-        if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
+        if ($currentUser->uid !== $mentorshipRequest->created_by) {
             throw new AccessDeniedException("You do not have permission to perform this operation");
         }
 
-        $interestedMentorId = $request->get("mentorId");
-        $allInterestedMentors = $mentorshipRequest->interested ?? [];
-        if (!(in_array($interestedMentorId, $allInterestedMentors))) {
-            throw new NotFoundException("The fellow is not an interested mentor");
+        $interestedUserId = $request->get("interestedUserId");
+        $allInterestedUsers = $mentorshipRequest->interested ?? [];
+        if (!(in_array($interestedUserId, $allInterestedUsers))) {
+            throw new NotFoundException("The fellow is not an interested user");
         }
     }
 
@@ -475,28 +494,41 @@ class RequestController extends Controller
 
         $requestDetails = $this->removePrimarySecondaryFields($request->all());
         $requestDetails["status_id"] = Status::OPEN;
+        $requestDetails["created_by"] = $user->uid;
 
         if ($request->exists("isMentor") && $request->input("isMentor")) {
-            $requestDetails["mentor_id"] = $user->uid;
+            $roleId = Role::MENTOR;
+            $requestDetails["request_type_id"] = RequestType::SEEKING_MENTEE;
         } else {
-            $requestDetails["mentee_id"] = $user->uid;
+            $roleId = Role::MENTEE;
+            $requestDetails["request_type_id"] = RequestType::SEEKING_MENTOR;
         }
 
-        $result = DB::transaction(function () use ($request, $requestDetails) {
-            $createdRequest = MentorshipRequest::create($requestDetails);
+        $result = DB::transaction(
+            function () use ($request, $requestDetails, $roleId) {
+                $createdRequest = MentorshipRequest::create($requestDetails);
 
-            $primary = $request->input("primary");
-            $this->mapRequestToSkill($createdRequest->id, $primary, "primary");
+                $primary = $request->input("primary");
+                $this->mapRequestToSkill($createdRequest->id, $primary, "primary");
 
-            $secondary = $request->input("secondary");
-            $this->mapRequestToSkill($createdRequest->id, $secondary, "secondary");
+                $secondary = $request->input("secondary");
+                $this->mapRequestToSkill($createdRequest->id, $secondary, "secondary");
 
-            $requestSkills = RequestSkill::where("request_id", $createdRequest->id)->with("skill")->get();
-            $requestSkills = $this->formatRequestSkills($requestSkills);
-            $createdRequest->request_skills = $requestSkills;
+                $requestSkills = RequestSkill::where("request_id", $createdRequest->id)->with("skill")->get();
+                $requestSkills = $this->formatRequestSkills($requestSkills);
+                $createdRequest->request_skills = $requestSkills;
 
-            return $createdRequest;
-        });
+                DB::table("request_users")->insert(
+                    [
+                        "user_id" => $createdRequest->created_by,
+                        "request_id" => $createdRequest->id,
+                        "role_id" => $roleId
+                    ]
+                );
+
+                return $createdRequest;
+            }
+        );
 
         return $this->respond(Response::HTTP_CREATED, $result);
     }
@@ -505,6 +537,8 @@ class RequestController extends Controller
      * Calculate and attach the rating of each request Object
      *
      * @param object $mentorshipRequests - mentorship requests
+     *
+     * @return void
      */
     private function appendRating(&$mentorshipRequests)
     {
@@ -545,8 +579,8 @@ class RequestController extends Controller
         foreach ($requests as $request) {
             $formattedRequest = (object) [
                 "id" => $request->id,
-                "mentee_id" => $request->mentee_id,
-                "mentor_id" => $request->mentor_id,
+                "created_by" => $request->created_by,
+                "request_type_id" => $request->request_type_id,
                 "title" => $request->title,
                 "description" => $request->description,
                 "status_id" => $request->status_id,
@@ -558,8 +592,16 @@ class RequestController extends Controller
                 "request_skills" => $this->formatRequestSkills($request->requestSkills),
                 "rating" => $request->rating ?? null,
                 "created_at" => $this->formatTime($request->created_at),
-                "mentee" => (object) ["fullname" => $request->mentee->fullname ?? ""],
-                "mentor" => (object) ["fullname" => $request->mentor->fullname ?? ""]
+                "mentee" => (object) [
+                    "id" => $request->mentee->user_id ?? null,
+                    "email" => $request->mentee->email ?? "",
+                    "fullname" => $request->mentee->fullname ?? ""
+                ],
+                "mentor" => (object) [
+                    "id" => $request->mentor->user_id ?? null,
+                    "email" => $request->mentor->email ?? "",
+                    "fullname" => $request->mentor->fullname ?? ""
+                ]
             ];
             $formattedRequests[] = $formattedRequest;
         }
@@ -569,8 +611,10 @@ class RequestController extends Controller
     /**
      * Append the user being awaited
      *
-     * @param array $requests - mentorship requests
-     * @param String $userId - id of current user
+     * @param array  $requests - mentorship requests
+     * @param String $userId   - id of current user
+     *
+     * @return void
      */
     private function appendAwaitedUser($requests, $userId)
     {
@@ -623,7 +667,7 @@ class RequestController extends Controller
      * Filter incoming request body to remove object property
      * containing primary and secondary skills
      *
-     * @param  object $request
+     * @param object $request the request
      *
      * @return object
      */
@@ -643,8 +687,8 @@ class RequestController extends Controller
      * saves them in the request_skills table
      *
      * @param integer $requestId the id of the request
-     * @param array $skills skill to map
-     * @param string $type the type of skill to map
+     * @param array   $skills    skill to map
+     * @param string  $type      the type of skill to map
      *
      * @return void
      */

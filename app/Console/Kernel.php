@@ -22,7 +22,11 @@ class Kernel extends ConsoleKernel
         Commands\UnmatchedRequestsWithInterestCommand::class,
         Commands\UpdateRatingsUserCommand::class,
         Commands\UpdateCompletedRequestStatusCommand::class,
-        Commands\InactiveMentorshipNotificationCommand::class
+        Commands\InactiveMentorshipNotificationCommand::class,
+        Commands\DumpRequestTableCommand::class,
+        Commands\RestoreRequestDataFromBackupCommand::class,
+        Commands\RemodelMenteeMentorRequestRelationshipCommand::class,
+
 
     ];
     /**

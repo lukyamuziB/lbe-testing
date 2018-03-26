@@ -116,7 +116,7 @@ class Session extends Model
             ->whereIn(
                 "request_id",
                 Request::select("id")
-                    ->where("mentor_id", $userId)
+                    ->where("created_by", $userId)
                     ->get()->toArray()
             )->get();
 

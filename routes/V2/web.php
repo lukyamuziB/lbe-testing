@@ -26,8 +26,8 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->patch("requests/{id}/withdraw-interest", "RequestController@withdrawInterest");
     $router->patch("requests/{id}/indicate-interest", "RequestController@indicateInterest");
     $router->get("requests/{id}/sessions", "SessionController@getRequestSessions");
-    $router->patch("requests/{id}/accept-mentor", "RequestController@acceptInterestedMentor");
-    $router->patch("requests/{id}/reject-mentor", "RequestController@rejectInterestedMentor");
+    $router->patch("requests/{id}/accept-user", "RequestController@acceptInterestedUser");
+    $router->patch("requests/{id}/reject-user", "RequestController@rejectInterestedUser");
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
     });

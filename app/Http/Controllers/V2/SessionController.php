@@ -342,10 +342,13 @@ class SessionController extends Controller
 
         $userId = $request->user()->uid;
         $approvalStatus = [];
-        if ($userId === $mentorshipRequest->mentor_id) {
+        $mentorId = $mentorshipRequest->mentor ? $mentorshipRequest->mentor->user_id : "";
+        $menteeId = $mentorshipRequest->mentee ? $mentorshipRequest->mentee->user_id : "";
+        
+        if ($userId === $mentorId) {
             $approvalStatus["mentor_approved"] = true;
             $approvalStatus["mentor_logged_at"] = Carbon::now($timezone);
-        } elseif ($userId === $mentorshipRequest->mentee_id) {
+        } elseif ($userId === $menteeId) {
             $approvalStatus["mentee_approved"] = true;
             $approvalStatus["mentee_logged_at"] = Carbon::now($timezone);
         } else {
@@ -375,7 +378,7 @@ class SessionController extends Controller
                 }
 
                 if (($rating_values = $request->input('rating_values')) &&
-                    $mentorshipRequest->mentee_id === $userId) {
+                    $mentorshipRequest->mentee->user_id === $userId) {
                     $sessionToLog->rating = Rating::create(
                         [
                             "user_id" => $userId,
@@ -413,8 +416,8 @@ class SessionController extends Controller
 
         $userId = $request->user()->uid;
         $timezone = $session->request->pairing["timezone"];
-        $menteeId = $session->request->mentee_id;
-        $mentorId = $session->request->mentor_id;
+        $menteeId = $session->request->mentee->user_id;
+        $mentorId = $session->request->mentor->user_id;
         $userRole = $userId === $mentorId ? "mentor" : "mentee";
         $confirmation = [];
 
