@@ -136,6 +136,41 @@ class RequestControllerTest extends TestCase
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
     }
 
+   /**
+     * Test to get a single request.
+     *
+     * @return void
+     */
+    public function testGetRequestSuccess()
+    {
+        $createdRequest = $this->createRequest("-K_nkl19N6-EGNa0W8LF", "-KesEogCwjq6lkOzKmLI", 2);
+        $createdRequestId = $createdRequest->id;
+
+        $this->get("/api/v2/requests/$createdRequestId");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+        $this->assertNotEmpty($response);
+        $this->assertEquals($createdRequestId, $response->id);
+    }
+
+    /**
+     * Test for get request failure when an invalid request id is passed.
+     *
+     * @return void
+     */
+    public function testGetRequestFailureForInvalidRequestId()
+    {
+        $fakeRequestId = 1223;
+        $this->get("/api/v2/requests/$fakeRequestId");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(404);
+        $this->assertEquals("Request not found.", $response->message);
+    }
+
     /**
      * Test to get the completed requests of a user
      *

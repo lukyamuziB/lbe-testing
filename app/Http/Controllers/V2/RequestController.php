@@ -99,6 +99,27 @@ class RequestController extends Controller
     }
 
     /**
+     * Returns request detail for a single request
+     *
+     * @param $id - id of the request
+     *
+     * @throws NotFoundException
+     *
+     * @return \HttpResponse $response - A formatted array of a single Request
+     */
+    public function getRequest($id)
+    {
+        $mentorshipRequest = MentorshipRequest::where("id", intval($id))->get();
+
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Request not found.");
+        }
+
+        $response = $this->formatRequestData($mentorshipRequest);
+        return $this->respond(Response::HTTP_OK, $response);
+    }
+
+    /**
      * Build query params from request
      *
      * @param Request $request - request object

@@ -31,6 +31,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
     });
+    $router->get("requests/{id}", "RequestController@getRequest");
     $router->post("requests", "RequestController@createRequest");
 });
 /**
