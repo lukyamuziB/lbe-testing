@@ -22,7 +22,7 @@ class RequestSkill extends Model
 
     public function skill()
     {
-        return $this->belongsTo("App\Models\Skill");
+        return $this->belongsTo("App\Models\Skill")->withTrashed();
     }
 
     public function userSkills()
