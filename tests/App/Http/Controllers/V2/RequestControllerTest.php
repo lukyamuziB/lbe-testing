@@ -101,7 +101,7 @@ class RequestControllerTest extends TestCase
         $createdRequest = Request::create(
             [
                 "created_by" => $createdBy,
-                "request_type" => RequestType::SEEKING_MENTOR,
+                "request_type" => RequestType::MENTEE_REQUEST,
                 "title" => "Javascript",
                 "description" => "Learn Javascript",
                 "status_id" => $statusId,

@@ -12,7 +12,7 @@ class RequestTypeTableSeeder extends Seeder
     public function run()
     {
         $limit = 2;
-        $role = array("SEEKING MENTEE", "SEEKING MENTOR");
+        $role = array("MENTOR REQUEST", "MENTEE REQUEST");
         for ($i = 0; $i < $limit; $i++) {
             DB::table("request_type")->insert([
                 "name" => $role[$i]

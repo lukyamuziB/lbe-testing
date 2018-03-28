@@ -63,7 +63,7 @@ class RequestController extends Controller
                 ->orderBy("created_at", "desc")
                 ->paginate($limit);
 
-        $response["requests"] = $this->formatRequestData($mentorshipRequests);
+        $response["requests"] = formatMultipleRequestsForAPIResponse($mentorshipRequests);
         $response["pagination"] = [
             "total_count" => $mentorshipRequests->total(),
             "page_size" => $mentorshipRequests->perPage()
@@ -89,7 +89,7 @@ class RequestController extends Controller
             ->orderBy("created_at", "desc")
             ->paginate($limit);
 
-        $response["requests"] = $this->formatRequestData($mentorshipRequests);
+        $response["requests"] = formatMultipleRequestsForAPIResponse($mentorshipRequests);
         $response["pagination"] = [
             "total_count" => $mentorshipRequests->total(),
             "page_size" => $mentorshipRequests->perPage()
@@ -109,14 +109,16 @@ class RequestController extends Controller
      */
     public function getRequest($id)
     {
-        $mentorshipRequest = MentorshipRequest::where("id", intval($id))->get();
+        $mentorshipRequest = MentorshipRequest::find(intval($id));
 
         if (!$mentorshipRequest) {
             throw new NotFoundException("Request not found.");
         }
 
-        $response = $this->formatRequestData($mentorshipRequest);
-        return $this->respond(Response::HTTP_OK, $response);
+        return $this->respond(
+            Response::HTTP_OK,
+            formatRequestForAPIResponse($mentorshipRequest)
+        );
     }
 
     /**
@@ -185,7 +187,7 @@ class RequestController extends Controller
                                                     ->with("requestSkills")
                                                     ->get();
         $this->appendRating($mentorshipRequests);
-        $formattedRequests = $this->formatRequestData($mentorshipRequests);
+        $formattedRequests = formatMultipleRequestsForAPIResponse($mentorshipRequests);
         return $this->respond(Response::HTTP_OK, $formattedRequests);
     }
 
@@ -208,7 +210,7 @@ class RequestController extends Controller
                                         ->orderBy("created_at", "desc")
                                         ->get();
 
-        $formattedRequest =  $this->formatRequestData($requests);
+        $formattedRequest =  formatMultipleRequestsForAPIResponse($requests);
         $this->appendAwaitedUser($formattedRequest, $userId);
         return $this->respond(Response::HTTP_OK, $formattedRequest);
     }
@@ -232,7 +234,7 @@ class RequestController extends Controller
                                                     ->where("status_id", STATUS::MATCHED)
                                                     ->orderBy("created_at", "desc")
                                                     ->get();
-        $formattedRequestsInProgress = $this->formatRequestData($requestsInProgress);
+        $formattedRequestsInProgress = formatMultipleRequestsForAPIResponse($requestsInProgress);
 
         return $this->respond(Response::HTTP_OK, $formattedRequestsInProgress);
     }
@@ -417,10 +419,10 @@ class RequestController extends Controller
         $mentorshipRequest->status_id = Status::MATCHED;
         $mentorshipRequest->save();
 
-        if ($mentorshipRequest->request_type_id == RequestType::SEEKING_MENTEE) {
-            $roleId = Role::MENTOR;
-        } else {
+        if ($mentorshipRequest->request_type_id == RequestType::MENTOR_REQUEST) {
             $roleId = Role::MENTEE;
+        } else {
+            $roleId = Role::MENTOR;
         }
 
         DB::table("request_users")->insert(
@@ -519,10 +521,10 @@ class RequestController extends Controller
 
         if ($request->exists("isMentor") && $request->input("isMentor")) {
             $roleId = Role::MENTOR;
-            $requestDetails["request_type_id"] = RequestType::SEEKING_MENTEE;
+            $requestDetails["request_type_id"] = RequestType::MENTOR_REQUEST;
         } else {
             $roleId = Role::MENTEE;
-            $requestDetails["request_type_id"] = RequestType::SEEKING_MENTOR;
+            $requestDetails["request_type_id"] = RequestType::MENTEE_REQUEST;
         }
 
         $result = DB::transaction(
@@ -536,7 +538,7 @@ class RequestController extends Controller
                 $this->mapRequestToSkill($createdRequest->id, $secondary, "secondary");
 
                 $requestSkills = RequestSkill::where("request_id", $createdRequest->id)->with("skill")->get();
-                $requestSkills = $this->formatRequestSkills($requestSkills);
+                $requestSkills = formatRequestSkills($requestSkills);
                 $createdRequest->request_skills = $requestSkills;
 
                 DB::table("request_users")->insert(
@@ -587,49 +589,6 @@ class RequestController extends Controller
     }
 
     /**
-     * Format request data
-     * extracts returned request queries to match data on client side
-     *
-     * @param Object $requests - collection of requests
-     *
-     * @return array - array of formatted requests
-     */
-    private function formatRequestData($requests)
-    {
-        $formattedRequests = [];
-        foreach ($requests as $request) {
-            $formattedRequest = (object) [
-                "id" => $request->id,
-                "created_by" => $request->created_by,
-                "request_type_id" => $request->request_type_id,
-                "title" => $request->title,
-                "description" => $request->description,
-                "status_id" => $request->status_id,
-                "interested" => $request->interested,
-                "match_date" => $request->match_date,
-                "location" => $request->location,
-                "duration" => (int)$request->duration,
-                "pairing" => $request->pairing,
-                "request_skills" => $this->formatRequestSkills($request->requestSkills),
-                "rating" => $request->rating ?? null,
-                "created_at" => $this->formatTime($request->created_at),
-                "mentee" => (object) [
-                    "id" => $request->mentee->user_id ?? null,
-                    "email" => $request->mentee->email ?? "",
-                    "fullname" => $request->mentee->fullname ?? ""
-                ],
-                "mentor" => (object) [
-                    "id" => $request->mentor->user_id ?? null,
-                    "email" => $request->mentor->email ?? "",
-                    "fullname" => $request->mentor->fullname ?? ""
-                ]
-            ];
-            $formattedRequests[] = $formattedRequest;
-        }
-        return $formattedRequests;
-    }
-
-    /**
      * Append the user being awaited
      *
      * @param array  $requests - mentorship requests
@@ -646,42 +605,6 @@ class RequestController extends Controller
             }
             $request->awaited_user = $awaitedUser;
         }
-    }
-
-    /**
-     * Format time
-     * checks if the given time is null and
-     * returns null else it returns the time in the date format
-     *
-     * @param string $time - the time in the date format
-     *
-     * @return mixed null|string
-     */
-    private function formatTime($time)
-    {
-        return $time === null ? null : date("Y-m-d H:i:s", $time->getTimestamp());
-    }
-
-    /**
-     * Format Request Skills
-     * Filter the result from skills table and add to the skills array
-     *
-     * @param array $requestSkills - the request skills
-     *
-     * @return array $skills
-     */
-    private function formatRequestSkills($requestSkills)
-    {
-        $skills = [];
-        foreach ($requestSkills as $skill) {
-            $result = (object) [
-                "id" => $skill->skill_id,
-                "type" => $skill->type,
-                "name" => $skill->skill->name
-            ];
-            $skills[] = $result;
-        }
-        return $skills;
     }
 
     /**
