@@ -70,10 +70,10 @@ class SkillController extends Controller
 
         if (strval($isTrashed) === "true") {
             $skills = Skill::withTrashed()->with(["requestSkills"])
-            ->orderBy("created_at", "desc")->get();
+            ->orderBy("name", "asc")->get();
         } else {
             $skills = Skill::with(["requestSkills"])
-                ->orderBy("created_at", "desc")->get();
+                ->orderBy("name", "asc")->get();
         }
 
         return $this->respond(Response::HTTP_OK, $skills);
