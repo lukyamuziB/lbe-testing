@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\V2;
 
-use App\Repositories\SlackUsersRepository;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use App\Clients\AISClient;
+use App\Models\User;
+use App\Models\Skill;
 use App\Models\Rating;
 use App\Models\Session;
-use App\Models\Skill;
 use App\Models\UserSkill;
+use App\Clients\AISClient;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Exceptions\ConflictException;
 use App\Exceptions\NotFoundException;
-use App\Models\User;
+use App\Repositories\SlackUsersRepository;
 use App\Models\Request as MentorshipRequest;
 
 /**
@@ -26,8 +26,10 @@ class UserController extends Controller
     private $aisClient;
     private $slackUsersRepository;
 
-    public function __construct(AISClient $aisClient, SlackUsersRepository $slackUsersRepository)
-    {
+    public function __construct(
+        AISClient $aisClient,
+        SlackUsersRepository $slackUsersRepository
+    ) {
         $this->aisClient = $aisClient;
         $this->slackUsersRepository = $slackUsersRepository;
     }

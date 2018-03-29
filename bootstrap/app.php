@@ -69,6 +69,7 @@ $app->middleware([
     App\Http\Middleware\ExampleMiddleware::class,
     \Barryvdh\Cors\HandleCors::class,
     Nord\Lumen\NewRelic\NewRelicMiddleware::class,
+    \App\Http\Middleware\LastActiveTimeMiddleware::class
 ]);
 
 $app->routeMiddleware([
