@@ -204,10 +204,10 @@ class SessionController extends Controller
                 );
             }
             $approver = [];
-            if ($user_id === $mentorship_request->mentor_id) {
+            if ($user_id === $mentorship_request->mentor->user_id) {
                 $approver["mentor_approved"] = true;
                 $approver["mentor_logged_at"] = Carbon::now($timezone);
-            } elseif ($user_id === $mentorship_request->mentee_id) {
+            } elseif ($user_id === $mentorship_request->mentee->user_id) {
                 $approver["mentee_approved"] = true;
                 $approver["mentee_logged_at"] = Carbon::now($timezone);
             } else {
@@ -270,9 +270,9 @@ class SessionController extends Controller
             $timezone = $mentorship_request->pairing['timezone'];
             $session_update_date = Carbon::now($timezone);
 
-            if ($user_id === $mentorship_request->mentee_id) {
+            if ($user_id === $mentorship_request->mentee->user_id) {
                 $approver = ["mentee_approved" => true, "mentee_logged_at" => $session_update_date];
-            } elseif ($user_id === $mentorship_request->mentor_id) {
+            } elseif ($user_id === $mentorship_request->mentor->user_id) {
                 $approver = ["mentor_approved" => true, "mentor_logged_at" => $session_update_date];
             } else {
                 throw new AccessDeniedException(
@@ -313,9 +313,9 @@ class SessionController extends Controller
         $timezone = $mentorship_request->pairing['timezone'];
         $session_update_date = Carbon::now($timezone);
 
-        if ($user_id === $mentorship_request->mentee_id) {
+        if ($user_id === $mentorship_request->mentee->user_id) {
             $values = ["mentee_approved" => false, "mentee_logged_at" => $session_update_date];
-        } elseif ($user_id === $mentorship_request->mentor_id) {
+        } elseif ($user_id === $mentorship_request->mentor->user_id) {
             $values = ["mentor_approved" => false, "mentor_logged_at" => $session_update_date];
         } else {
                 throw new AccessDeniedException(

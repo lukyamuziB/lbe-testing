@@ -203,7 +203,7 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(200);
         $this->assertEquals(
             "-KXGy1MT1oimjQgFim7u",
-            $response[1]->user_id
+            $response[1]->created_by
         );
 
         $this->assertContains(
@@ -231,7 +231,7 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Test that a mentee can cancel there own request succesfully
+     * Test that a mentee can cancel their own request succesfully
      *
      * @return {void}
      */

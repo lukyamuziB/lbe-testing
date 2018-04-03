@@ -291,6 +291,7 @@ class RequestController extends Controller
 
         $mentorshipRequest->status_id = Status::CANCELLED;
         $cancellationReason = $request->input("reason");
+
         $result = DB::transaction(
             function () use ($mentorshipRequest, $currentUser, $cancellationReason) {
                 $mentorshipRequest->save();
@@ -351,9 +352,14 @@ class RequestController extends Controller
      */
     private function sendCancellationNotification($mentorshipRequest, $cancellationReason)
     {
+        if ($mentorshipRequest->request_type_id === RequestType::SEEKING_MENTOR) {
+            $createdBy = $mentorshipRequest->mentee;
+        } else {
+            $createdBy = $mentorshipRequest->mentor;
+        }
         $requestTitle = $mentorshipRequest->title;
         $creationDate = $mentorshipRequest->created_at;
-        $recipientSlackID = $mentorshipRequest->createdBy->slack_id;
+        $recipientSlackID = $createdBy->slack_id;
         $slackMessage = "Your Mentorship Request `$requestTitle`
             opened on `$creationDate` has been cancelled \nREASON: `$cancellationReason`.";
         $this->slackUtility->sendMessage([$recipientSlackID], $slackMessage);

@@ -346,9 +346,9 @@ class SessionControllerTest extends \TestCase
      */
     public function testConfirmSessionSuccessForMentor()
     {
-        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->makeUser("-KXGy1MimjQgFim7u");
         $this->patch(
-            "/api/v2/sessions/15/confirm",
+            "/api/v2/sessions/20/confirm",
             [
                 "comment" => "Confirmado, amigo!",
             ]
@@ -358,7 +358,6 @@ class SessionControllerTest extends \TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("comment", $response);
-        $this->assertEquals(true, $response->mentee_approved);
         $this->assertEquals(true, $response->mentor_approved);
     }
 
@@ -370,7 +369,12 @@ class SessionControllerTest extends \TestCase
     public function testConfirmSessionFailureForAlreadyConfirmedSession()
     {
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
-        $this->patch("/api/v2/sessions/1/confirm");
+        $this->patch(
+            "/api/v2/sessions/1/confirm",
+            [
+                "comment" => "Another one"
+            ]
+        );
         $response = json_decode($this->response->getContent());
 
         $this->assertResponseStatus(409);

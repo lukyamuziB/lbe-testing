@@ -416,12 +416,11 @@ class SessionController extends Controller
 
         $userId = $request->user()->uid;
         $timezone = $session->request->pairing["timezone"];
-        $menteeId = $session->request->mentee->user_id;
-        $mentorId = $session->request->mentor->user_id;
+        $menteeId = $session->request->mentee->user_id ?? "";
+        $mentorId = $session->request->mentor->user_id ?? "";
         $userRole = $userId === $mentorId ? "mentor" : "mentee";
         $confirmation = [];
-
-        if ($userId !== $session->request[$userRole . "_id"]) {
+        if ($userId !== $session->request[$userRole]["user_id"]) {
             throw new UnauthorizedException("You do not have permission to confirm this session.");
         }
 

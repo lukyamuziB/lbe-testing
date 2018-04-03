@@ -15,6 +15,7 @@ class RemodelRequestsTable extends Migration
     {
 
         Schema::table("requests", function (Blueprint $table) {
+            $table->dropForeign('requests_mentee_id_foreign');
             $table->renameColumn("mentee_id", "created_by");
             $table->integer("request_type_id")->default(2);
             $table->dropColumn("mentor_id");
@@ -30,7 +31,9 @@ class RemodelRequestsTable extends Migration
     public function down()
     {
         Schema::table("requests", function (Blueprint $table) {
+            $table->dropForeign('requests_created_by_foreign');
             $table->renameColumn("created_by", "mentee_id");
+            $table->foreign('mentee_id')->references('user_id')->on('users');
             $table->dropColumn("request_type_id");
             $table->string("mentor_id")->nullable();
         });

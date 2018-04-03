@@ -98,7 +98,7 @@ class UserController extends Controller
      */
     private function getMenteeRequests($userId)
     {
-        return MentorshipRequest::where('mentee_id', $userId)
+        return MentorshipRequest::where('created_by', $userId)
             ->count();
     }
 
@@ -111,7 +111,7 @@ class UserController extends Controller
     public function getUserGainedSkills($userId)
     {
         return RequestSkill::whereIn('request_id', MentorshipRequest::select("id", "title")
-            ->where('mentee_id', $userId)
+            ->where('created_by', $userId)
             ->where("status_id", Status::COMPLETED)
             ->get()->pluck("id"))
             ->get();

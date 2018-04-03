@@ -273,6 +273,7 @@ class ReportController extends Controller
         $unmatchedRequests = MentorshipRequest::getUnmatchedRequests($duration, $params)->paginate($limit);
 
         $menteeEmails =  $unmatchedRequests->pluck("mentee.email")->toArray();
+
         $mentees = $this->aisClient->getUsersByEmail(array_unique($menteeEmails));
 
         $unmatchedRequestsWithMenteeDetails = [];

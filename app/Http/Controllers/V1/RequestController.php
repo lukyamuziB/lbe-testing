@@ -17,6 +17,8 @@ use App\Exceptions\BadRequestException;
 use App\Models\User;
 use App\Models\UserSkill;
 use App\Models\Status;
+use App\Models\Role;
+use App\Models\RequestType;
 use App\Models\RequestSkill;
 use App\Models\RequestCancellationReason;
 use App\Models\UserNotification;
@@ -25,6 +27,7 @@ use App\Models\Request as MentorshipRequest;
 use App\Repositories\SlackUsersRepository;
 use App\Utility\SlackUtility;
 use App\Models\RequestExtension;
+use DB;
 
 /**
  * Class RequestController
@@ -74,10 +77,10 @@ class RequestController extends Controller
             $params["search_query"] = $searchQuery;
         }
         if ($this->getRequestParams($request, "mentee")) {
-            $params["mentee_id"] = $userId;
+            $params["mentee"] = $userId;
         }
         if ($this->getRequestParams($request, "mentor")) {
-            $params["mentor_id"] = $userId;
+            $params["mentor"] = $userId;
         }
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
@@ -158,10 +161,22 @@ class RequestController extends Controller
         // update the user table with the mentee details
         $this->updateUserTable($user->uid, $user->email);
 
-        $userArray = ["mentee_id" => $user->uid, "status_id" => Status::OPEN];
+        $userArray = [
+            "created_by" => $user->uid,
+            "status_id" => Status::OPEN,
+            "request_type_id" => RequestType::SEEKING_MENTOR
+        ];
         $newRecord = $this->filterRequest($request->all());
         $newRecord = array_merge($newRecord, $userArray);
         $createdRequest = $mentorshipRequest::create($newRecord);
+
+        DB::table("request_users")->insert(
+            [
+                "user_id" => $createdRequest->created_by,
+                "request_id" => $createdRequest->id,
+                "role_id" => Role::MENTEE
+            ]
+        );
 
         $primary = $request->all()["primary"];
         $secondary = $request->all()["secondary"];
@@ -217,7 +232,7 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
         } catch (ModelNotFoundException $exception) {
@@ -262,7 +277,7 @@ class RequestController extends Controller
             }
 
             // check that the mentee is not the one interested
-            if (in_array($mentorshipRequest->mentee_id, $request->interested)) {
+            if (in_array($mentorshipRequest->created_by, $request->interested)) {
                 throw new BadRequestException("You cannot indicate interest in your own mentorship request", 1);
             }
 
@@ -278,7 +293,7 @@ class RequestController extends Controller
 
             $mentorName = $currentUser->name;
 
-            $menteeId = $mentorshipRequest->mentee_id;
+            $menteeId = $mentorshipRequest->mentee->user_id;
             $requestUrl = $this->getClientBaseUrl()."/requests/{$id}";
 
             // get user details from FIS and send email
@@ -340,7 +355,6 @@ class RequestController extends Controller
         $id
     ) {
         $this->validate($request, MentorshipRequest::$mentor_update_rules);
-
         $request->match_date = Date('Y-m-d H:i:s', $request->match_date);
 
         try {
@@ -353,15 +367,22 @@ class RequestController extends Controller
                 );
             }
 
-            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
             // update mentor for mentorship request
-            $mentorshipRequest->mentor_id = $request->mentor_id;
             $mentorshipRequest->match_date = $request->match_date;
             $mentorshipRequest->status_id = Status::MATCHED;
             $mentorshipRequest->save();
+
+            DB::table("request_users")->insert(
+                [
+                    "user_id" => $request->mentor_id,
+                    "request_id" => intval($id),
+                    "role_id" => Role::MENTOR
+                ]
+            );
 
             // get mentee name and request url and add to email content
             $menteeName = $request->mentee_name;
@@ -435,7 +456,7 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->mentee_id) {
+            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by) {
                 throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
 
@@ -550,9 +571,9 @@ class RequestController extends Controller
     {
         $formattedResult = (object) [
             "id" => $result->id,
-            "mentee_id" => $result->mentee_id,
+            "mentee_id" => $result->mentee["user_id"],
             "mentee_email" => $result->mentee->email ?? '',
-            "mentor_id" => $result->mentor_id,
+            "mentor_id" => $result->mentor["user_id"],
             "mentor_email" => $result->mentor->email ?? '',
             "title" => $result->title,
             "description" => $result->description,
@@ -789,7 +810,7 @@ class RequestController extends Controller
 
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->mentee_id) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by) {
                 throw new AccessDeniedException(
                     "You don't have permission to request an extension for this mentorship"
                 );
@@ -802,8 +823,8 @@ class RequestController extends Controller
             );
             $message = "A request for extension of a mentorship period " .
                 "has been made by your mentee, Please review it here";
+            
             $slackId = $mentorshipRequest->mentor->slack_id;
-
             if ($slackId) {
                 $baseUrl = $this->getClientBaseUrl();
                 $this->slackUtility->sendMessage(
@@ -840,8 +861,7 @@ class RequestController extends Controller
                 );
             }
             $currentUser = $request->user();
-
-            if ($currentUser->uid !== $mentorshipRequest->mentor_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentor->user_id) {
                 throw new AccessDeniedException(
                     "You don't have permission to approve an extension of this mentorship"
                 );
@@ -898,7 +918,7 @@ class RequestController extends Controller
             }
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->mentor_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentor->user_id) {
                 throw new AccessDeniedException(
                     "You don't have permission to reject an extension of this mentorship"
                 );

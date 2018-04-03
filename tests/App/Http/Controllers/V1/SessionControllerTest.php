@@ -138,7 +138,7 @@ class SessionControllerTest extends TestCase
         $this->patch(
             "/api/v1/sessions/{$session_id}/approve",
             [
-                "user_id" => "-KesEogCwjq6lkOzKmLI",
+                "user_id" => "-KXGy1MimjQgFim7u",
             ]
         );
 
@@ -182,12 +182,12 @@ class SessionControllerTest extends TestCase
     public function testRejectSessionSuccessForMentorReject()
     {
          // Mentor may reject a logged session
-         $this->patch(
-             "/api/v1/sessions/20/reject",
-             [
-             "user_id" => "-KesEogCwjq6lkOzKmLI",
-             ]
-         );
+        $this->patch(
+            "/api/v1/sessions/20/reject",
+            [
+                "user_id" => "-KXGy1MimjQgFim7u",
+            ]
+        );
 
          $response = json_decode($this->response->getContent());
 

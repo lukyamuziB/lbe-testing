@@ -29,7 +29,7 @@ class RatingController extends Controller
             $request_id = $session->request_id;
             $user_id = $request->user()->uid;
 
-            if (!MentorshipRequest::where('id', $request_id)->where('mentee_id', $user_id)->exists()) {
+            if (!MentorshipRequest::where('id', $request_id)->where('created_by', $user_id)->exists()) {
                 return $this->respond(
                     Response::HTTP_FORBIDDEN,
                     ["message" => "You are not allowed to rate this session"]

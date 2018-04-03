@@ -51,6 +51,17 @@ class Request extends Model
         "request_type_id" => "numeric",
     ];
 
+    public static $mentee_rules = [
+        "interested" => "required|array",
+        "interested.*" => "string|regex:/\w+/"
+    ];
+
+    public static $mentor_update_rules = [
+        "mentor_id" => "required|string",
+        "mentee_name" => "required|string",
+        "match_date" => "numeric|required"
+    ];
+
     public static $acceptOrRejectUserRules = [
         "interestedUserId" => "required|string",
         "interestedUserName" => "required|string",
@@ -212,17 +223,21 @@ class Request extends Model
             }
         )
         ->when(
-            isset($params["mentee_id"]),
+            isset($params["mentee"]),
             function ($query) use ($params) {
-                return $query->where("mentee_id", $params["mentee_id"]);
+                $requestsWhereMentee = RequestUsers::where("user_id", $params["mentee"])
+                    ->where("role_id", Role::MENTEE)
+                    ->pluck("request_id");
+
+                return $query->whereIn("id", $requestsWhereMentee);
             }
         )
         ->when(
-            isset($params["mentor_id"]),
+            isset($params["mentor"]),
             function ($query) use ($params) {
-                $user_id = $params["mentor_id"];
+                $mentorId = $params["mentor"];
                 return $query->with('requestSkills')
-                    ->whereRaw("interested::jsonb @> to_jsonb('$user_id'::TEXT)")
+                    ->whereRaw("interested::jsonb @> to_jsonb('$mentorId'::TEXT)")
                     ->orderBy('created_at', 'desc');
             }
         )
@@ -313,7 +328,7 @@ class Request extends Model
         $params["status"] = [Status::OPEN];
 
         $unmatchedRequests = Request::buildQuery($params)
-            ->with("requestSkills.skill", "mentee")
+            ->with("requestSkills.skill")
             ->whereDate("created_at", "<=", $thresholdDate)
             ->orderBy("created_at", "asc");
 

@@ -25,7 +25,7 @@ class RequestsTableSeeder extends Seeder
             $createdRequest = Request::create(
                 [
                     'created_by' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
-                    'request_type_id' => $faker->randomElement([1,2]),
+                    'request_type_id' => $faker->randomElement([2]),
                     'title' => $faker->sentence(6, true),
                     'description' => $faker->text($maxNbChars = 300),
                     'status_id' => ($i%2 === 0 ? 1 : 2),
@@ -64,7 +64,7 @@ class RequestsTableSeeder extends Seeder
             if ($createdRequest->status_id == 2 || $createdRequest->status_id == 3) {
                 RequestUsers::create(
                     [
-                        "user_id" => $createdRequest->interested[0] ?? "-KXGy1MimjQgFim7u",
+                        "user_id" => "-KXGy1MimjQgFim7u",
                         "role_id" => $requestOwner->role_id == 2 ? 1 : 2,
                         "request_id" => $createdRequest->id
                     ]

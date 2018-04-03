@@ -5,6 +5,7 @@ namespace Test\App\Http\Controllers;
 use Illuminate\Support\Facades\Mail;
 use Test\Mocks\GoogleCalendarClientMock;
 use App\Models\User;
+use App\Models\Request;
 use TestCase;
 
 class RequestControllerTest extends TestCase
@@ -87,7 +88,8 @@ class RequestControllerTest extends TestCase
             "primary" => ["1"],
             "secondary" => ["1"],
             "location" => "Lagos",
-            "status_id" => 1
+            "status_id" => 1,
+            "request_type_id" => 2,
         ]
     ];
 
@@ -529,9 +531,9 @@ class RequestControllerTest extends TestCase
 
         $this->assertTrue($this->google_calendar_client_mock->called);
 
-        $response = json_decode($this->response->getContent());
+        $request = Request::find(14);
 
-        $this->assertEquals("-KXGy1MimjQgFim7u", $response->mentor_id);
+        $this->assertEquals("-KXGy1MimjQgFim7u", $request->mentor->user_id);
     }
 
     /*
@@ -582,6 +584,15 @@ class RequestControllerTest extends TestCase
      */
     public function testRequestExtensionSuccess()
     {
+        $this->patch(
+            "/api/v1/requests/1/update-mentor",
+            [
+                "mentor_id" => "-KXGy1MimjQgFim7u",
+                "mentee_name" => "Chinazor Allen",
+                "match_date" => "10"
+            ]
+        );
+
         $this->put("/api/v1/requests/1/extend-mentorship");
 
         $response = json_decode($this->response->getContent());
@@ -602,7 +613,7 @@ class RequestControllerTest extends TestCase
     {
         $this->put("/api/v1/requests/20/extend-mentorship");
 
-        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->makeUser("-KXGy1MimjQgFim7u");
 
         $this->patch("/api/v1/requests/20/approve-extension");
 
@@ -624,7 +635,7 @@ class RequestControllerTest extends TestCase
     {
         $this->put("/api/v1/requests/20/extend-mentorship");
 
-        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->makeUser("-KXGy1MimjQgFim7u");
 
         $this->patch("/api/v1/requests/20/reject-extension");
 

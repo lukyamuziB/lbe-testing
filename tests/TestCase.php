@@ -29,6 +29,8 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
     {
         parent::setUp();
 
+        $this->artisan('migrate');
+
         $this->artisan('db:seed');
 
         $freckle_client_mock = new FreckleClientMock();
@@ -83,5 +85,11 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
         );
 
         return $command_tester;
+    }
+
+    public function tearDown()
+    {
+        DB::rollback();
+        parent::tearDown();
     }
 }

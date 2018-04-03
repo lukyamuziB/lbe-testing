@@ -73,7 +73,7 @@ class Session extends Model
     {
         $threshold_time = Carbon::now()->subHours($duration);
 
-        $unapproved_sessions = Session::with('request.mentee', 'request.mentor')
+        $unapproved_sessions = Session::with('request')
             ->whereIn(
                 "request_id",
                 Request::select("id")
