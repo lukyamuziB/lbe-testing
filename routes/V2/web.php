@@ -8,7 +8,7 @@
 | It is a breeze. Simply tell Lumen the URIs it should respond to
 | and give it the Closure to call when that URI is requested.
 |
-*/
+ */
 $router->get("/", function () use ($router) {
     return $router->app->version();
 });
@@ -30,6 +30,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
     $router->patch("requests/{id}/reject-user", "RequestController@rejectInterestedUser");
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get("requests/status-statistics", "ReportController@getRequestsStatusStatistics");
+        $router->get("skills/{skillId}/requests", "RequestController@getSkillRequests");
     });
     $router->get("requests/{id}", "RequestController@getRequest");
     $router->post("requests", "RequestController@createRequest");
@@ -46,6 +47,7 @@ $router->group(["prefix" => "api/v2"], function ($router) {
         $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
         $router->patch("skills/{skillId}/update-status", "SkillController@updateSkillStatus");
         $router->post('skills', 'SkillController@addSkill');
+        $router->get("skills/{skillId}/mentors", "SkillController@getSkillMentors");
     });
     $router->get('skill/status-report', 'SkillController@getSkillsAndStatusCount');
 });

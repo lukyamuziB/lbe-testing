@@ -672,4 +672,37 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals($response->pagination->total_count, 1);
     }
+
+    /**
+     * Test to return skill requests
+     */
+    public function testGetSkillRequestsSuccess()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->get(
+            "/api/v2/skills/1/requests"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
+        $this->assertNotEmpty($response);
+        $this->assertObjectHasAttribute("requests", $response->skill);
+    }
+
+    /**
+     * Test to return error message if there skill id is invalid
+     */
+    public function testGetSkillRequestsFailure()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->get(
+            "/api/v2/skills/1aaaa1/requests"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $errorResponse = (object) [
+            "message" => "Invalid parameter."
+        ];
+        $this->assertEquals($response, $errorResponse);
+    }
 }

@@ -1,15 +1,23 @@
 <?php
 namespace App\Http\Controllers\V2;
 
+use App\Clients\AISClient;
 use App\Models\Skill;
 use App\Exceptions\Exception;
 use Illuminate\Http\Response;
 use App\Exceptions\NotFoundException;
+use App\Models\Status;
+use App\Exceptions\AccessDeniedException;
+use App\Exceptions\BadRequestException;
 use App\Models\Request as MentorshipRequest;
-use Illuminate\Http\Request;
+use App\Models\RequestSkill;
+use App\Models\RequestUsers;
+use App\Models\Rating;
+use App\Models\Role;
+use App\Models\User;
 use Carbon\Carbon;
 use App\Exceptions\ConflictException;
-use App\Exceptions\BadRequestException;
+use Illuminate\Http\Request;
 
 /**
  * Class SkillController
@@ -32,7 +40,7 @@ class SkillController extends Controller
     public function addSkill(Request $request)
     {
         $this->validate($request, Skill::$rules);
-        
+
         if (Skill::where('name','ilike', $request->name)->exists()) {
             throw new ConflictException("Skill already exists.");
         }
@@ -80,7 +88,119 @@ class SkillController extends Controller
     }
 
     /**
-     * Gets status count for each skill requested by location and start date and end date
+     * Retrieve mentors for a particular skill in the database
+     *
+     * @param integer $skilId - skill id
+     *
+     * @throws BadRequestException
+     *
+     * @return json - JSON object containing skill(s) mentors
+     */
+    public function getSkillMentors(AISClient $aisClient, Request $request, $skillId)
+    {
+        if ((!filter_var($skillId, FILTER_VALIDATE_INT)) || (empty($skillId))) {
+            throw new BadRequestException("Invalid parameter.");
+        }
+
+        $limit = $request->query("limit");
+
+        if (!$limit) {
+            $limit = 4;
+        }
+
+        $field = ["skill_id" => $skillId, "type" => "primary"];
+
+        $skill = Skill::select("name", "id")->where("id", $skillId)->first();
+        $requestIds = RequestSkill::select("request_id")->where($field);
+        $mentorsIds = RequestUsers::select("user_id")
+                                    ->whereIn("request_id", $requestIds)
+                                    ->where("role_id", ROLE::MENTOR);
+        $mentorsRatings = Rating::select("values", "scale", "user_id")
+                                    ->whereIn("user_id", $mentorsIds)
+                                    ->get()->groupBy("user_id");
+
+        $mentorsAverageRating = User::getMentorsAverageRatingAndEmail($mentorsRatings);
+
+        usort($mentorsAverageRating, array($this, "compareMentorsRatings"));
+        array_splice($mentorsAverageRating, $limit);
+
+        $mentorsEmail = $this->getMentorsEmail($mentorsRatings);
+
+        $aisMentorsDetails = $aisClient->getUsersByEmail($mentorsEmail);
+        $mentorsDetails = $this->appendMentorAvatarAndNameToRatings(
+            $mentorsAverageRating,
+            $aisMentorsDetails["values"]
+        );
+
+        $skill["mentors"] = $mentorsDetails;
+
+        return $this->respond(Response::HTTP_OK, ["skill" => $skill]);
+    }
+
+    /**
+     * Modifies the mentors array by appending user's picture and name where the email matches
+     *
+     * @param array $mentors to modify
+     * @param array $aisMentorsDetails array with mentor ais details
+     *
+     * @return array $mentors - list of mentors with their pictures and names
+     */
+    private function appendMentorAvatarAndNameToRatings($mentors, $aisMentorsDetails)
+    {
+        $mentorsDetails = [];
+        foreach($mentors as $mentor) {
+            $name = "";
+            $picture = "";
+            foreach($aisMentorsDetails as $details) {
+                if($mentor["email"] == $details["email"]) {
+                    $name = $details["name"];
+                    $picture = $details["picture"];
+                }
+            }
+            $mentor["name"] = $name;
+            $mentor["picture"] = $picture;
+            unset($mentor["email"]);
+            $mentorsDetails[] = $mentor;
+        }
+
+        return $mentorsDetails;
+    }
+
+    /**
+     * Compares the elements of an array
+     *
+     * @param array $firstElement first element of the array
+     * @param array $secondElement second element of the array
+     *
+     * @return integer the precedence determinant of the array element
+     */
+    private function compareMentorsRatings($firstElement, $secondElement)
+    {
+        if ($firstElement["average_rating"] == $secondElement["average_rating"]) {
+            return 0;
+        }
+
+        return ($firstElement["average_rating"] > $secondElement["average_rating"]) ? -1 : 1;
+    }
+
+    /**
+     * Gets mentors email
+     *
+     * @param array $mentors details
+     *
+     * @return array $mentorsEmail
+     */
+    private function getMentorsEmail($mentors)
+    {
+        $mentorsEmail = [];
+        foreach($mentors as $mentor) {
+            $mentor= $mentor[0]["user"]["email"];
+            $mentorsEmail[] = $mentor;
+        }
+        return $mentorsEmail;
+    }
+
+    /** Gets status count for each skill requested by location and start date and end date
      *
      * @param Request $request - the request object
      *

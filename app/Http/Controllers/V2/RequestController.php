@@ -11,6 +11,7 @@ use Illuminate\Http\Response;
 use App\Exceptions\UnauthorizedException;
 use App\Exceptions\ConflictException;
 use App\Models\Status;
+use App\Models\Skill;
 use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestUsers;
@@ -560,6 +561,33 @@ class RequestController extends Controller
         );
 
         return $this->respond(Response::HTTP_CREATED, $result);
+    }
+
+    /**
+     * Retrieve all requests for a particular skill in the database
+     *
+     * @param integer $skilId - skill id
+     *
+     * @throws BadRequestException
+     *
+     * @return json - JSON object containing skill(s) request
+     */
+    public function getSkillRequests($skillId)
+    {
+        if ((!filter_var($skillId, FILTER_VALIDATE_INT)) || (empty($skillId))) {
+            throw new BadRequestException("Invalid parameter.");
+        }
+
+        $skill = Skill::select("name", "id")->where("id", $skillId)->first();
+        $field = ["skills" => [$skillId], "type" => "primary"];
+        $requests = MentorshipRequest::buildPoolFilterQuery($field)
+                                        ->withCount("session")
+                                        ->get();
+
+        $formattedRequests = formatMultipleRequestsForAPIResponse($requests);
+        $skill["requests"] = $formattedRequests;
+
+        return $this->respond(Response::HTTP_OK, ["skill" => $skill]);
     }
 
     /**

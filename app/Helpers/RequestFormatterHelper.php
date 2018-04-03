@@ -20,6 +20,7 @@ function formatRequestForAPIResponse($request)
         "location" => $request->location,
         "duration" => (int)$request->duration,
         "pairing" => $request->pairing,
+        "session_count" => sizeof($request->session),
         "request_skills" => formatRequestSkills($request->requestSkills),
         "rating" => $request->rating ?? null,
         "created_at" => formatTime($request->created_at),

@@ -249,4 +249,36 @@ class SkillControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("The name field is required.", $response->name[0]);
     }
+
+    /**
+     * Test to return skill requests
+     */
+    public function testGetSkillTopMentorsSuccess()
+    {
+        $this->get(
+            "/api/v2/skills/1/mentors"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
+        $this->assertNotEmpty($response);
+        $this->assertObjectHasAttribute("mentors", $response->skill);
+        $this->assertLessThan(5, sizeof($response->skill->mentors));
+    }
+
+    /**
+     * Test to return error message if there skill id is invalid
+     */
+    public function testGetSkillTopMentorsFailure()
+    {
+        $this->get(
+            "/api/v2/skills/1hsdxh1/mentors"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $errorResponse = (object) [
+            "message" => "Invalid parameter."
+        ];
+        $this->assertEquals($response, $errorResponse);
+    }
 }
