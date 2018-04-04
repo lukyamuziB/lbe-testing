@@ -3,12 +3,13 @@
 namespace Test\App\Http\Controllers;
 
 use TestCase;
+use App\Models\User;
 use Test\Mocks\AISClientMock;
 
 /**
  * Test class for user controller
  *
- * @return null
+ * @return void
  */
 class UserControllerTest extends TestCase
 {
@@ -16,11 +17,23 @@ class UserControllerTest extends TestCase
     /**
      * Setup function to instantiate ais client mock
      *
-     * @return null
+     * @return void
      */
     public function setUp()
     {
         parent::setUp();
+        $this->be(
+            factory(User::class)->make(
+                [
+                    "uid" => "-KXGy1MT1oimjQgFim7u",
+                    "name" => "Adebayo Adesanya",
+                    "email" => "adebayo.adesanya@andela.com",
+                    "role" => "Admin",
+                    "firstname" => "Adebayo",
+                    "lastname" => "Adesanya",
+                ]
+            )
+        );
     }
 
     /**

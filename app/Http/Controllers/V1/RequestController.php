@@ -164,7 +164,7 @@ class RequestController extends Controller
         $userArray = [
             "created_by" => $user->uid,
             "status_id" => Status::OPEN,
-            "request_type_id" => RequestType::SEEKING_MENTOR
+            "request_type_id" => RequestType::MENTOR_REQUEST
         ];
         $newRecord = $this->filterRequest($request->all());
         $newRecord = array_merge($newRecord, $userArray);

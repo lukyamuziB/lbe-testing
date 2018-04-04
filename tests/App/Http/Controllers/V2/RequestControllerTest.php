@@ -100,7 +100,7 @@ class RequestControllerTest extends TestCase
         $createdRequest = Request::create(
             [
                 "created_by" => $createdBy,
-                "request_type" => RequestType::MENTEE_REQUEST,
+                "request_type_id" => RequestType::MENTEE_REQUEST,
                 "title" => "Javascript",
                 "description" => "Learn Javascript",
                 "status_id" => $statusId,
@@ -108,7 +108,7 @@ class RequestControllerTest extends TestCase
                 "match_date" => null,
                 "interested" => [$interested],
                 "duration" => 2,
-                "pairing" => json_encode(
+                "pairing" => (
                     [
                         "start_time" => "01:00",
                         "end_time" => "02:00",
@@ -124,7 +124,7 @@ class RequestControllerTest extends TestCase
             [
                 "user_id" => $createdBy,
                 "role_id" => Role::MENTEE,
-                "request_id" => $createdRequest->id
+                "request_id" => $createdRequest["id"]
             ]
         );
 
