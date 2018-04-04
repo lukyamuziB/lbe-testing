@@ -29,4 +29,29 @@ class RequestSkill extends Model
     {
         return $this->belongsTo("App\Models\UserSkill");
     }
+
+    /**
+     * Maps the skills in the request body by type and
+     * saves them in the request_skills table
+     *
+     * @param integer $requestId the id of the request
+     * @param array   $skills    skill to map
+     * @param string  $type      the type of skill to map
+     *
+     * @return void
+     */
+    public static function mapRequestToSkill($requestId, $skills, $type)
+    {
+        if ($skills) {
+            foreach ($skills as $skill) {
+                RequestSkill::create(
+                    [
+                        "request_id" => $requestId,
+                        "skill_id" => $skill,
+                        "type" => $type
+                    ]
+                );
+            }
+        }
+    }
 }

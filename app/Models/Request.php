@@ -13,13 +13,13 @@ class Request extends Model
     protected $fillable = [
         "title",
         "description",
+        "duration",
+        "interested",
         "status_id",
         "match_date",
         "pairing",
-        "duration",
         "location",
         "created_at",
-        "interested",
         "created_by",
         "request_type_id",
     ];
@@ -40,12 +40,15 @@ class Request extends Model
         "pairing.start_time" => "required|date_format:H:i",
         "pairing.end_time" => "required|date_format:H:i",
         "pairing.days" => "required|array|",
-        "pairing.days.*" => "in:monday,tuesday,wednesday,thursday,friday,saturday,sunday",
+        "pairing.days.*"
+        => "in:monday,tuesday,wednesday,thursday,friday,saturday,sunday",
         "pairing.timezone" => "required|timezone",
         "primary" => "required|array|max:3",
         "secondary" => "array|max:3",
+        "preRequisite" => "array|max:3",
         "primary.*" => "numeric|min:1",
         "secondary.*" => "numeric|min:1",
+        "preRequisite.*" => "numeric|min:1",
         "location" => "string",
         "created_by" => "string",
         "request_type_id" => "numeric",
@@ -391,5 +394,15 @@ class Request extends Model
             ->get();
 
         return $sessions;
+    }
+
+    /**
+     * Defines Foreign Key Relationship to the RequestType model
+     *
+     * @return Object
+     */
+    public function requestType()
+    {
+        return $this->hasOne("App\Models\RequestType", "request_type_id", "id");
     }
 }

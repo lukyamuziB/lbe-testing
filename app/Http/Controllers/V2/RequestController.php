@@ -522,45 +522,81 @@ class RequestController extends Controller
         $this->validate($request, MentorshipRequest::$rules);
         $user = $request->user();
 
-        $requestDetails = $this->removePrimarySecondaryFields($request->all());
+        $requestDetails = $this->removeSkillsFields($request->all());
         $requestDetails["status_id"] = Status::OPEN;
         $requestDetails["created_by"] = $user->uid;
 
-        if ($request->exists("isMentor") && $request->input("isMentor")) {
-            $roleId = Role::MENTOR;
-            $requestDetails["request_type_id"] = RequestType::MENTOR_REQUEST;
-        } else {
-            $roleId = Role::MENTEE;
-            $requestDetails["request_type_id"] = RequestType::MENTEE_REQUEST;
-        }
+        $requestSkills['primary'] = $request->input('primary');
+        $requestSkills['secondary'] = $request->input('secondary');
+        $requestSkills['preRequisite'] = $request->input('preRequisite');
 
+        $requestDetails["request_type_id"] = (int)$request->input('requestType');
+        if ($requestDetails["request_type_id"] === RequestType::MENTOR_REQUEST) {
+            $userRole = Role::MENTEE;
+        } else {
+            $userRole = Role::MENTOR;
+        }
+        
         $result = DB::transaction(
-            function () use ($request, $requestDetails, $roleId) {
+            function () use ($requestDetails, $requestSkills, $userRole) {
                 $createdRequest = MentorshipRequest::create($requestDetails);
 
-                $primary = $request->input("primary");
-                $this->mapRequestToSkill($createdRequest->id, $primary, "primary");
+                $requestSkills = $this->saveRequestSkills($requestSkills, $createdRequest);
 
-                $secondary = $request->input("secondary");
-                $this->mapRequestToSkill($createdRequest->id, $secondary, "secondary");
-
-                $requestSkills = RequestSkill::where("request_id", $createdRequest->id)->with("skill")->get();
-                $requestSkills = formatRequestSkills($requestSkills);
-                $createdRequest->request_skills = $requestSkills;
-
-                DB::table("request_users")->insert(
+                RequestUsers::create(
                     [
                         "user_id" => $createdRequest->created_by,
                         "request_id" => $createdRequest->id,
-                        "role_id" => $roleId
+                        "role_id" => $userRole
                     ]
                 );
+
+                $createdRequest->request_skills = formatRequestSkills($requestSkills);
 
                 return $createdRequest;
             }
         );
+    
+        return $this->respond(Response::HTTP_CREATED, formatRequestForAPIResponse($result));
+    }
 
-        return $this->respond(Response::HTTP_CREATED, $result);
+    /**
+     * Save request skills in the request_skills table
+     *
+     * @param array $requestSkills - request skill
+     * @param object $createdRequest - created request
+     *
+     * @return void
+     */
+    private function saveRequestSkills($requestSkills, $createdRequest)
+    {
+        RequestSkill::mapRequestToSkill(
+            $createdRequest->id,
+            $requestSkills['primary'],
+            'primary'
+        );
+
+        if ($createdRequest->request_type_id === RequestType::MENTOR_REQUEST) {
+            $skills = $requestSkills['secondary'];
+            $requestSkillType = 'secondary';
+        } else {
+            $skills = $requestSkills['preRequisite'];
+            $requestSkillType = 'preRequisite';
+        }
+
+        RequestSkill::mapRequestToSkill(
+            $createdRequest->id,
+            $skills,
+            $requestSkillType
+        );
+
+        $requestSkills = RequestSkill::where(
+            "request_id",
+            $createdRequest->id
+        )
+        ->with("skill")->get();
+        
+        return $requestSkills;
     }
 
     /**
@@ -621,7 +657,7 @@ class RequestController extends Controller
             }
         };
     }
-
+    
     /**
      * Append the user being awaited
      *
@@ -643,13 +679,14 @@ class RequestController extends Controller
 
     /**
      * Filter incoming request body to remove object property
-     * containing primary and secondary skills
+     * containing primary and secondary skills or
+     * primary and prerequisite skills
      *
      * @param object $request the request
      *
      * @return object
      */
-    private function removePrimarySecondaryFields($request)
+    private function removeSkillsFields($request)
     {
         return array_filter(
             $request,
@@ -658,30 +695,5 @@ class RequestController extends Controller
             },
             ARRAY_FILTER_USE_KEY
         );
-    }
-
-    /**
-     * Maps the skills in the request body by type and
-     * saves them in the request_skills table
-     *
-     * @param integer $requestId the id of the request
-     * @param array   $skills    skill to map
-     * @param string  $type      the type of skill to map
-     *
-     * @return void
-     */
-    private function mapRequestToSkill($requestId, $skills, $type)
-    {
-        if ($skills) {
-            foreach ($skills as $skill) {
-                RequestSkill::create(
-                    [
-                        "request_id" => $requestId,
-                        "skill_id" => $skill,
-                        "type" => $type
-                    ]
-                );
-            }
-        }
     }
 }

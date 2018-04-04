@@ -46,7 +46,6 @@ class RequestControllerTest extends TestCase
         "secondary" => ["1"],
         "location" => "Lagos",
         "status_id" => 1,
-        "isMentor" => true,
     ];
 
     private $invalidResponse = [
@@ -128,6 +127,8 @@ class RequestControllerTest extends TestCase
                 "request_id" => $createdRequest->id
             ]
         );
+
+        return $createdRequest;
     }
 
     public function setUp()
@@ -490,10 +491,39 @@ class RequestControllerTest extends TestCase
      */
     public function testCreateMentorRequestSuccess()
     {
-        unset($this->validRequest["isMentor"]);
+        $this->validRequest["requestType"] = 1;
+
         $this->post(self::REQUESTS_URI, $this->validRequest);
         $response = json_decode($this->response->getContent());
+        $this->createRequestAssertion($response, $this->validRequest["requestType"]);
+    }
+    
+    /**
+     * Test to create a valid mentee mentorship request
+     *
+     * @return void
+     */
+    public function testCreateMenteeRequest()
+    {
+        $this->validRequest["requestType"] = 2;
+        
+        $this->post(self::REQUESTS_URI, $this->validRequest);
+        $response = json_decode($this->response->getContent());
+        $this->createRequestAssertion($response, $this->validRequest["requestType"]);
+    }
+    
+    /**
+     * Test to create request assertions
+     *
+     * @param object $response created request
+     * @param int $requestType request type
+     *
+     * @return void
+     */
+    private function createRequestAssertion($response, $requestType)
+    {
         $this->assertResponseStatus(201);
+        $this->assertEquals($requestType, $response->request_type_id);
         $this->assertEquals($this->validRequest["title"], $response->title);
         $this->assertEquals($this->validRequest["description"], $response->description);
         $this->assertEquals($this->validRequest["duration"], $response->duration);
