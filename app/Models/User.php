@@ -87,10 +87,11 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      *
      * @return array $mentorsDetails
      */
-    public static function getMentorsAverageRatingAndEmail($mentors)
+    public static function getMentorsAverageRating($mentors)
     {
         $mentorsDetails = [];
-        foreach($mentors as $mentor) {
+        foreach ($mentors as $mentorId => $mentor)
+        {
             $ratings = [];
             for ($i=0; $i < count($mentor); ++$i) {
                 $ratings[] = get_object_vars(json_decode($mentor[$i]["values"]));
@@ -107,6 +108,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
                 $mentorDetails["average_rating"] = number_format($averageRating/count($mentor), 1);
                 $mentorDetails["email"] = $mentor[0]["user"]["email"];
                 $mentorDetails["session_count"] = count($mentor);
+                $mentorDetails["user_id"] = $mentorId;
                 $mentorsDetails[] = $mentorDetails;
         }
         return $mentorsDetails;

@@ -155,7 +155,7 @@ class RequestControllerTest extends TestCase
 
         $this->assertNotEmpty($response->pagination);
 
-        $this->assertEquals(20, $response->pagination->totalCount);
+        $this->assertEquals(25, $response->pagination->totalCount);
 
         $this->assertEquals(20, $response->pagination->pageSize);
 
@@ -177,7 +177,7 @@ class RequestControllerTest extends TestCase
 
         $this->assertNotEmpty($response->pagination);
 
-        $this->assertEquals(20, $response->pagination->totalCount);
+        $this->assertEquals(25, $response->pagination->totalCount);
 
         $this->assertEquals(10, $response->pagination->pageSize);
 
@@ -273,7 +273,7 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals(1, $response->status_id);
 
-        $this->assertEquals(21, $response->id);
+        $this->assertEquals(26, $response->id);
     }
 
 
@@ -546,7 +546,7 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Request Cancelled.", $response->message);
     }
-    
+
     /*
      * Test that a user can cancel their own request
      */
@@ -558,7 +558,7 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Request Cancelled.", $response->message);
     }
-    
+
     /*
      * Test should prevent from cancelling someone else's request
      */

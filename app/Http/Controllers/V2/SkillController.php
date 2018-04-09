@@ -17,6 +17,7 @@ use App\Models\Role;
 use App\Models\User;
 use Carbon\Carbon;
 use App\Exceptions\ConflictException;
+use App\Repositories\LastActiveRepository;
 use Illuminate\Http\Request;
 
 /**
@@ -27,6 +28,12 @@ use Illuminate\Http\Request;
 class SkillController extends Controller
 {
     use RESTActions;
+    private $lastActiveRepository;
+
+    public function __construct(LastActiveRepository $lastActiveRepository)
+    {
+        $this->lastActiveRepository = $lastActiveRepository;
+    }
 
     /**
      * Adds a new skill to the skills table
@@ -88,6 +95,45 @@ class SkillController extends Controller
     }
 
     /**
+     * Appends a mentors last active time for each mentor in
+     * the mentors details object.
+     *
+     * @param array $mentorsIds - ids of mentors
+     * @param array $mentorsDetails - details of mentors
+     *
+     * @return json - JSON object containing the updated mentors details
+     */
+    private function appendMentorsLastActive(&$mentorsDetails)
+    {
+        $lastActives = $this->lastActiveRepository->query(
+            array_column($mentorsDetails, "user_id")
+        );
+
+        foreach ($mentorsDetails as &$mentorDetail) {
+            $mentorDetail["last_active"] =
+                Carbon::parse($lastActives[$mentorDetail["user_id"]])->toFormattedDateString();
+        }
+        return $mentorsDetails;
+    }
+
+    /**
+     * Appends the no of mentorships for each mentor to the mentor
+     * details object.
+     *
+     * @param array $mentorsIds - ids of mentors
+     * @param array $mentorsDetails - details of mentors
+     *
+     * @return json - JSON object containing the updated mentor details
+     */
+    private function appendMentorshipsCount($mentorsIds, &$mentorsDetails)
+    {
+        foreach ($mentorsDetails as &$mentorDetail) {
+            $mentorDetail["mentorships_count"] = count(array_keys($mentorsIds, $mentorDetail["user_id"]));
+        }
+        return $mentorsDetails;
+    }
+
+    /**
      * Retrieve mentors for a particular skill in the database
      *
      * @param integer $skilId - skill id
@@ -119,7 +165,7 @@ class SkillController extends Controller
                                     ->whereIn("user_id", $mentorsIds)
                                     ->get()->groupBy("user_id");
 
-        $mentorsAverageRating = User::getMentorsAverageRatingAndEmail($mentorsRatings);
+        $mentorsAverageRating = User::getMentorsAverageRating($mentorsRatings);
 
         usort($mentorsAverageRating, array($this, "compareMentorsRatings"));
         array_splice($mentorsAverageRating, $limit);
@@ -130,6 +176,12 @@ class SkillController extends Controller
         $mentorsDetails = $this->appendMentorAvatarAndNameToRatings(
             $mentorsAverageRating,
             $aisMentorsDetails["values"]
+        );
+
+        $this->appendMentorsLastActive($mentorsDetails);
+        $this->appendMentorshipsCount(
+            array_column($mentorsIds->get()->toArray(), "user_id"),
+            $mentorsDetails
         );
 
         $skill["mentors"] = $mentorsDetails;

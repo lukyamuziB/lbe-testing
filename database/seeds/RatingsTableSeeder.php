@@ -14,6 +14,46 @@ class RatingsTableSeeder extends Seeder
         $faker = Faker\Factory::create();
         $limit = 8;
 
+        $this->seedBaseData($faker, $limit);
+        $this->seedSKillMentorsData($faker);
+    }
+
+    /**
+     * Skill mentors specific ratings seeds.
+     *
+     * @return void
+     */
+    private function seedSKillMentorsData($faker)
+    {
+        $customSessionId = 21;
+        for ($i = 0; $i < 5; $i++) {
+            DB::table('ratings')->insert(
+                [
+                    'user_id' => $faker->randomElement(['-KXGy1MimjQgFim7u']),
+                    'session_id' => $customSessionId,
+                    'values' => json_encode(
+                        [
+                            'availability' => '1',
+                            'usefulness' => '2',
+                            'reliability' => '1',
+                            'knowledge' => '2',
+                            'teaching' => '3'
+                        ]
+                    ),
+                    'scale' => 5
+                ]
+            );
+            $customSessionId += 1;
+        }
+    }
+
+    /**
+     * Base ratings seeds.
+     *
+     * @return void
+     */
+    private function seedBaseData($faker, $limit)
+    {
         for ($i = 0; $i < $limit; $i++) {
             DB::table('ratings')->insert(
                 [

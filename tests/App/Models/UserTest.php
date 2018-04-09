@@ -41,7 +41,7 @@ class UserTest extends TestCase
      *
      * @return array
      */
-    public function testGetMentorsAverageRatingAndEmail()
+    public function testGetMentorsAverageRating()
     {
         $mentors = [
             "-KXGy1MimjQgFim7u" => [
@@ -103,26 +103,30 @@ class UserTest extends TestCase
             [
                 "average_rating" => "1.4",
                 "email" => "adebayo.adesanya@andela.com",
-                "session_count" => 2
+                "session_count" => 2,
+                "user_id" => "-KXGy1MimjQgFim7u"
             ],
             [
                 "average_rating" => "1.0",
                 "email" => "delight.balogun@andela.com",
-                "session_count" => 1
+                "session_count" => 1,
+                "user_id" => "-L7ALN5ifcQLQjJ8nAz8"
             ],
             [
                 "average_rating" => "1.8",
                 "email" => "inumidun.amao@andela.com",
-                "session_count" => 1
+                "session_count" => 1,
+                "user_id" => "-K_nkl19N6-EGNa0W8LF"
             ],
             [
                 "average_rating" => "3.0",
                 "email" => "rukayat.odukoya@andela.com",
-                "session_count" => 1
+                "session_count" => 1,
+                "user_id" => "-L4j_59h7xJAbieX7gpa"
             ]
         ];
 
-        $averageRating = User::getMentorsAverageRatingAndEmail($mentors);
+        $averageRating = User::getMentorsAverageRating($mentors);
         $this->assertEquals($expectedResult, $averageRating);
     }
 }

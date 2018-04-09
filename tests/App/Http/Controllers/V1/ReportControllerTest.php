@@ -47,7 +47,7 @@ class ReportControllerTest extends TestCase
             $this->assertNotEmpty($skill->count->open);
         }
     }
-    
+
     /**
      * Test that a user that is an admin can get all unmatched reqests
      *
@@ -59,10 +59,10 @@ class ReportControllerTest extends TestCase
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
         $this->assertTrue(is_array($response->requests));
-        $this->assertEquals(10, count($response->requests));
-        $this->assertEquals(10, $response->pagination->totalCount);
+        $this->assertEquals(13, count($response->requests));
+        $this->assertEquals(13, $response->pagination->totalCount);
     }
-    
+
     /**
      * Test to check all status counts are accurate
      */
@@ -71,10 +71,10 @@ class ReportControllerTest extends TestCase
         $this->get("/api/v1/reports");
 
         $response = json_decode($this->response->getContent());
-        
-        $this->assertEquals(20, $response->totalRequests);
-        $this->assertEquals(10, $response->totalOpenRequests);
-        $this->assertEquals(10, $response->totalMatchedRequests);
+
+        $this->assertEquals(25, $response->totalRequests);
+        $this->assertEquals(13, $response->totalOpenRequests);
+        $this->assertEquals(12, $response->totalMatchedRequests);
         $this->assertEquals(0, $response->totalCancelledRequests);
         $this->assertEquals(0, $response->totalCompletedRequests);
     }
@@ -88,7 +88,7 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->skillsCount);
+        $this->assertCount(2, $response->skillsCount);
 
         foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
@@ -109,7 +109,7 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->skillsCount);
+        $this->assertCount(2, $response->skillsCount);
 
         foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
@@ -118,7 +118,7 @@ class ReportControllerTest extends TestCase
             $this->assertNotEmpty($skill->count->open);
         }
 
-        $this->assertEquals(4, $response->sessionsCompleted);
+        $this->assertEquals(9, $response->sessionsCompleted);
     }
 
     /**
@@ -132,7 +132,7 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response->skillsCount);
+        $this->assertCount(2, $response->skillsCount);
 
         foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
@@ -140,7 +140,7 @@ class ReportControllerTest extends TestCase
             $this->assertObjectHasAttribute('open', $skill->count);
             $this->assertNotEmpty($skill->count->open);
         }
-        $this->assertEquals(20, $response->totalRequests);
+        $this->assertEquals(25, $response->totalRequests);
     }
 
     /**
@@ -180,7 +180,7 @@ class ReportControllerTest extends TestCase
         $startDate = $today->subWeek(2)->toDateString();
         $this->get("/api/v1/reports/inactive-mentorships?start_date=".$startDate);
         $response = json_decode($this->response->getContent(), true);
-        $this->assertEquals(10, $response[1]["count"]);
+        $this->assertEquals(12, $response[1]["count"]);
     }
 
     public function testGetInactiveMentorshipsReportFailureNotAdmin()

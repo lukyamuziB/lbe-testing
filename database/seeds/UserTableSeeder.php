@@ -16,7 +16,7 @@ class UserTableSeeder extends Seeder
         $user_ids = ['-KXGy1MimjQgFim7u', '-K_nkl19N6-EGNa0W8LF', '-KXGy1MT1oimjQgFim7u', '-KesEogCwjq6lkOzKmLI'];
 
         $emails = ["adebayo.adesanya@andela.com", "inumidun.amao@andela.com",
-            "ichiato.ikkin@andela.com", "felistas.ngunmi@andela.com"];
+            "ichiato.ikkin@andela.com", "felistas.ngumi@andela.com"];
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('users')->insert([

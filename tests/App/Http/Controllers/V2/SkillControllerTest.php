@@ -7,12 +7,32 @@ use App\Models\Skill;
 use App\Http\Controllers\V2\SkillController;
 use TestCase;
 use Carbon\Carbon;
+use App\Repositories\LastActiveRepository;
 
 /**
  * Test class for report controller v2
  */
 class SkillControllerTest extends TestCase
 {
+    private $mentorsIds = [
+        "-L4g35ttuyfK5kpzyocv",
+        "-KesEogCwjq6lkOzKmLI"
+    ];
+    private $mentorsDetails = [
+        [
+            "average_rating" => "4.9",
+            "session_count" => 2,
+            "user_id" => "-L4g35ttuyfK5kpzyocv",
+            "name" => "Ekundayo Abiona",
+            "picture" => "dayo_picture.jpg",
+        ]
+    ];
+    private function setupMock()
+    {
+        $lastActiveMock = $this->createMock(LastActiveRepository::class);
+        return new SkillController($lastActiveMock);
+    }
+
     /**
      * Create users for each test case
      *
@@ -77,7 +97,7 @@ class SkillControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(1, $response);
+        $this->assertCount(2, $response);
 
         foreach ($response as $skill) {
             $this->assertNotEmpty($skill->name);
@@ -132,7 +152,7 @@ class SkillControllerTest extends TestCase
         $method = new \ReflectionMethod('App\Http\Controllers\V2\SkillController', 'getEachSkillStatusCount');
         $method->setAccessible(true);
 
-        $skillObject = new SkillController();
+        $skillObject = $this->setupMock();
 
         $request = [
             (object) [
@@ -280,5 +300,57 @@ class SkillControllerTest extends TestCase
             "message" => "Invalid parameter."
         ];
         $this->assertEquals($response, $errorResponse);
+    }
+
+    /**
+     * Test to return mentors by skill
+     */
+    public function testGetSkillMentorsSuccess()
+    {
+        $this->get(
+            "/api/v2/skills/18/mentors"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
+        $this->assertNotEmpty($response);
+        $this->assertObjectHasAttribute("mentorships_count", $response->skill->mentors[0]);
+        $this->assertObjectHasAttribute("last_active", $response->skill->mentors[0]);
+    }
+
+    /**
+     * Test to ensure that the last active time
+     * is appended to an array of mentors details
+     */
+    public function testAppendMentorsLastActiveSuccess()
+    {
+        $method = new \ReflectionMethod('App\Http\Controllers\V2\SkillController', 'appendMentorsLastActive');
+        $method->setAccessible(true);
+
+        $skillObject = $this->setupMock();
+        $actualResult = $method->invokeArgs(
+            $skillObject,
+            array(&$this->mentorsDetails)
+        );
+
+        $this->assertObjectHasAttribute("last_active", (object)$actualResult[0]);
+    }
+
+    /**
+     * Test to ensure that the mentorships count is
+     * appended to an array of mentors details
+     */
+    public function testAppendMentorshipsCountSuccess()
+    {
+        $method = new \ReflectionMethod('App\Http\Controllers\V2\SkillController', 'appendMentorshipsCount');
+        $method->setAccessible(true);
+
+        $skillObject = $this->setupMock();
+        $actualResult = $method->invokeArgs(
+            $skillObject,
+            array($this->mentorsDetails, &$this->mentorsDetails)
+        );
+
+        $this->assertObjectHasAttribute("mentorships_count", (object)$actualResult[0]);
     }
 }

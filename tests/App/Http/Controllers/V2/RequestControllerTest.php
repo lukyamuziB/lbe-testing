@@ -497,7 +497,7 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->createRequestAssertion($response, $this->validRequest["requestType"]);
     }
-    
+
     /**
      * Test to create a valid mentee mentorship request
      *
@@ -506,12 +506,12 @@ class RequestControllerTest extends TestCase
     public function testCreateMenteeRequest()
     {
         $this->validRequest["requestType"] = 2;
-        
+
         $this->post(self::REQUESTS_URI, $this->validRequest);
         $response = json_decode($this->response->getContent());
         $this->createRequestAssertion($response, $this->validRequest["requestType"]);
     }
-    
+
     /**
      * Test to create request assertions
      *
@@ -542,7 +542,7 @@ class RequestControllerTest extends TestCase
         $this->assertEquals($this->validRequest["location"], $response->location);
         $this->assertEquals($this->validRequest["status_id"], $response->status_id);
         $this->assertEquals(1, $response->status_id);
-        $this->assertEquals(21, $response->id);
+        $this->assertEquals(26, $response->id);
         $response = json_decode($this->response->getContent(), true);
         $this->assertArrayHasKey("created_by", $response);
     }

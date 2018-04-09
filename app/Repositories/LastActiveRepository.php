@@ -2,10 +2,28 @@
 
 namespace App\Repositories;
 
+use App\Interfaces\LastActiveRepositoryInterface;
 use Illuminate\Support\Facades\Redis;
 
-class LastActiveRepository
+class LastActiveRepository implements LastActiveRepositoryInterface
 {
+    protected $redisClient;
+
+    /**
+     * LastActiveRepositoryMock constructor.
+     */
+    public function __construct()
+    {
+        $this->make();
+    }
+
+    /**
+     * Populate $model from Redis cache or make it an empty array if cache is empty
+     */
+    public function make()
+    {
+        $this->redisClient = new Redis();
+    }
 
     /**
      * @param string $id - a user's Id
@@ -13,7 +31,7 @@ class LastActiveRepository
      */
     public function set($id, $time)
     {
-        Redis::set("users:$id:lastActive", $time);
+        $this->redisClient::set("users:$id:lastActive", $time);
     }
 
     /**
@@ -23,6 +41,27 @@ class LastActiveRepository
      */
     public function get($id)
     {
-        return Redis::get("users:$id:lastActive");
+        return $this->redisClient::get("users:$id:lastActive");
+    }
+
+    /**
+     * Queries the model with specified parameters
+     *
+     * @param array $userIds - ids of users
+     *
+     * @return Response object - response object
+     */
+    public function query($userIds)
+    {
+        $lastActivesQuery = [];
+        if (count($userIds) > 0) {
+            foreach ($userIds as $userId) {
+                $lastActivesQuery[] = "users:".$userId.":lastActive";
+            }
+            $usersLastActive = $this->redisClient::mget($lastActivesQuery);
+        } else {
+            $usersLastActive = [];
+        }
+        return array_combine($userIds, $usersLastActive);
     }
 }

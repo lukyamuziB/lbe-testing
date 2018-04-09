@@ -18,6 +18,79 @@ class RequestsTableSeeder extends Seeder
         $limit = 20;
         $upperLimit = 23;
 
+        $this->seedBaseData($faker, $limit, $upperLimit);
+        $this->seedSkillMentorsData($faker, $limit, $upperLimit);
+    }
+
+    /**
+     * Skill mentors specific requests seeds.
+     *
+     * @return void
+     */
+    private function seedSkillMentorsData($faker)
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $today = Carbon::now();
+            $created_at = $today->subMonths(23 - $i);
+
+            $createdRequest = Request::create(
+                [
+                    'created_by' => $faker->randomElement(['-K_nkl19N6-EGNa0W8LF']),
+                    'request_type_id' => 1,
+                    'title' => $faker->sentence(6, true),
+                    'description' => $faker->text(300),
+                    'status_id' => ($i%2 === 0 ? 1 : 2),
+                    'interested' => (
+                    ($i === 4) ? ['-K_nkl19N6-EGNa0W8LF']
+                        : ($i === 2) ? ['-KesEogCwjq6lkOzKmLI']
+                        : null
+                    ),
+                    'created_at' => $created_at,
+                    'updated_at' => null,
+                    'match_date' => $created_at->addWeek(),
+                    'duration' => $i+2,
+                    'pairing' =>
+                        [
+                            'start_time' => '01:00',
+                            'end_time' => '02:00',
+                            'days' => ['monday'],
+                            'timezone' => 'EAT'
+                        ],
+                        'location' => $faker->randomElement(
+                            [
+                                'Nairobi',
+                                'Lagos',
+                                'kampala'
+                            ]
+                        )
+                ]
+            );
+
+            RequestUsers::create(
+                [
+                    "user_id" => $createdRequest->created_by,
+                    "role_id" => 2,
+                    "request_id" => $createdRequest->id
+                ]
+            );
+
+            RequestUsers::create(
+                [
+                    "user_id" => "-KXGy1MimjQgFim7u",
+                    "role_id" => 1,
+                    "request_id" => $createdRequest->id
+                ]
+            );
+        }
+    }
+
+    /**
+     * Base requests seeds.
+     *
+     * @return void
+     */
+    private function seedBaseData($faker, $limit, $upperLimit)
+    {
         for ($i = 0; $i < $limit; $i++) {
             $today = Carbon::now();
             $created_at = $today->subMonths($upperLimit - $i);

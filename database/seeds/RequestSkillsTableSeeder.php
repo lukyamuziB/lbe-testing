@@ -14,6 +14,35 @@ class RequestSkillsTableSeeder extends Seeder
         $faker = Faker\Factory::create();
         $limit = 1;
 
+        $this->seedBaseData($faker, $limit);
+        $this->seedSkillMentorsData();
+    }
+
+    /**
+     * Skill mentors specific request skills seeds.
+     *
+     * @return void
+     */
+    private function seedSkillMentorsData()
+    {
+        $customRequestId = 21;
+        for ($i = 0; $i < 5; $i++) {
+            DB::table('request_skills')->insert([
+                'request_id' => $customRequestId,
+                'skill_id' => "18",
+                'type' => 'primary'
+            ]);
+            $customRequestId += 1;
+        }
+    }
+
+    /**
+     * Base request skills seeds.
+     *
+     * @return void
+     */
+    private function seedBaseData($faker, $limit)
+    {
         for ($i = 0; $i < $limit; $i++) {
             DB::table('request_skills')->insert([
                 'request_id' => $i + 1,

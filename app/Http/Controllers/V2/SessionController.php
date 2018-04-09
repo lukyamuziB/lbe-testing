@@ -168,7 +168,7 @@ class SessionController extends Controller
 
         return $this->respond(Response::HTTP_OK, $sessions);
     }
-    
+
     /**
      * Delete a session file from cloud storage.
      *
@@ -344,7 +344,7 @@ class SessionController extends Controller
         $approvalStatus = [];
         $mentorId = $mentorshipRequest->mentor ? $mentorshipRequest->mentor->user_id : "";
         $menteeId = $mentorshipRequest->mentee ? $mentorshipRequest->mentee->user_id : "";
-        
+
         if ($userId === $mentorId) {
             $approvalStatus["mentor_approved"] = true;
             $approvalStatus["mentor_logged_at"] = Carbon::now($timezone);
@@ -381,7 +381,7 @@ class SessionController extends Controller
                     $mentorshipRequest->mentee->user_id === $userId) {
                     $sessionToLog->rating = Rating::create(
                         [
-                            "user_id" => $userId,
+                            "user_id" => $mentorshipRequest->mentor->user_id,
                             "session_id" => $sessionToLog->id,
                             "values" => json_encode($rating_values),
                             "scale" => $request->input('rating_scale')

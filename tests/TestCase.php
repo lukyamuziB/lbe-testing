@@ -9,6 +9,7 @@ use Test\Mocks\SlackUtilityMock;
 use Test\Mocks\SlackUsersRepositoryMock;
 use Test\Mocks\AISClientMock;
 use Test\Mocks\GoogleCloudStorageClientMock;
+use Test\Mocks\LastActiveRepositoryMock;
 
 abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 {
@@ -33,25 +34,29 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $this->artisan('db:seed');
 
-        $freckle_client_mock = new FreckleClientMock();
+        $freckleClientMock = new FreckleClientMock();
 
-        $this->app->instance('App\Clients\FreckleClient', $freckle_client_mock);
+        $this->app->instance('App\Clients\FreckleClient', $freckleClientMock);
 
-        $slack_user_repository_mock = new SlackUsersRepositoryMock();
+        $slackUserRepositoryMock = new SlackUsersRepositoryMock();
 
-        $slack_utility_mock = new SlackUtilityMock($slack_user_repository_mock);
+        $lastActiveRepositoryMock= new LastActiveRepositoryMock();
 
-        $ais_client_mock = new AISClientMock();
+        $slackUtilityMock = new SlackUtilityMock($slackUserRepositoryMock);
 
-        $google_cloud_storage_mock = new GoogleCloudStorageClientMock();
+        $aisClientMock = new AISClientMock();
 
-        $this->app->instance("App\Clients\GoogleCloudStorageClient", $google_cloud_storage_mock);
+        $googleCloudStorageMock = new GoogleCloudStorageClientMock();
 
-        $this->app->instance("App\Utility\SlackUtility", $slack_utility_mock);
+        $this->app->instance("App\Clients\GoogleCloudStorageClient", $googleCloudStorageMock);
 
-        $this->app->instance("App\Clients\AISClient", $ais_client_mock);
+        $this->app->instance("App\Utility\SlackUtility", $slackUtilityMock);
 
-        $this->app->instance("App\Repositories\SlackUsersRepository", $slack_user_repository_mock);
+        $this->app->instance("App\Clients\AISClient", $aisClientMock);
+
+        $this->app->instance("App\Repositories\SlackUsersRepository", $slackUserRepositoryMock);
+
+        $this->app->instance("App\Repositories\LastActiveRepository", $lastActiveRepositoryMock);
 
         Mail::fake();
     }
