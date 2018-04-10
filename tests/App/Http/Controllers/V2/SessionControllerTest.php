@@ -202,7 +202,7 @@ class SessionControllerTest extends \TestCase
      *
      * @return void
      */
-    public function testLogSessionSuccess()
+    public function testUpdateSessionSuccess()
     {
         $this->post("/api/v2/requests/2/sessions", ["date" => Carbon::now()->toDateString()]);
 
@@ -225,11 +225,10 @@ class SessionControllerTest extends \TestCase
         $this->assertResponseStatus(201);
         $response = json_decode($this->response->getContent());
 
-
         $this->assertObjectHasAttribute("date", $response);
         $this->assertObjectHasAttribute("start_time", $response);
         $this->assertObjectHasAttribute("end_time", $response);
-        $this->assertObjectHasAttribute("comment", $response);
+        $this->assertEquals(true, $response->mentee_approved);
     }
 
     /**
@@ -237,7 +236,7 @@ class SessionControllerTest extends \TestCase
      *
      * @return void
      */
-    public function testLogSessionWithRatingSuccess()
+    public function testUpdateSessionWithRatingSuccess()
     {
 
         $this->post("/api/v2/requests/2/sessions", ["date" => Carbon::now()->toDateString()]);
@@ -270,8 +269,7 @@ class SessionControllerTest extends \TestCase
         $this->assertObjectHasAttribute("date", $response);
         $this->assertObjectHasAttribute("start_time", $response);
         $this->assertObjectHasAttribute("end_time", $response);
-        $this->assertObjectHasAttribute("comment", $response);
-        $this->assertObjectHasAttribute("rating", $response);
+        $this->assertEquals(true, $response->mentee_approved);
     }
 
     /**
@@ -279,7 +277,7 @@ class SessionControllerTest extends \TestCase
      *
      * @return void
      */
-    public function testLogSessionFailureForSessionNotBelongsToUser()
+    public function testUpdateSessionFailureForSessionNotBelongsToUser()
     {
         $this->post("/api/v2/requests/2/sessions", ['date' => Carbon::now()->toDateString()]);
 
@@ -351,6 +349,14 @@ class SessionControllerTest extends \TestCase
             "/api/v2/sessions/20/confirm",
             [
                 "comment" => "Confirmado, amigo!",
+                "ratings" => (object)[
+                    "teaching" => "5",
+                    "availability" => "4",
+                    "reliability" => "4",
+                    "knowledge" => "5",
+                    "usefulness" => "3"
+                ],
+                "rating_scale" => "5"
             ]
         );
 
@@ -358,6 +364,7 @@ class SessionControllerTest extends \TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("comment", $response);
+        $this->assertObjectHasAttribute("ratings", $response);
         $this->assertEquals(true, $response->mentor_approved);
     }
 

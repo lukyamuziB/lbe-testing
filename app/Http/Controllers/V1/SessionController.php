@@ -312,11 +312,15 @@ class SessionController extends Controller
         $user_id = $request->input('user_id');
         $timezone = $mentorship_request->pairing['timezone'];
         $session_update_date = Carbon::now($timezone);
+        $mentorId = $mentorship_request->mentor->user_id;
+        $userRole = $user_id === $mentorId ? "mentor" : "mentee";
 
-        if ($user_id === $mentorship_request->mentee->user_id) {
-            $values = ["mentee_approved" => false, "mentee_logged_at" => $session_update_date];
-        } elseif ($user_id === $mentorship_request->mentor->user_id) {
-            $values = ["mentor_approved" => false, "mentor_logged_at" => $session_update_date];
+        if ($user_id === $mentorship_request[$userRole] ["user_id"]) {
+            $values = [
+                "mentee_approved" => false,
+                "mentor_approved" => false,
+                $userRole."_logged_at" => $session_update_date
+            ];
         } else {
                 throw new AccessDeniedException(
                     "You do not have permission to reject this session"
@@ -325,7 +329,7 @@ class SessionController extends Controller
         $session->fill($values)->save();
         return $this->respond(Response::HTTP_OK, $session);
     }
- 
+
     /**
      * Calculate the time difference and return result in minutes
      *

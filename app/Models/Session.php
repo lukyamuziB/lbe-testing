@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -10,25 +11,25 @@ class Session extends Model
     public $timestamps = false;
 
     protected $fillable = [
-      "request_id",
-      "date",
-      "start_time",
-      "end_time",
-      "mentee_approved",
-      "mentor_approved",
-      "mentee_logged_at",
-      "mentor_logged_at"
+        "request_id",
+        "date",
+        "start_time",
+        "end_time",
+        "mentee_approved",
+        "mentor_approved",
+        "mentee_logged_at",
+        "mentor_logged_at"
     ];
 
     public static $rules = [
-      "request_id" => "required|numeric",
-      "date" => 'date_format:"Y-m-d"',
-      "start_time" => 'required|string',
-      "end_time" => 'required|string',
-      "mentee_approved" => "boolean",
-      "mentor_approved" => "boolean",
-      "mentee_logged_at" => 'date_format:"Y-m-d H:i:s"',
-      "mentor_logged_at" => 'date_format:"Y-m-d H:i:s"'
+        "request_id" => "required|numeric",
+        "date" => 'date_format:"Y-m-d"',
+        "start_time" => 'required|string',
+        "end_time" => 'required|string',
+        "mentee_approved" => "boolean",
+        "mentor_approved" => "boolean",
+        "mentee_logged_at" => 'date_format:"Y-m-d H:i:s"',
+        "mentor_logged_at" => 'date_format:"Y-m-d H:i:s"'
     ];
 
     public function request()
@@ -59,6 +60,68 @@ class Session extends Model
     public function comments()
     {
         return $this->hasMany("App\Models\SessionComment");
+    }
+
+    /**
+     * Save the comment for a particular session
+     *
+     * @param string $comment - the comment
+     * @param string $commentOwner - the user id of whom the comment is about
+     */
+    public function saveComment($comment, $commentOwner)
+    {
+        $currentSessionComment = SessionComment::where("user_id", $commentOwner)
+            ->where("session_id", $this->id)
+            ->get();
+
+        if (count($currentSessionComment) === 0) {
+            SessionComment::create(
+                [
+                    "user_id" => $commentOwner,
+                    "session_id" => $this->attributes["id"],
+                    "comment" => $comment
+                ]
+            );
+        } else {
+            SessionComment::where("user_id", $commentOwner)
+                ->where("session_id", $this->attributes["id"])
+                ->update(
+                    ["comment" => $comment]
+                );
+        }
+    }
+
+    /**
+     * Save the rating for a particular session
+     *
+     * @param string $userToRate - id of the user to be rated
+     * @param object $rating - the rating object
+     * @param integer $scale - rating scale
+     */
+    public function saveRating($userToRate, $rating, $scale)
+    {
+        $currentRating = Rating::where("session_id", $this->attributes["id"])
+            ->where("user_id", $userToRate)
+            ->get();
+
+        if (count($currentRating) === 0) {
+            Rating::create(
+                [
+                    "user_id" => $userToRate,
+                    "session_id" => $this->attributes["id"],
+                    "values" => json_encode($rating),
+                    "scale" => $scale
+                ]
+            );
+        } else {
+            Rating::where("user_id", $userToRate)
+                ->where("session_id", $this->attributes["id"])
+                ->update(
+                    ["values" => json_encode($rating),
+                        "scale" => $scale
+                    ]
+                );
+        }
     }
 
     /**

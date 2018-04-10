@@ -25,8 +25,6 @@ class CreateRatingsTable extends Migration
                 $table->json('values');
                 $table->integer('scale');
                 $table->timestamps();
-
-                $table->primary(array('session_id', 'user_id'));
             }
         );
     }

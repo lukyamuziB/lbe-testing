@@ -179,13 +179,12 @@ class SessionControllerTest extends TestCase
      *
      * @return Object - response containing session data
      */
-    public function testRejectSessionSuccessForMentorReject()
+    public function testRejectSessionSuccess()
     {
-         // Mentor may reject a logged session
         $this->patch(
             "/api/v1/sessions/20/reject",
             [
-                "user_id" => "-KXGy1MimjQgFim7u",
+                "user_id" => "-K_nkl19N6-EGNa0W8LF",
             ]
         );
 
@@ -194,8 +193,9 @@ class SessionControllerTest extends TestCase
          $this->assertResponseStatus(200);
 
          $this->assertTrue($response->mentor_approved === false);
-
+         $this->assertTrue($response->mentee_approved === false);
          $this->assertNotEmpty($response->mentor_logged_at);
+         $this->assertNotEmpty($response->mentee_logged_at);
     }
 
     /*
