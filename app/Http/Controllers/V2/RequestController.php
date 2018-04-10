@@ -427,9 +427,9 @@ class RequestController extends Controller
         $mentorshipRequest->save();
 
         if ($mentorshipRequest->request_type_id == RequestType::MENTOR_REQUEST) {
-            $roleId = Role::MENTEE;
-        } else {
             $roleId = Role::MENTOR;
+        } else {
+            $roleId = Role::MENTEE;
         }
 
         DB::table("request_users")->insert(
@@ -536,7 +536,7 @@ class RequestController extends Controller
         } else {
             $userRole = Role::MENTOR;
         }
-        
+
         $result = DB::transaction(
             function () use ($requestDetails, $requestSkills, $userRole) {
                 $createdRequest = MentorshipRequest::create($requestDetails);
@@ -556,7 +556,7 @@ class RequestController extends Controller
                 return $createdRequest;
             }
         );
-    
+
         return $this->respond(Response::HTTP_CREATED, formatRequestForAPIResponse($result));
     }
 
@@ -595,7 +595,7 @@ class RequestController extends Controller
             $createdRequest->id
         )
         ->with("skill")->get();
-        
+
         return $requestSkills;
     }
 
@@ -657,7 +657,7 @@ class RequestController extends Controller
             }
         };
     }
-    
+
     /**
      * Append the user being awaited
      *
