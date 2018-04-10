@@ -167,7 +167,9 @@ class SkillController extends Controller
 
         $mentorsAverageRating = User::getMentorsAverageRating($mentorsRatings);
 
-        usort($mentorsAverageRating, array($this, "compareMentorsRatings"));
+        usort($mentorsAverageRating, function ($firstElement, $secondElement) {
+            return ($firstElement["average_rating"] > $secondElement["average_rating"]) ? -1 : 1;
+        });
         array_splice($mentorsAverageRating, $limit);
 
         $mentorsEmail = $this->getMentorsEmail($mentorsRatings);
@@ -216,23 +218,6 @@ class SkillController extends Controller
         }
 
         return $mentorsDetails;
-    }
-
-    /**
-     * Compares the elements of an array
-     *
-     * @param array $firstElement first element of the array
-     * @param array $secondElement second element of the array
-     *
-     * @return integer the precedence determinant of the array element
-     */
-    private function compareMentorsRatings($firstElement, $secondElement)
-    {
-        if ($firstElement["average_rating"] == $secondElement["average_rating"]) {
-            return 0;
-        }
-
-        return ($firstElement["average_rating"] > $secondElement["average_rating"]) ? -1 : 1;
     }
 
     /**
