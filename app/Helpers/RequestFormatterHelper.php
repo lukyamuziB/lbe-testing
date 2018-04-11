@@ -10,7 +10,11 @@ function formatRequestForAPIResponse($request)
 {
     return (object)[
         "id" => $request->id,
-        "created_by" => $request->created_by,
+        "created_by" => (object)[
+            "user_id" => $request->created_by->user_id,
+            "email" => $request->created_by->email,
+            "fullname" => $request->created_by->fullname
+        ],
         "request_type_id" => $request->request_type_id,
         "title" => $request->title,
         "description" => $request->description,

@@ -172,7 +172,7 @@ class RequestController extends Controller
 
         DB::table("request_users")->insert(
             [
-                "user_id" => $createdRequest->created_by,
+                "user_id" => $createdRequest->created_by->user_id,
                 "request_id" => $createdRequest->id,
                 "role_id" => Role::MENTEE
             ]
@@ -232,7 +232,7 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->created_by) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
         } catch (ModelNotFoundException $exception) {
@@ -277,7 +277,7 @@ class RequestController extends Controller
             }
 
             // check that the mentee is not the one interested
-            if (in_array($mentorshipRequest->created_by, $request->interested)) {
+            if (in_array($mentorshipRequest->created_by->user_id, $request->interested)) {
                 throw new BadRequestException("You cannot indicate interest in your own mentorship request", 1);
             }
 
@@ -367,7 +367,7 @@ class RequestController extends Controller
                 );
             }
 
-            if ($currentUser->uid !== $mentorshipRequest->created_by) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
@@ -456,7 +456,7 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by) {
+            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by->user_id) {
                 throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
 
@@ -810,7 +810,7 @@ class RequestController extends Controller
 
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->created_by) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
                 throw new AccessDeniedException(
                     "You don't have permission to request an extension for this mentorship"
                 );

@@ -204,7 +204,7 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(200);
         $this->assertEquals(
             "-KXGy1MT1oimjQgFim7u",
-            $response[1]->created_by
+            $response[1]->created_by->user_id
         );
 
         $this->assertContains(

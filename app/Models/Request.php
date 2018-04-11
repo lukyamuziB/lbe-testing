@@ -111,7 +111,15 @@ class Request extends Model
                             ->first()["user"];
     }
 
-
+    /**
+     * Returns an object containing the created_by user's details
+     *
+     * @return Object
+     */
+    public function getCreatedByAttribute()
+    {
+        return User::where("user_id", $this->attributes["created_by"])->first();
+    }
     /**
      * Defines Foreign Key Relationship to the skill model
      *

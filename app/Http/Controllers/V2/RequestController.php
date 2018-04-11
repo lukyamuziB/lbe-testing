@@ -262,7 +262,7 @@ class RequestController extends Controller
 
         $mentorshipRequest->interested = $mentorshipRequest->interested ?? [];
 
-        if ($currentUser->uid === $mentorshipRequest->created_by) {
+        if ($currentUser->uid === $mentorshipRequest->created_by->user_id) {
             throw new BadRequestException("You can't indicate interest in your own request.");
         }
 
@@ -333,7 +333,7 @@ class RequestController extends Controller
             throw new NotFoundException("Mentorship Request not found.");
         }
 
-        if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by) {
+        if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by->user_id) {
             throw new UnauthorizedException("You don't have permission to cancel this Mentorship Request.");
         }
 
@@ -497,7 +497,7 @@ class RequestController extends Controller
         }
 
         $currentUser = $request->user();
-        if ($currentUser->uid !== $mentorshipRequest->created_by) {
+        if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
             throw new AccessDeniedException("You do not have permission to perform this operation");
         }
 
@@ -545,7 +545,7 @@ class RequestController extends Controller
 
                 RequestUsers::create(
                     [
-                        "user_id" => $createdRequest->created_by,
+                        "user_id" => $createdRequest->created_by->user_id,
                         "request_id" => $createdRequest->id,
                         "role_id" => $userRole
                     ]
