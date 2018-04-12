@@ -11,7 +11,7 @@ function formatRequestForAPIResponse($request)
     return (object)[
         "id" => $request->id,
         "created_by" => (object)[
-            "user_id" => $request->created_by->id,
+            "id" => $request->created_by->id,
             "email" => $request->created_by->email,
             "fullname" => $request->created_by->fullname
         ],
