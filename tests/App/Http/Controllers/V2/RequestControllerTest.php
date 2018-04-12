@@ -203,12 +203,12 @@ class RequestControllerTest extends TestCase
 
         $this->assertResponseStatus(200);
         $this->assertEquals(
-            "-KXGy1MT1oimjQgFim7u",
+            "-K_nkl19N6-EGNa0W8LF",
             $response[1]->created_by->user_id
         );
 
         $this->assertContains(
-            "-K_nkl19N6-EGNa0W8LF",
+            "-KesEogCwjq6lkOzKmLI",
             $response[1]->interested
         );
     }

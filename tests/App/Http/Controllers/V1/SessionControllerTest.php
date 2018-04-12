@@ -138,7 +138,7 @@ class SessionControllerTest extends TestCase
         $this->patch(
             "/api/v1/sessions/{$session_id}/approve",
             [
-                "user_id" => "-KXGy1MimjQgFim7u",
+                "user_id" => "-KesEogCwjq6lkOzKmLI",
             ]
         );
 

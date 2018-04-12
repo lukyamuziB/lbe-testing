@@ -533,7 +533,7 @@ class RequestControllerTest extends TestCase
 
         $request = Request::find(14);
 
-        $this->assertEquals("-KXGy1MimjQgFim7u", $request->mentor->id);
+        $this->assertEquals("-KesEogCwjq6lkOzKmLI", $request->mentor->id);
     }
 
     /*
@@ -613,7 +613,7 @@ class RequestControllerTest extends TestCase
     {
         $this->put("/api/v1/requests/20/extend-mentorship");
 
-        $this->makeUser("-KXGy1MimjQgFim7u");
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
 
         $this->patch("/api/v1/requests/20/approve-extension");
 
@@ -635,7 +635,7 @@ class RequestControllerTest extends TestCase
     {
         $this->put("/api/v1/requests/20/extend-mentorship");
 
-        $this->makeUser("-KXGy1MimjQgFim7u");
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
 
         $this->patch("/api/v1/requests/20/reject-extension");
 

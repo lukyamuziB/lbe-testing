@@ -312,7 +312,7 @@ class SessionControllerTest extends \TestCase
      */
     public function testConfirmSessionSuccessForMentee()
     {
-        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->makeUser("-KesEogCwjq6lkOzKmLI");
         $this->patch(
             "/api/v2/sessions/10/confirm",
             [
@@ -344,7 +344,7 @@ class SessionControllerTest extends \TestCase
      */
     public function testConfirmSessionSuccessForMentor()
     {
-        $this->makeUser("-KXGy1MimjQgFim7u");
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
         $this->patch(
             "/api/v2/sessions/20/confirm",
             [
@@ -365,7 +365,7 @@ class SessionControllerTest extends \TestCase
         $response = json_decode($this->response->getContent());
         $this->assertObjectHasAttribute("comment", $response);
         $this->assertObjectHasAttribute("ratings", $response);
-        $this->assertEquals(true, $response->mentor_approved);
+        $this->assertEquals(true, $response->mentee_approved);
     }
 
     /**

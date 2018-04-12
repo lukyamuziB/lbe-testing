@@ -100,7 +100,7 @@ class RequestsTableSeeder extends Seeder
                     'request_type_id' => $faker->randomElement([2]),
                     'title' => $faker->sentence(6, true),
                     'description' => $faker->text($maxNbChars = 300),
-                    'status_id' => ($i%2 === 0 ? 1 : 2),
+                    'status_id' => ($i === 18) ? 2 : ($i%2 === 0 ? 1 : 2),
                     'interested' => (
                     ($i === 20) ? ['-K_nkl19N6-EGNa0W8LF']
                         : ($i === 18) ? ['-KesEogCwjq6lkOzKmLI']
@@ -133,10 +133,11 @@ class RequestsTableSeeder extends Seeder
                     "request_id" => $createdRequest->id
                 ]
             );
+
             if ($createdRequest->status_id == 2 || $createdRequest->status_id == 3) {
                 RequestUsers::create(
                     [
-                        "user_id" => "-KXGy1MimjQgFim7u",
+                        "user_id" => "-KesEogCwjq6lkOzKmLI",
                         "role_id" => $requestOwner->role_id == 2 ? 1 : 2,
                         "request_id" => $createdRequest->id
                     ]
