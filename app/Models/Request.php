@@ -118,7 +118,7 @@ class Request extends Model
      */
     public function getCreatedByAttribute()
     {
-        return User::where("user_id", $this->attributes["created_by"])->first();
+        return User::where("id", $this->attributes["created_by"])->first();
     }
     /**
      * Defines Foreign Key Relationship to the skill model

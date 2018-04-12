@@ -68,7 +68,7 @@ class RequestsTableSeeder extends Seeder
 
             RequestUsers::create(
                 [
-                    "user_id" => $createdRequest->created_by->user_id,
+                    "user_id" => $createdRequest->created_by->id,
                     "role_id" => 2,
                     "request_id" => $createdRequest->id
                 ]
@@ -128,7 +128,7 @@ class RequestsTableSeeder extends Seeder
             );
             $requestOwner = RequestUsers::create(
                 [
-                    "user_id" => $createdRequest->created_by->user_id,
+                    "user_id" => $createdRequest->created_by->id,
                     "role_id" => $createdRequest->request_type_id == 2 ? 2 : 1,
                     "request_id" => $createdRequest->id
                 ]

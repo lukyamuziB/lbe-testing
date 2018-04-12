@@ -370,9 +370,9 @@ class SessionController extends Controller
                 //update session with the approval
                 $sessionToLog->update($sessionApproval);
 
-                $userToRate = ($mentorshipRequest->mentee->user_id === $currentUserId)
-                    ? $mentorshipRequest->mentor->user_id
-                    : $mentorshipRequest->mentee->user_id;
+                $userToRate = ($mentorshipRequest->mentee->id === $currentUserId)
+                    ? $mentorshipRequest->mentor->id
+                    : $mentorshipRequest->mentee->id;
 
                 if ($rating["comment"]) {
                     $sessionToLog->saveComment($rating["comment"], $userToRate);
@@ -408,12 +408,12 @@ class SessionController extends Controller
         }
         $userId = $request->user()->uid;
         $timezone = $session->request->pairing["timezone"];
-        $menteeId = $session->request->mentee->user_id ?? "";
-        $mentorId = $session->request->mentor->user_id ?? "";
+        $menteeId = $session->request->mentee->id ?? "";
+        $mentorId = $session->request->mentor->id ?? "";
         $userRole = $userId === $mentorId ? "mentor" : "mentee";
         $confirmation = [];
 
-        if ($userId !== $session->request[$userRole] ["user_id"]) {
+        if ($userId !== $session->request[$userRole] ["id"]) {
             throw new UnauthorizedException("You do not have permission to confirm this session.");
         }
 
@@ -478,10 +478,10 @@ class SessionController extends Controller
     {
         $approvalStatus = [];
 
-        if ($currentUserId === $mentorshipRequest->mentor->user_id) {
+        if ($currentUserId === $mentorshipRequest->mentor->id) {
             $approvalStatus["mentor_approved"] = true;
             $approvalStatus["mentor_logged_at"] = Carbon::now($timezone);
-        } elseif ($currentUserId === $mentorshipRequest->mentee->user_id) {
+        } elseif ($currentUserId === $mentorshipRequest->mentee->id) {
             $approvalStatus["mentee_approved"] = true;
             $approvalStatus["mentee_logged_at"] = Carbon::now($timezone);
         } else {

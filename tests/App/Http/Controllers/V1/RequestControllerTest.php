@@ -533,7 +533,7 @@ class RequestControllerTest extends TestCase
 
         $request = Request::find(14);
 
-        $this->assertEquals("-KXGy1MimjQgFim7u", $request->mentor->user_id);
+        $this->assertEquals("-KXGy1MimjQgFim7u", $request->mentor->id);
     }
 
     /*

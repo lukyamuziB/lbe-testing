@@ -52,7 +52,7 @@ class UserController extends Controller
 
         if (!$lenkenUser) {
             $lenkenUser = User::create([
-                "user_id" => $aisUser["id"],
+                "id" => $aisUser["id"],
                 "email" => $aisUser["email"],
                 "slack_id" => $slackUser->id ?? ""
                 ]);

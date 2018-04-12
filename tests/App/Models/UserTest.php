@@ -18,7 +18,7 @@ class UserTest extends TestCase
 
         User::create(
             [
-                "user_id" => "-K_nkl1kolop909",
+                "id" => "-K_nkl1kolop909",
                 "email" => "timothy.kyadondo@andela.com",
                 "slack_id" => "C655PE124",
             ]

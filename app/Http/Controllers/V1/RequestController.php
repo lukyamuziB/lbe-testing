@@ -172,7 +172,7 @@ class RequestController extends Controller
 
         DB::table("request_users")->insert(
             [
-                "user_id" => $createdRequest->created_by->user_id,
+                "user_id" => $createdRequest->created_by->id,
                 "request_id" => $createdRequest->id,
                 "role_id" => Role::MENTEE
             ]
@@ -232,7 +232,7 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by->id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
         } catch (ModelNotFoundException $exception) {
@@ -277,7 +277,7 @@ class RequestController extends Controller
             }
 
             // check that the mentee is not the one interested
-            if (in_array($mentorshipRequest->created_by->user_id, $request->interested)) {
+            if (in_array($mentorshipRequest->created_by->id, $request->interested)) {
                 throw new BadRequestException("You cannot indicate interest in your own mentorship request", 1);
             }
 
@@ -293,7 +293,7 @@ class RequestController extends Controller
 
             $mentorName = $currentUser->name;
 
-            $menteeId = $mentorshipRequest->mentee->user_id;
+            $menteeId = $mentorshipRequest->mentee->id;
             $requestUrl = $this->getClientBaseUrl()."/requests/{$id}";
 
             // get user details from FIS and send email
@@ -323,7 +323,7 @@ class RequestController extends Controller
                 when a mentor shows interest in their request
                 */
                 $user = User::select('slack_id')
-                    ->where('user_id', $menteeId)
+                    ->where('id', $menteeId)
                     ->first();
                 $message = "*{$mentorName}* has indicated interest in mentoring you.\n"
                     ."View details of the request: {$requestUrl}";
@@ -367,7 +367,7 @@ class RequestController extends Controller
                 );
             }
 
-            if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by->id) {
                 throw new AccessDeniedException("You don't have permission to edit the mentorship request", 1);
             }
 
@@ -420,7 +420,7 @@ class RequestController extends Controller
             if ($userSetting->slack) {
                 $menteeId = $request->input('mentor_id');
                 $user = User::select('slack_id')
-                    ->where('user_id', $menteeId)
+                    ->where('id', $menteeId)
                     ->first();
                 $message = "{$menteeName} selected you as a mentor
                 \n"."View details of the request: {$requestUrl}";
@@ -456,7 +456,7 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by->user_id) {
+            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by->id) {
                 throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
 
@@ -571,9 +571,9 @@ class RequestController extends Controller
     {
         $formattedResult = (object) [
             "id" => $result->id,
-            "mentee_id" => $result->mentee["user_id"],
+            "mentee_id" => $result->mentee["id"],
             "mentee_email" => $result->mentee->email ?? '',
-            "mentor_id" => $result->mentor["user_id"],
+            "mentor_id" => $result->mentor["id"],
             "mentor_email" => $result->mentor->email ?? '',
             "title" => $result->title,
             "description" => $result->description,
@@ -718,7 +718,7 @@ class RequestController extends Controller
 
         // if the user's userId is not in the table, create a new user
         User::updateOrCreate(
-            ["user_id" => $userId],
+            ["id" => $userId],
             $userDetails
         );
     }
@@ -810,7 +810,7 @@ class RequestController extends Controller
 
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->created_by->user_id) {
+            if ($currentUser->uid !== $mentorshipRequest->created_by->id) {
                 throw new AccessDeniedException(
                     "You don't have permission to request an extension for this mentorship"
                 );
@@ -861,7 +861,7 @@ class RequestController extends Controller
                 );
             }
             $currentUser = $request->user();
-            if ($currentUser->uid !== $mentorshipRequest->mentor->user_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentor->id) {
                 throw new AccessDeniedException(
                     "You don't have permission to approve an extension of this mentorship"
                 );
@@ -918,7 +918,7 @@ class RequestController extends Controller
             }
             $currentUser = $request->user();
 
-            if ($currentUser->uid !== $mentorshipRequest->mentor->user_id) {
+            if ($currentUser->uid !== $mentorshipRequest->mentor->id) {
                 throw new AccessDeniedException(
                     "You don't have permission to reject an extension of this mentorship"
                 );
@@ -981,7 +981,7 @@ class RequestController extends Controller
 
         if (count($potentialMentorIdsForEmail) > 0) {
             $potentialMentorEmails = User::select('email')
-                ->whereIn('user_id', $potentialMentorIdsForEmail)
+                ->whereIn('id', $potentialMentorIdsForEmail)
                 ->get();
             $potentialMentorEmails
                 = array_flatten(json_decode($potentialMentorEmails, true));
@@ -1004,7 +1004,7 @@ class RequestController extends Controller
 
         if (count($potentialMentorIdsForSlack) > 0) {
             $potentialMentorSlackIds = User::select('slack_id')
-                ->whereIn('user_id', $potentialMentorIdsForSlack)
+                ->whereIn('id', $potentialMentorIdsForSlack)
                 ->get();
             $potentialMentorSlackIds
                 = array_flatten(json_decode($potentialMentorSlackIds, true));

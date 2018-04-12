@@ -20,7 +20,7 @@ class UserTableSeeder extends Seeder
 
         for ($i = 0; $i < $limit; $i++) {
             DB::table('users')->insert([
-                'user_id' => $user_ids[$i],
+                'id' => $user_ids[$i],
                 'slack_id' => "1En-kEn{($i + 1) * 2}",
                 'email' => $emails[$i]
             ]);

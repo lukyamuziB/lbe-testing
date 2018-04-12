@@ -12,7 +12,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 {
     use Authenticatable, Authorizable;
 
-    protected $primaryKey = 'user_id'; // or null
+    protected $primaryKey = 'id'; // or null
     public $incrementing = false;
     public $timestamps = false;
 
@@ -22,7 +22,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        "user_id",
+        "id",
         "slack_id",
         "email"
     ];

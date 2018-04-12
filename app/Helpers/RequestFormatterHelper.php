@@ -11,7 +11,7 @@ function formatRequestForAPIResponse($request)
     return (object)[
         "id" => $request->id,
         "created_by" => (object)[
-            "user_id" => $request->created_by->user_id,
+            "user_id" => $request->created_by->id,
             "email" => $request->created_by->email,
             "fullname" => $request->created_by->fullname
         ],
@@ -29,12 +29,12 @@ function formatRequestForAPIResponse($request)
         "rating" => $request->rating ?? null,
         "created_at" => formatTime($request->created_at),
         "mentee" => (object)[
-            "id" => $request->mentee->user_id ?? null,
+            "id" => $request->mentee->id ?? null,
             "email" => $request->mentee->email ?? "",
             "fullname" => $request->mentee->fullname ?? ""
         ],
         "mentor" => (object)[
-            "id" => $request->mentor->user_id ?? null,
+            "id" => $request->mentor->id ?? null,
             "email" => $request->mentor->email ?? "",
             "fullname" => $request->mentor->fullname ?? ""
         ]

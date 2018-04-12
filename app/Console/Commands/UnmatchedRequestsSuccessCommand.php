@@ -259,7 +259,7 @@ class UnmatchedRequestsSuccessCommand extends Command
                 if ($request["mentee"]["email"] === $fellow["email"]) {
                     $menteeRequestData[$request["id"]] = [
                         "name" => $fellow["name"],
-                        "mentee_id" => $request['mentee']['user_id'],
+                        "mentee_id" => $request['mentee']['id'],
                         "placement" => $fellow["placement"],
                         "client" => $fellow["client"],
                         "email" => $fellow["email"],
