@@ -720,6 +720,25 @@ class RequestControllerTest extends TestCase
     }
 
     /**
+     * Test that it only returns requests where the type
+     * of the skill for the skillId passed is type primary
+     */
+    public function testGetSkillRequestsSuccessForPrimarySkill()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->get(
+            "/api/v2/skills/18/requests"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
+        $this->assertNotEmpty($response->skill->requests[0]->request_skills);
+        $this->assertEquals($response->skill->id, $response->skill->requests[0]->request_skills[0]->id);
+        $this->assertEquals($response->skill->name, $response->skill->requests[0]->request_skills[0]->name);
+        $this->assertEquals("primary", $response->skill->requests[0]->request_skills[0]->type);
+    }
+
+    /**
      * Test to return error message if there skill id is invalid
      */
     public function testGetSkillRequestsFailure()

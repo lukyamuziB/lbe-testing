@@ -615,10 +615,11 @@ class RequestController extends Controller
         }
 
         $skill = Skill::select("name", "id")->where("id", $skillId)->first();
-        $field = ["skills" => [$skillId], "type" => "primary"];
-        $requests = MentorshipRequest::buildPoolFilterQuery($field)
-                                        ->withCount("session")
-                                        ->get();
+
+        $field = ["skill_id" => $skillId, "type" => "primary"];
+
+        $requestIds = RequestSkill::select("request_id")->where($field);
+        $requests = MentorshipRequest::whereIn("id", $requestIds)->get();
 
         $formattedRequests = formatMultipleRequestsForAPIResponse($requests);
         $skill["requests"] = $formattedRequests;
