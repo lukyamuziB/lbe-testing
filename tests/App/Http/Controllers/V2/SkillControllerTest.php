@@ -92,7 +92,7 @@ class SkillControllerTest extends TestCase
     public function testGetSkillStatusCountForAllLocations()
     {
         $this->get(
-            "/api/v2/skill/status-report"
+            "/api/v2/skills/status-report"
         );
 
         $response = json_decode($this->response->getContent());
@@ -115,7 +115,7 @@ class SkillControllerTest extends TestCase
     public function testGetSkillStatusCountForStartAndEndDate()
     {
         $this->get(
-            "/api/v2/skill/status-report?start_date=2017-11-13&end_date=2017-12-09"
+            "/api/v2/skills/status-report?start_date=2017-11-13&end_date=2017-12-09"
         );
 
         $response = json_decode($this->response->getContent());
@@ -132,7 +132,7 @@ class SkillControllerTest extends TestCase
     public function testGetSkillStatusCountForStartDateMoreThanEndDate()
     {
         $this->get(
-            "/api/v2/skill/status-report?start_date=2017-11-13&end_date=2017-10-13"
+            "/api/v2/skills/status-report?start_date=2017-11-13&end_date=2017-10-13"
         );
 
         $response = json_decode($this->response->getContent());
