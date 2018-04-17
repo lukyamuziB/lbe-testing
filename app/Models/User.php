@@ -97,12 +97,11 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
                 $ratings[] = get_object_vars(json_decode($mentor[$i]["values"]));
                 $averageRating = 0;
                 foreach($ratings as $rating) {
-                    $ratingValues = (
-                        $rating["teaching"] + $rating["reliability"]
-                        + $rating["availability"] + $rating["usefulness"]
-                        + $rating["knowledge"]
+                    $averageRating += (
+                        (int)$rating["teaching"] + (int)$rating["reliability"]
+                        + (int)$rating["availability"] + (int)$rating["usefulness"]
+                        + (int)$rating["knowledge"]
                     )/count($rating);
-                    $averageRating += $ratingValues;
                 }
             }
                 $mentorDetails["average_rating"] = number_format($averageRating/count($mentor), 1);
