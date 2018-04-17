@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Config;
 use Exception;
 
 use App\Models\Request;
+use App\Models\RequestType;
+use App\Models\User;
 use App\Clients\AISClient;
 
 /**
@@ -43,20 +45,20 @@ class UnmatchedRequestsFellowsCommand extends Command
     protected $description = "Sends email notification about 
     unmatched requests to Lenken users";
 
-    protected $base_url;
-    protected $ais_client;
+    protected $baseUrl;
+    protected $aisClient;
 
     /**
      * UnmatchedRequestsFellowsCommand constructor.
      *
-     * @param AISClient $ais_client AIS client
+     * @param AISClient $aisClient AIS client
      */
-    public function __construct(AISClient $ais_client)
+    public function __construct(AISClient $aisClient)
     {
         parent::__construct();
 
-        $this->base_url = getenv("LENKEN_FRONTEND_BASE_URL");
-        $this->ais_client = $ais_client;
+        $this->baseUrl = getenv("LENKEN_FRONTEND_baseUrl");
+        $this->aisClient = $aisClient;
     }
 
     /**
@@ -67,27 +69,29 @@ class UnmatchedRequestsFellowsCommand extends Command
     public function handle()
     {
         try {
-            $unmatched_requests = Request::getUnmatchedRequests()->get()->toArray();
+            $unmatchedRequests = Request::getUnmatchedRequests()->get()->toArray();
 
-            if ($unmatched_requests) {
-                $mentee_emails = $this->getMenteeEmails($unmatched_requests);
+            $this->addUserDetailsToRequests($unmatchedRequests);
 
-                $mentees = $this->ais_client
-                    ->getUsersByEmail($mentee_emails);
+            if ($unmatchedRequests) {
+                $emailsOfUsersWhoMadeTheRequests = $this->getUsersEmails($unmatchedRequests);
+
+                $usersWhoMadeTheRequests = $this->aisClient
+                    ->getUsersByEmail($emailsOfUsersWhoMadeTheRequests);
 
                 // Build the $requests array that will
                 // contain only the info we need to send to the template
-                $requests = $this->getRequestAndMenteeDetails(
-                    $unmatched_requests,
-                    $mentees["values"]
+                $requests = $this->getRequestAndUserDetails(
+                    $unmatchedRequests,
+                    $usersWhoMadeTheRequests["values"]
                 );
 
                 $this->sortRequestsByPlacementStatus($requests);
 
-                $app_environment = getenv("APP_ENV");
+                $appEnvironment = getenv("APP_ENV");
 
                 $recipients = Config::get(
-                    "notifications.{$app_environment}.all_fellows_notification_email"
+                    "notifications.{$appEnvironment}.all_fellows_notification_email"
                 );
 
                 Mail::to($recipients)->send(
@@ -95,7 +99,7 @@ class UnmatchedRequestsFellowsCommand extends Command
                 );
             }
 
-            $count = count($unmatched_requests);
+            $count = count($unmatchedRequests);
 
             if ($count) {
                 $message = "A notification about $count unmatched" .
@@ -110,42 +114,76 @@ class UnmatchedRequestsFellowsCommand extends Command
     }
 
     /**
-     * Get emails of mentees from $unmatched_requests
+     * Get emails of users who created the requests
+     * from $unmatchedRequests
      *
-     * @param array $unmatched_requests unmatched requests
+     * @param array $unmatchedRequests unmatched requests
      *
      * @return array
      */
-    public function getMenteeEmails($unmatched_requests)
+    public function getUsersEmails($unmatchedRequests)
     {
-        $mentee_emails = [];
-        foreach ($unmatched_requests as $request) {
-            $mentee_emails[] = $request["mentee"]["email"];
+        $usersEmails = [];
+        foreach ($unmatchedRequests as $request) {
+            $userRole = $this->getUserRole($request);
+            $usersEmails[] = $request[$userRole]["email"];
         }
 
-        return $mentee_emails;
+        return $usersEmails;
+    }
+    
+    /**
+     * Get details of users who created the requests
+     * from $unmatchedRequests
+     *
+     * @param array $unmatchedRequests unmatched requests
+     *
+     * @return void
+     */
+    public function addUserDetailsToRequests(&$unmatchedRequests)
+    {
+        foreach ($unmatchedRequests as &$request) {
+            $userId = $request["created_by"];
+            $user = User::find($userId);
+            $userRole = $this->getUserRole($request);
+            $request[$userRole] = $user;
+        }
     }
 
     /**
-     * Take only the info we need from $unmatched_requests
+     * Get the role of the user who made the request
+     *
+     * @param object $request request
+     *
+     * @return void
+     */
+    public function getUserRole($request)
+    {
+        $userRole = $request["request_type_id"] === RequestType::MENTOR_REQUEST  ? "mentee" : "mentor";
+        return $userRole;
+    }
+
+    /**
+     * Take only the info we need from $unmatchedRequests
      * and $mentees and store it in a new array
      *
-     * @param array $unmatched_requests unmatched requests
-     * @param array $mentees            mentees details
+     * @param array $unmatchedRequests unmatched requests
+     * @param array $users             mentees details
      *
      * @return array
      */
-    public function getRequestAndMenteeDetails($unmatched_requests, $mentees)
+    public function getRequestAndUserDetails($unmatchedRequests, $users)
     {
         $requests = [];
-        foreach ($unmatched_requests as $request) {
-            foreach ($mentees as $mentee) {
-                if ($request["mentee"]["email"] === $mentee["email"]) {
+        foreach ($unmatchedRequests as $request) {
+            $userRole = $this->getUserRole($request);
+            foreach ($users as $user) {
+                if ($request[$userRole]["email"] === $user["email"]) {
                     $requests[$request["id"]]
                         = [
-                        "client" => $mentee["placement"]["client"] ?? "",
+                        "client" => $user["placement"]["client"] ?? "",
                         "request_url"
-                        => $this->base_url . "/requests/" . $request["id"],
+                        => $this->baseUrl . "/requests/" . $request["id"],
                         "request_skills"
                         => array_column($request["request_skills"], "skill")
                         ];
@@ -166,18 +204,18 @@ class UnmatchedRequestsFellowsCommand extends Command
      */
     public function sortRequestsByPlacementStatus(&$requests)
     {
-        $placed_fellow_requests= [];
-        $unplaced_fellow_requests = [];
+        $placedFellowRequests= [];
+        $unplacedFellowRequests = [];
 
         foreach ($requests as $request) {
             if ($request["client"] && trim($request["client"]) !== "") {
-                $placed_fellow_requests[] = $request;
+                $placedFellowRequests[] = $request;
             } else {
                 $request["client"] = "Not Placed";
-                $unplaced_fellow_requests[] = $request;
+                $unplacedFellowRequests[] = $request;
             }
         }
 
-        $requests = array_merge($placed_fellow_requests, $unplaced_fellow_requests);
+        $requests = array_merge($placedFellowRequests, $unplacedFellowRequests);
     }
 }

@@ -18,6 +18,8 @@ use Exception;
 use App\Models\Notification;
 
 use App\Models\Request;
+use App\Models\RequestType;
+use App\Models\User;
 use App\Utility\SlackUtility;
 use App\Models\UserNotification;
 use App\Clients\AISClient;
@@ -81,8 +83,11 @@ class UnmatchedRequestsWithInterestCommand extends Command
                 return;
             }
 
+            $this->addUserDetailsToRequests($unmatchedRequests);
+
             foreach ($unmatchedRequests as $request) {
-                $user = $request["mentee"];
+                $userRole = $this->getUserRole($request);
+                $user = $request[$userRole];
 
                 $userSetting = UserNotification::getUserSettingById(
                     $user["user_id"],
@@ -118,5 +123,36 @@ class UnmatchedRequestsWithInterestCommand extends Command
             $this->info($e);
             $this->error("An error occurred - Notifications were not sent");
         }
+    }
+
+    /**
+     * Get details of users who created the requests
+     * from $unmatchedRequests
+     *
+     * @param array $unmatchedRequests unmatched requests
+     *
+     * @return void
+     */
+    public function addUserDetailsToRequests(&$unmatchedRequests)
+    {
+        foreach ($unmatchedRequests as &$request) {
+            $userId = $request["created_by"];
+            $user = User::find($userId);
+            $userRole = $this->getUserRole($request);
+            $request[$userRole] = $user;
+        }
+    }
+
+    /**
+     * Get the role of the user who made the request
+     *
+     * @param object $request request
+     *
+     * @return void
+     */
+    public function getUserRole($request)
+    {
+        $userRole = $request["request_type_id"] === RequestType::MENTOR_REQUEST  ? "mentee" : "mentor";
+        return $userRole;
     }
 }

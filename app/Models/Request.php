@@ -257,6 +257,12 @@ class Request extends Model
             function ($query) use ($params) {
                 return $query->where("location", $params["location"]);
             }
+        )
+        ->when(
+            isset($params["mentorRequest"]),
+            function ($query) use ($params) {
+                return $query->whereIn("request_type_id", [$params["mentorRequest"]]);
+            }
         );
 
         return $mentorshipRequests;
@@ -346,6 +352,7 @@ class Request extends Model
         return $unmatchedRequests;
     }
 
+
     /**
      * Get all unmatched requests that have mentors who indicated interest
      *
@@ -354,7 +361,7 @@ class Request extends Model
     public static function getUnmatchedRequestsWithInterests($duration = 3)
     {
         $thresholdDate =  Carbon::now()->subDays($duration);
-        $unmatchedRequests = Request::with("requestSkills.skill", "mentee")
+        $unmatchedRequests = Request::with("requestSkills.skill")
             ->where("status_id", Status::OPEN)
             ->where("interested", '!=', null)
             ->whereDate("created_at", "<", $thresholdDate)

@@ -11,6 +11,8 @@ use Exception;
 
 use App\Clients\AISClient as AISClient;
 use App\Models\Status;
+use App\Models\User;
+use App\Models\RequestType;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestCancellationReason;
 use App\Mail\SuccessUnmatchedRequestsMail;
@@ -32,20 +34,20 @@ class UnmatchedRequestsSuccessCommand extends Command
     protected $description = "Sends an email notification when mentorship 
     requests by placed fellows do not get matched within 24 hours";
 
-    protected $ais_client;
-    protected $base_url;
+    protected $aisClient;
+    protected $baseUrl;
 
     /**
      * UnmatchedRequestsSuccessCommand constructor.
      *
-     * @param AISClient $ais_client AIS client
+     * @param AISClient $aisClient AIS client
      */
-    public function __construct(AISClient $ais_client)
+    public function __construct(AISClient $aisClient)
     {
         parent::__construct();
 
-        $this->ais_client = $ais_client;
-        $this->base_url = getenv("LENKEN_FRONTEND_BASE_URL");
+        $this->aisClient = $aisClient;
+        $this->baseUrl = getenv("LENKEN_FRONTEND_baseUrl");
     }
 
     /**
@@ -57,7 +59,7 @@ class UnmatchedRequestsSuccessCommand extends Command
     {
         try {
             // get requests with more than two emails sent for them
-            $abandonedRequests = $this->getAbandonedMenteeRequests();
+            $abandonedRequests = $this->getAbandonedRequests();
 
             // find and cancel abandoned requests.
             if ($abandonedRequests) {
@@ -67,14 +69,18 @@ class UnmatchedRequestsSuccessCommand extends Command
             }
 
             // get all unmatched requests
-            $unmatchedRequests = MentorshipRequest::getUnmatchedRequests(24)->get()->toArray();
+            $params["mentorRequest"] = RequestType::MENTOR_REQUEST;
+
+            $unmatchedRequests = MentorshipRequest::getUnmatchedRequests(24, $params)->get()->toArray();
 
             if (empty($unmatchedRequests)) {
                 return $this->info("There are no unmatched requests");
             }
 
+            $this->addUserDetailsToUmnatchedRequests($unmatchedRequests);
             // get all unique emails from the unmatched requests
             $unmatchedRequestsEmails = $this->getUniqueEmails($unmatchedRequests);
+
 
             // get placement info from AIS for placed fellows only
             $placedMenteeInfo
@@ -110,7 +116,6 @@ class UnmatchedRequestsSuccessCommand extends Command
 
             // Cache placed fellow mentorship requests email count.
             $this->cacheRequestEmailCount($unmatchedRequestsDetails);
-
             $this->info("External engagement notification sent to placed fellows");
         } catch (Exception $e) {
             $this->error("An error occurred - notifications were not sent");
@@ -127,10 +132,12 @@ class UnmatchedRequestsSuccessCommand extends Command
      */
     public function cacheRequestEmailCount($unmatchedRequestDetails)
     {
+
         $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
         $requestToCache = [];
 
         // Creates emails sent counter and saves to cache.
+
         foreach ($unmatchedRequestDetails as $requestId => $unmatchedRequest) {
             $requestToCache[$requestId] = [
                 "emailCount" => array_key_exists($requestId, $cachedRequests)
@@ -148,22 +155,21 @@ class UnmatchedRequestsSuccessCommand extends Command
      *
      * @return array $abandonedMentorRequests - request and mentee ids
      */
-    public function getAbandonedMenteeRequests()
+    public function getAbandonedRequests()
     {
         // Get requests with two emails sent
         $cachedRequests = Cache::get("requests:emailNotificationCount") ?? [];
-        $abandonedMenteeRequests = [];
+        $abandonedRequests = [];
 
         foreach ($cachedRequests as $requestId => $content) {
             if ($content["emailCount"] >= 2) {
-                $abandonedMenteeRequests[] = [
+                $abandonedRequests[] = [
                     "request_id" => $requestId,
                     "mentee_id" => $content["mentee_id"]
                 ];
             }
         }
-
-        return $abandonedMenteeRequests;
+        return $abandonedRequests;
     }
 
     /**
@@ -205,7 +211,7 @@ class UnmatchedRequestsSuccessCommand extends Command
     {
         $placedMenteeInfo = [];
 
-        $response = $this->ais_client->getUsersByEmail($emails);
+        $response = $this->aisClient->getUsersByEmail($emails);
 
         $placedStatus = ["External Engagements - Standard", "External Engagements - Awaiting Onboarding"];
 
@@ -225,7 +231,7 @@ class UnmatchedRequestsSuccessCommand extends Command
     }
 
     /**
-     * Returns an array of unique mentee email addresses from requests
+     * Returns an array of unique user email addresses from requests
      *
      * @param array $requests unmatched requests
      *
@@ -266,14 +272,30 @@ class UnmatchedRequestsSuccessCommand extends Command
                         "avatar" => $fellow["avatar"],
                         "request_title" => $request["title"],
                         "request_url"
-                        => $this->base_url . "/requests/" . $request["id"],
+                        => $this->baseUrl . "/requests/" . $request["id"],
                         "request_skills"
                         => array_column($request["request_skills"], "skill")
                     ];
                 }
             }
         }
-
         return $menteeRequestData;
+    }
+
+    /**
+     * Get details of users who created the requests
+     * from $unmatchedRequests
+     *
+     * @param array $unmatchedRequests unmatched requests
+     *
+     * @return void
+     */
+    public function addUserDetailsToUmnatchedRequests(&$unmatchedRequests)
+    {
+        foreach ($unmatchedRequests as &$request) {
+            $userId = $request["created_by"];
+            $user = User::find($userId);
+            $request["mentee"] = $user;
+        }
     }
 }

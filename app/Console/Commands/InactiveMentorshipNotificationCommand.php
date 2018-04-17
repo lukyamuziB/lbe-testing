@@ -21,9 +21,9 @@ class InactiveMentorshipNotificationCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'notify:inactive-mentorships';
-    protected $description = 'Sends an email notification when 
-    more than 3 sessions are not logged';
+    protected $signature = "notify:inactive-mentorships";
+    protected $description = "Sends an email notification when 
+    more than 3 sessions are not logged";
 
     /**
      * Execute the console command.
@@ -32,8 +32,8 @@ class InactiveMentorshipNotificationCommand extends Command
      */
     public function handle()
     {
-        $allMatchedRequests = Request::with('sessions', 'mentee', 'mentor')
-            ->where('status_id', Status::MATCHED)->get();
+        $allMatchedRequests = Request::with("sessions")
+            ->where("status_id", Status::MATCHED)->get();
 
         $inactiveRequests = $this->getInactiveRequests($allMatchedRequests);
         if (!$inactiveRequests) {
@@ -81,7 +81,7 @@ class InactiveMentorshipNotificationCommand extends Command
 
         foreach ($requests as $request) {
             if ($this->isRequestInactive($request)) {
-                $request = array_except($request, ['sessions']);
+                $request = array_except($request, ["sessions"]);
                 $inactiveRequests[] = $request;
             }
         }
@@ -100,8 +100,8 @@ class InactiveMentorshipNotificationCommand extends Command
      */
     private function isRequestInactive($request)
     {
-        $matchDate = date('Y-m-d H:i:s', strtotime($request['match_date']));
-        $pairingDays = $request['pairing']['days'];
+        $matchDate = date("Y-m-d H:i:s", strtotime($request["match_date"]));
+        $pairingDays = $request["pairing"]["days"];
 
         // date when the first of the last three sessions was supposed to happen
         $expectedAntepenultimateSessionDate = $this->getAntepenultimateSessionDate($pairingDays);
@@ -109,9 +109,9 @@ class InactiveMentorshipNotificationCommand extends Command
         //a request needs to be of a lengthy period, enough to have had 3 scheduled sessions from match date
         if ($expectedAntepenultimateSessionDate > $matchDate) {
             // check for logged sessions within the last three session dates
-            $sessions = $request['sessions'];
+            $sessions = $request["sessions"];
             foreach ($sessions as $session) {
-                if ($session['date'] > $expectedAntepenultimateSessionDate) {
+                if ($session["date"] > $expectedAntepenultimateSessionDate) {
                     // proves at least one session is logged within the last 3 scheduled sessions
                     return false;
                 }
@@ -132,12 +132,12 @@ class InactiveMentorshipNotificationCommand extends Command
         $now = Carbon::now();
 
         $lastSessionDate = $now->subWeekday();
-        $lastSessionDay = strtolower($lastSessionDate->format('l'));
+        $lastSessionDay = strtolower($lastSessionDate->format("l"));
 
         // get the last day when a session was to occur from pairing days
         while (!in_array($lastSessionDay, $pairingDays)) {
             $lastSessionDate = $lastSessionDate->subWeekday();
-            $lastSessionDay = strtolower($lastSessionDate->format('l'));
+            $lastSessionDay = strtolower($lastSessionDate->format("l"));
         }
 
         // get the index of the third last session day in pairing days

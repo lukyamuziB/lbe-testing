@@ -9,6 +9,6 @@ class RequestType extends Model
 
     protected $fillable = ["name"];
 
-    const MENTOR_REQUEST = 1;
-    const MENTEE_REQUEST = 2;
+    const MENTEE_REQUEST = 1;
+    const MENTOR_REQUEST = 2;
 }

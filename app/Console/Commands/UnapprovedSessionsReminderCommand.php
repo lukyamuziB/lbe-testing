@@ -17,6 +17,8 @@ use Exception;
 
 use App\Models\Notification;
 use App\Models\Session;
+use App\Models\RequestUsers;
+use App\Models\Role;
 use App\Utility\SlackUtility;
 use App\Repositories\SlackUsersRepository;
 use App\Models\UserNotification;
@@ -45,27 +47,27 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     protected $description = "Sends a slack message about unapproved sessions";
 
-    protected $slack_utility;
-    protected $slack_repository;
-    protected $ais_client;
+    protected $slackUtility;
+    protected $slackRepository;
+    protected $aisClient;
 
     /**
      * UnapprovedSessionsReminderCommand constructor.
      *
-     * @param SlackUtility         $slack_utility    SlackUtility for API calls
-     * @param SlackUsersRepository $slack_repository slack users repository
-     * @param AISClient            $ais_client       AISClient for API calls
+     * @param SlackUtility         $slackUtility    SlackUtility for API calls
+     * @param SlackUsersRepository $slackRepository slack users repository
+     * @param AISClient            $aisClient       AISClient for API calls
      */
     public function __construct(
-        SlackUtility $slack_utility,
-        SlackUsersRepository $slack_repository,
-        AISClient $ais_client
+        SlackUtility $slackUtility,
+        SlackUsersRepository $slackRepository,
+        AISClient $aisClient
     ) {
         parent::__construct();
 
-        $this->slack_utility = $slack_utility;
-        $this->slack_repository = $slack_repository;
-        $this->ais_client = $ais_client;
+        $this->slackUtility = $slackUtility;
+        $this->slackRepository = $slackRepository;
+        $this->aisClient = $aisClient;
     }
 
     /**
@@ -74,79 +76,81 @@ class UnapprovedSessionsReminderCommand extends Command
     public function handle()
     {
         try {
-            $unapproved_sessions = Session::getUnApprovedSessions(2)
+            $unapprovedSessions = Session::getUnApprovedSessions(2)
                 ->toArray();
 
-            if ($unapproved_sessions) {
-                $session_details = $this->groupSessionsByRecipient($unapproved_sessions);
+            $this->appendMenteeAndMentorDetailsToRequest($unapprovedSessions);
 
-                $emails = $this->getUserEmails($session_details);
+            if ($unapprovedSessions) {
+                $sessionDetails = $this->groupSessionsByRecipient($unapprovedSessions);
+
+                $emails = $this->getUserEmails($sessionDetails);
 
                 // get details of people who logged the sessions
-                $users = $this->ais_client->getUsersByEmail($emails);
+                $users = $this->aisClient->getUsersByEmail($emails);
 
-                $this->appendUserDetails($session_details, $users["values"]);
+                $this->appendUserDetails($sessionDetails, $users["values"]);
 
-                $user_ids = array_keys($session_details);
+                $userIds = array_keys($sessionDetails);
 
                 // get settings of message recipients
                 // (those who have not logged their sessions)
                 $settings = UserNotification::getUsersSettingById(
-                    $user_ids,
+                    $userIds,
                     Notification::LOG_SESSIONS_REMINDER
                 );
 
-                $this->appendUserSettings($session_details, $settings);
+                $this->appendUserSettings($sessionDetails, $settings);
 
-                $lenken_base_url = getenv("LENKEN_FRONTEND_BASE_URL");
+                $lenkenBaseUrl = getenv("LENKEN_FRONTEND_BASE_URL");
 
                 // send notifications to users
-                foreach ($session_details as $recipient) {
+                foreach ($sessionDetails as $recipient) {
                     $user = $this->getRecipient(current($recipient["requests"])[0]);
 
-                    $slack_id = $user["slack_id"] ?? "";
+                    $slackId = $user["slack_id"] ?? "";
                     $email = $user["email"];
 
-                    if ($recipient["notification"]["slack"] && $slack_id) {
-                        $slack_message = $this->buildSlackMessage(
+                    if ($recipient["notification"]["slack"] && $slackId) {
+                        $slackMessage = $this->buildSlackMessage(
                             $recipient["requests"],
-                            $lenken_base_url
+                            $lenkenBaseUrl
                         );
 
-                        $this->slack_utility->sendMessage(
-                            [$slack_id],
-                            $slack_message["title"],
-                            json_encode($slack_message["attachments"])
+                        $this->slackUtility->sendMessage(
+                            [$slackId],
+                            $slackMessage["title"],
+                            json_encode($slackMessage["attachments"])
                         );
                     }
 
                     // Send email message as well if email setting is true
                     if ($recipient["notification"]["email"]) {
-                        $session_info = [];
+                        $sessionInfo = [];
 
-                        foreach ($recipient["requests"] as $request_id => $request) {
-                            $request_url = "$lenken_base_url/requests/$request_id";
-                            $session_logger
+                        foreach ($recipient["requests"] as $requestId => $request) {
+                            $requestUrl = "$lenkenBaseUrl/requests/$requestId";
+                            $sessionLogger
                                 = $this->getLogger($request[0]);
 
-                            $session_info[] = [
+                            $sessionInfo[] = [
                                 "title" => $request[0]["request"]["title"],
                                 "sessions_count" => count($request),
-                                "url" => $request_url,
-                                "name" => $session_logger["name"],
+                                "url" => $requestUrl,
+                                "name" => $sessionLogger["name"],
                                 "avatar"
-                                => $session_logger["avatar"]
+                                => $sessionLogger["avatar"]
                             ];
                         }
 
                         Mail::to($email)->send(
-                            new UnapprovedSessionsMail($session_info)
+                            new UnapprovedSessionsMail($sessionInfo)
                         );
                     }
                 }
-                $number_of_recipients = count($session_details);
+                $numberOfRecipients = count($sessionDetails);
                 $this->info(
-                    "Notifications have been sent to $number_of_recipients recipients"
+                    "Notifications have been sent to $numberOfRecipients recipients"
                 );
             } else {
                 $this->info("There are no unapproved sessions");
@@ -159,17 +163,17 @@ class UnapprovedSessionsReminderCommand extends Command
     /**
      * Get emails of people who logged sessions from $sessions
      *
-     * @param array $unapproved_sessions unapproved sessions
+     * @param array $unapprovedSessions unapproved sessions
      *
      * @return array unique emails
      */
-    private function getUserEmails($unapproved_sessions)
+    private function getUserEmails($unapprovedSessions)
     {
         $emails = [];
-        foreach ($unapproved_sessions as $recipient) {
+        foreach ($unapprovedSessions as $recipient) {
             foreach ($recipient["requests"] as $request) {
-                $session_logger = $this->getLogger($request[0]);
-                $emails[] = $session_logger["email"];
+                $sessionLogger = $this->getLogger($request[0]);
+                $emails[] = $sessionLogger["email"];
             }
         }
 
@@ -179,24 +183,24 @@ class UnapprovedSessionsReminderCommand extends Command
     /**
      * Append user avatar and name to $sessions
      *
-     * @param array $unapproved_sessions unapproved sessions
+     * @param array $unapprovedSessions unapproved sessions
      * @param array $users               user data from AISClient
      */
-    private function appendUserDetails(&$unapproved_sessions, $users)
+    private function appendUserDetails(&$unapprovedSessions, $users)
     {
         $avatars = array_column($users, "picture", "email");
         $names = array_column($users, "name", "email");
 
-        foreach ($unapproved_sessions as $recipient_id => $recipient) {
-            foreach ($recipient["requests"] as $request_id => $request) {
-                $user_key = $request[0]["mentee_approved"] ? "mentee" : "mentor";
+        foreach ($unapprovedSessions as $recipientId => $recipient) {
+            foreach ($recipient["requests"] as $requestId => $request) {
+                $userKey = $request[0]["mentee_approved"] ? "mentee" : "mentor";
 
-                $unapproved_sessions[$recipient_id]["requests"][$request_id]
-                [0]["request"][$user_key]["avatar"]
-                    = $avatars[$request[0]["request"][$user_key]["email"]];
-                $unapproved_sessions[$recipient_id]["requests"][$request_id]
-                [0]["request"][$user_key]["name"]
-                    = $names[$request[0]["request"][$user_key]["email"]];
+                $unapprovedSessions[$recipientId]["requests"][$requestId]
+                [0]["request"][$userKey]["avatar"]
+                    = $avatars[$request[0]["request"][$userKey]["email"]];
+                $unapprovedSessions[$recipientId]["requests"][$requestId]
+                [0]["request"][$userKey]["name"]
+                    = $names[$request[0]["request"][$userKey]["email"]];
             }
         }
     }
@@ -209,35 +213,35 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     private function appendUserSettings(&$sessions, $settings)
     {
-        $user_ids = array_keys($sessions);
-        $slack_settings = array_column($settings, "slack", "user_id");
+        $userIds = array_keys($sessions);
+        $slackSettings = array_column($settings, "slack", "user_id");
         $email_settings = array_column($settings, "email", "user_id");
 
-        foreach ($user_ids as $user_id) {
-            $sessions[$user_id]["notification"]["slack"]
-                = $slack_settings[$user_id];
-            $sessions[$user_id]["notification"]["email"]
-                = $email_settings[$user_id];
+        foreach ($userIds as $userId) {
+            $sessions[$userId]["notification"]["slack"]
+                = $slackSettings[$userId];
+            $sessions[$userId]["notification"]["email"]
+                = $email_settings[$userId];
         }
     }
 
     /**
      * Group sessions based on message recipient's user_id
      *
-     * @param array $unapproved_sessions unapproved sessions
+     * @param array $unapprovedSessions unapproved sessions
      *
      * @return array
      */
-    private function groupSessionsByRecipient($unapproved_sessions)
+    private function groupSessionsByRecipient($unapprovedSessions)
     {
         $sessions = [];
 
-        foreach ($unapproved_sessions as $session) {
+        foreach ($unapprovedSessions as $session) {
             $recipient = $this->getRecipient($session);
 
-            $recipient_id = $recipient["user_id"];
+            $recipientId = $recipient["user_id"];
 
-            $sessions[$recipient_id]["requests"][$session["request_id"]][]
+            $sessions[$recipientId]["requests"][$session["request_id"]][]
                 = $session;
         }
 
@@ -253,9 +257,9 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     private function getRecipient($session)
     {
-        $user_key = $session["mentee_approved"] ? "mentor" : "mentee";
+        $userKey = $session["mentee_approved"] ? "mentor" : "mentee";
 
-        return $session["request"][$user_key];
+        return $session["request"][$userKey];
     }
 
     /**
@@ -264,24 +268,24 @@ class UnapprovedSessionsReminderCommand extends Command
      * This is necessitated by lack of html code support in slack API
      *
      * @param array $sessions        the unapproved sessions
-     * @param array $lenken_base_url lenken url
+     * @param array $lenkenBaseUrl lenken url
      *
      * @return array
      */
-    public function buildSlackMessage($sessions, $lenken_base_url)
+    public function buildSlackMessage($sessions, $lenkenBaseUrl)
     {
         $attachments = [];
         $limit = 0;
 
-        foreach ($sessions as $request_id => $session) {
-            $request_url = "$lenken_base_url/requests/$request_id";
+        foreach ($sessions as $requestId => $session) {
+            $requestUrl = "$lenkenBaseUrl/requests/$requestId";
 
             $attachments[]
                 =  [
                 "fallback"
                 => "Attachment could not be displayed on your browser",
                 "mrkdwn_in" => ["pretext"],
-                "pretext" => "```Mentorship Request Number $request_id.```",
+                "pretext" => "```Mentorship Request Number $requestId.```",
                 "color" => "#50CFF3",
                 "fields" => [
                     [
@@ -291,7 +295,7 @@ class UnapprovedSessionsReminderCommand extends Command
                     ],
                     [
                         "title" => "Request Url",
-                        "value" => $request_url,
+                        "value" => $requestUrl,
                         "short" => true
                     ]
                 ]
@@ -319,8 +323,35 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     private function getLogger($session)
     {
-        $user_key = $session["mentee_approved"] ? "mentee" : "mentor";
+        $userKey = $session["mentee_approved"] ? "mentee" : "mentor";
 
-        return $session["request"][$user_key];
+        return $session["request"][$userKey];
+    }
+
+    /**
+     * Append mentee and mentor details to requests
+     * from $unapprovedSessions
+     *
+     * @param array $unapprovedSessions unapproved sessions
+     *
+     * @return void
+     */
+    public function appendMenteeAndMentorDetailsToRequest(&$unapprovedSessions)
+    {
+        foreach ($unapprovedSessions as &$unapprovedSession) {
+            $requestId = $unapprovedSession["request"]["id"];
+            $mentee = RequestUsers::with("user")
+                                        ->where("request_id", $requestId)
+                                        ->where("role_id", Role::MENTEE)
+                                        ->first()["user"];
+
+            $mentor = RequestUsers::with("user")
+                                        ->where("request_id", $requestId)
+                                        ->where("role_id", Role::MENTOR)
+                                        ->first()["user"];
+
+            $unapprovedSession["request"]["mentee"] = $mentee;
+            $unapprovedSession["request"]["mentor"] = $mentor;
+        }
     }
 }
