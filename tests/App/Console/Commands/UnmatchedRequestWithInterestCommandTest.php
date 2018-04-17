@@ -53,7 +53,7 @@ class TestUnmatchedRequestsWithInterestCommand extends TestCase
         Rating::where("session_id", ">", 0)->forceDelete();
         Session::where("id", ">", 0)->forceDelete();
         Request::where("id", ">", 0)->forceDelete();
-        User::where("user_id", "not", 0)->forceDelete();
+        User::where("id", "not", 0)->forceDelete();
     }
 
     /**
@@ -92,7 +92,7 @@ class TestUnmatchedRequestsWithInterestCommand extends TestCase
             return $mail->hasTo("inumidun.amao@andela.com");
         });
 
-        $message = "Notifications have been sent to 3 user(s)\n";
+        $message = "Notifications have been sent to 2 user(s)\n";
 
         $this->assertEquals($commandTester->getDisplay(), $message);
     }

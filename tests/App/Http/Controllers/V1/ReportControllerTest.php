@@ -118,7 +118,7 @@ class ReportControllerTest extends TestCase
             $this->assertNotEmpty($skill->count->open);
         }
 
-        $this->assertEquals(8, $response->sessionsCompleted);
+        $this->assertEquals(9, $response->sessionsCompleted);
     }
 
     /**

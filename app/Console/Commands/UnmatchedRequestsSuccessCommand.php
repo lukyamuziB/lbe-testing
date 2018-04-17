@@ -293,8 +293,7 @@ class UnmatchedRequestsSuccessCommand extends Command
     public function addUserDetailsToUmnatchedRequests(&$unmatchedRequests)
     {
         foreach ($unmatchedRequests as &$request) {
-            $userId = $request["created_by"];
-            $user = User::find($userId);
+            $user = $request["created_by"];
             $request["mentee"] = $user;
         }
     }

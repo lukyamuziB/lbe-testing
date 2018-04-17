@@ -71,8 +71,6 @@ class UnmatchedRequestsFellowsCommand extends Command
         try {
             $unmatchedRequests = Request::getUnmatchedRequests()->get()->toArray();
 
-            $this->addUserDetailsToRequests($unmatchedRequests);
-
             if ($unmatchedRequests) {
                 $emailsOfUsersWhoMadeTheRequests = $this->getUsersEmails($unmatchedRequests);
 
@@ -125,42 +123,10 @@ class UnmatchedRequestsFellowsCommand extends Command
     {
         $usersEmails = [];
         foreach ($unmatchedRequests as $request) {
-            $userRole = $this->getUserRole($request);
-            $usersEmails[] = $request[$userRole]["email"];
+            $usersEmails[] = $request["created_by"]["email"];
         }
 
         return $usersEmails;
-    }
-    
-    /**
-     * Get details of users who created the requests
-     * from $unmatchedRequests
-     *
-     * @param array $unmatchedRequests unmatched requests
-     *
-     * @return void
-     */
-    public function addUserDetailsToRequests(&$unmatchedRequests)
-    {
-        foreach ($unmatchedRequests as &$request) {
-            $userId = $request["created_by"];
-            $user = User::find($userId);
-            $userRole = $this->getUserRole($request);
-            $request[$userRole] = $user;
-        }
-    }
-
-    /**
-     * Get the role of the user who made the request
-     *
-     * @param object $request request
-     *
-     * @return void
-     */
-    public function getUserRole($request)
-    {
-        $userRole = $request["request_type_id"] === RequestType::MENTOR_REQUEST  ? "mentee" : "mentor";
-        return $userRole;
     }
 
     /**
@@ -176,9 +142,8 @@ class UnmatchedRequestsFellowsCommand extends Command
     {
         $requests = [];
         foreach ($unmatchedRequests as $request) {
-            $userRole = $this->getUserRole($request);
             foreach ($users as $user) {
-                if ($request[$userRole]["email"] === $user["email"]) {
+                if ($request["created_by"]["email"] === $user["email"]) {
                     $requests[$request["id"]]
                         = [
                         "client" => $user["placement"]["client"] ?? "",

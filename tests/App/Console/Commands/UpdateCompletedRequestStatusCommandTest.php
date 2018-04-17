@@ -51,7 +51,7 @@ class TestUpdateFulfilledRequestStatusCommand extends TestCase
         Rating::where("session_id", ">", 0)->forceDelete();
         Session::where("id", ">", 0)->forceDelete();
         Request::where("id", ">", 0)->forceDelete();
-        User::where("user_id", "not", 0)->forceDelete();
+        User::where("id", "not", 0)->forceDelete();
     }
 
     /**
@@ -67,7 +67,7 @@ class TestUpdateFulfilledRequestStatusCommand extends TestCase
          */
         User::create(
             [
-                "user_id" => "-KXGy1MTimjQgFim7u",
+                "id" => "-KXGy1MTimjQgFim7u",
                 "email" => "daisy.wanjiru@andela.com",
                 "slack_id" => "idgoeshere"
             ]

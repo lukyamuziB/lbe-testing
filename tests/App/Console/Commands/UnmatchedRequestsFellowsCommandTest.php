@@ -48,7 +48,7 @@ class TestUnmatchedRequestsFellowsCommand extends TestCase
      */
     private function clearTables()
     {
-        User::where("user_id", "not", 0)->forceDelete();
+        User::where("id", "not", 0)->forceDelete();
         RequestSkill::where("id", ">", 0)->forceDelete();
         Rating::where("session_id", ">", 0)->forceDelete();
         Session::where("id", ">", 0)->forceDelete();
@@ -72,7 +72,7 @@ class TestUnmatchedRequestsFellowsCommand extends TestCase
             return $mail->hasTo("test-user-admin@andela.com");
         });
 
-        $message = "A notification about 13 unmatched " .
+        $message = "A notification about 12 unmatched " .
             "requests has been sent to all fellows\n";
 
         $this->assertEquals($command_tester->getDisplay(), $message);
@@ -109,7 +109,7 @@ class TestUnmatchedRequestsFellowsCommand extends TestCase
         // create user with invalid data that can cause handle() failure
         User::create(
             [
-                "user_id" => "fake_id",
+                "id" => "fake_id",
                 "email" => "fake.email@andela.com",
                 "slack_id" => "fake_slack_id"
             ]

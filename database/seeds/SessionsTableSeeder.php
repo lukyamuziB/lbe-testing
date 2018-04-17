@@ -60,8 +60,8 @@ class SessionsTableSeeder extends Seeder
             $requestCreationDate = $today->copy()->subMonths($requestUpperLimit - $i);
             $secondPairingDay = $requestCreationDate->next(Carbon::MONDAY)->addWeek();
 
-            $isMentorApproved = $i % 2 === 0 ? true : null;
-            $isMenteeApproved = $i % 3 === 0 ? true : null;
+            $isMentorApproved = $i % 3 === 0 ? true : null;
+            $isMenteeApproved = $i % 2 === 0 ? true : null;
 
             DB::table('sessions')->insert(
                 [
@@ -69,8 +69,8 @@ class SessionsTableSeeder extends Seeder
                     'date' => $secondPairingDay,
                     'start_time' => Carbon::instance($secondPairingDay)->addHour(13)->format("Y-m-d H:i:s"),
                     'end_time' => Carbon::instance($secondPairingDay)->addHour(14)->format("Y-m-d H:i:s"),
-                    'mentee_approved' => ($i === 18) ? false: $isMenteeApproved,
-                    'mentor_approved' => ($i === 18) ? false: $isMentorApproved,
+                    'mentee_approved' => $isMenteeApproved,
+                    'mentor_approved' => $isMentorApproved,
                     'mentee_logged_at' => Carbon::today()->subHours(2)->format("Y-m-d H:i:s"),
                     'mentor_logged_at' => Carbon::now()->subHours(2)->format("Y-m-d H:i:s")
                 ]

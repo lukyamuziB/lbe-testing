@@ -69,7 +69,7 @@ class AISClientMock extends AISClient
             ],
             [
                 "id" => "-KXGy1MTiQgFim7",
-                "email" => "felistas.ngunmi@andela.com",
+                "email" => "felistas.ngumi@andela.com",
                 "name" => "Felistas Ngunmi",
                 "location" => "Nairobi",
                 "picture" => "picture",

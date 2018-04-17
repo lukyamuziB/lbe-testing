@@ -92,7 +92,6 @@ class UnapprovedSessionsReminderCommand extends Command
                 $this->appendUserDetails($sessionDetails, $users["values"]);
 
                 $userIds = array_keys($sessionDetails);
-
                 // get settings of message recipients
                 // (those who have not logged their sessions)
                 $settings = UserNotification::getUsersSettingById(
@@ -188,6 +187,7 @@ class UnapprovedSessionsReminderCommand extends Command
      */
     private function appendUserDetails(&$unapprovedSessions, $users)
     {
+
         $avatars = array_column($users, "picture", "email");
         $names = array_column($users, "name", "email");
 
@@ -239,12 +239,11 @@ class UnapprovedSessionsReminderCommand extends Command
         foreach ($unapprovedSessions as $session) {
             $recipient = $this->getRecipient($session);
 
-            $recipientId = $recipient["user_id"];
+            $recipientId = $recipient["id"];
 
             $sessions[$recipientId]["requests"][$session["request_id"]][]
                 = $session;
         }
-
         return $sessions;
     }
 

@@ -54,7 +54,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
         Session::where("id", ">", 0)->forceDelete();
         RequestExtension::where("request_id", ">", 0)->forceDelete();
         Request::where("id", ">", 0)->forceDelete();
-        User::where("user_id", "not", 0)->forceDelete();
+        User::where("id", "not", 0)->forceDelete();
     }
 
     /**
@@ -74,7 +74,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
         });
 
         $message = "Notifications have been ".
-            "sent for 10 placed fellows\nExternal ".
+            "sent for 9 placed fellows\nExternal ".
             "engagement notification sent to placed fellows\n";
 
         $this->assertEquals($command_tester->getDisplay(), $message);
@@ -99,7 +99,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
             );
         }
 
-        $message = "10 abandoned request(s) cancelled\n".
+        $message = "9 abandoned request(s) cancelled\n".
             "There are no unmatched requests\n";
 
         $this->assertEquals($commandTester->getDisplay(), $message);
@@ -119,7 +119,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
          */
         User::create(
             [
-                "user_id" => "-KXGy1MTimjQgFim7u",
+                "id" => "-KXGy1MTimjQgFim7u",
                 "email" => "daisy.wanjiru@andela.com",
                 "slack_id" => "i-am-not-a-placed-fellow"
             ]
@@ -176,7 +176,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
          */
         User::create(
             [
-                "user_id" => "fake_id",
+                "id" => "fake_id",
                 "email" => "fake.email@andela.com",
                 "slack_id" => "fake_slack_id"
             ]

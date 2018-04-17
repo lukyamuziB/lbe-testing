@@ -48,7 +48,7 @@ class TestUnapprovedSessionsReminderCommand extends TestCase
      */
     private function clearTables()
     {
-        User::where("user_id", "not", 0)->forceDelete();
+        User::where("id", "not", 0)->forceDelete();
         RequestSkill::where("id", ">", 0)->forceDelete();
         Rating::where("session_id", ">", 0)->forceDelete();
         Session::where("id", ">", 0)->forceDelete();
@@ -114,7 +114,7 @@ class TestUnapprovedSessionsReminderCommand extends TestCase
          */
         User::create(
             [
-                "user_id" => "fake_id",
+                "id" => "fake_id",
                 "email" => "fake.email@andela.com",
                 "slack_id" => "fake_slack_id"
             ]

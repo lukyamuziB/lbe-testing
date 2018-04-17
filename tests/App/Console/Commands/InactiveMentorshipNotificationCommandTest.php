@@ -45,7 +45,7 @@ class TestInactiveMentorshipNotificationCommand extends TestCase
         Session::where("id", ">", 0)->forceDelete();
         RequestExtension::where("request_id", ">", 0)->forceDelete();
         Request::where("id", ">", 0)->forceDelete();
-        User::where("user_id", "not", 0)->forceDelete();
+        User::where("id", "not", 0)->forceDelete();
     }
 
     /**
@@ -60,7 +60,7 @@ class TestInactiveMentorshipNotificationCommand extends TestCase
             InactiveMentorshipNotificationCommand::class
         );
 
-        $message = "Inactive notifications have been sent to 2 fellows\n";
+        $message = "Inactive notifications have been sent to 3 fellows\n";
 
         Mail::assertSent(InactiveMentorshipNotificationMail::class, function ($mail) {
             return $mail->hasTo("inumidun.amao@andela.com");
@@ -82,12 +82,12 @@ class TestInactiveMentorshipNotificationCommand extends TestCase
          */
         User::create(
             [
-                "user_id" => "-KXGy1MTimjQgFim7u",
+                "id" => "-KXGy1MTimjQgFim7u",
                 "email" => "daisy.wanjiru@andela.com",
                 "slack_id" => "i-am-active"
             ],
             [
-                "user_id" => "-KXGy1MTimjQgFim7u",
+                "id" => "-KXGy1MTimjQgFim7u",
                 "email" => "adebayo.adesanya@andela.com",
                 "slack_id" => "i-am-active-too"
             ]

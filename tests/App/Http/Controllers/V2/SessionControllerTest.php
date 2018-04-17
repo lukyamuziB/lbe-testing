@@ -312,7 +312,7 @@ class SessionControllerTest extends \TestCase
      */
     public function testConfirmSessionSuccessForMentee()
     {
-        $this->makeUser("-KesEogCwjq6lkOzKmLI");
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
         $this->patch(
             "/api/v2/sessions/10/confirm",
             [

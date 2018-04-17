@@ -90,7 +90,7 @@ class UnmatchedRequestsWithInterestCommand extends Command
                 $user = $request[$userRole];
 
                 $userSetting = UserNotification::getUserSettingById(
-                    $user["user_id"],
+                    $user["id"],
                     Notification::INDICATES_INTEREST
                 );
 
@@ -136,8 +136,7 @@ class UnmatchedRequestsWithInterestCommand extends Command
     public function addUserDetailsToRequests(&$unmatchedRequests)
     {
         foreach ($unmatchedRequests as &$request) {
-            $userId = $request["created_by"];
-            $user = User::find($userId);
+            $user = $request["created_by"];
             $userRole = $this->getUserRole($request);
             $request[$userRole] = $user;
         }
