@@ -62,9 +62,9 @@ class UserControllerTest extends \TestCase
 
         $this->assertContains("skills", $response);
 
-        $this->assertContains("totalSessions", $response);
+        $this->assertContains("total_sessions", $response);
 
-        $this->assertContains("requestCount", $response);
+        $this->assertContains("request_count", $response);
 
         $this->assertContains("placement", $response);
 

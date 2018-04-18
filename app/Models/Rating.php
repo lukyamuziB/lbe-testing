@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\RequestType;
 
 class Rating extends Model
 {
@@ -23,7 +24,7 @@ class Rating extends Model
         "values" => "required|array",
         "scale" => "required|integer",
     ];
-    
+
     /**
      * Defines Foreign Key Relationship to the session model
      *
@@ -33,7 +34,7 @@ class Rating extends Model
     {
         return $this->belongsTo("App\Models\Session", "session_id", "id");
     }
-    
+
     /**
      * Defines Foreign Key Relationship to the user model
      *
@@ -43,7 +44,7 @@ class Rating extends Model
     {
         return $this->belongsTo("App\Models\User", "user_id", "id");
     }
-    
+
     /**
      * Gets the ratings of the user and calculate the average and total ratings
      *
@@ -56,27 +57,32 @@ class Rating extends Model
     {
         $ratingValues = [];
         $averageRating = 0;
+        $averageMentorRating = 0;
+        $averageMenteeRating = 0;
         $ratingDetails = [];
-        
-        $ratings = Rating::select("values")
-                    ->where("user_id", $userId)
-                    ->get();
 
-        $ratingDetails["total_ratings"] = count($ratings);
+        $ratings = Rating::with("session.request")->where("user_id", $userId)
+                    ->get();
 
         foreach ($ratings as $rating) {
             $userRatings = json_decode($rating->values);
-            foreach (get_object_vars($userRatings) as $ratingName => $ratingValue) {
-                array_push($ratingValues, $ratingValue);
-                $averageRating = number_format(
-                    (array_sum($ratingValues) / count($ratingValues)),
-                    1
-                );
+            foreach (get_object_vars($userRatings) as $ratingValue) {
+                $ratingValues[]= $ratingValue;
+                $averageRating = number_format((array_sum($ratingValues) / count($ratingValues)), 1);
+            }
+
+            if ($rating->session->request->request_type_id === RequestType::MENTEE_REQUEST) {
+                $averageMentorRating = $averageRating;
+            } else {
+                $averageMenteeRating = $averageRating;
             }
         }
 
-        $ratingDetails["average_rating"] = $averageRating;
-        
+        $ratingDetails["total_ratings"] = count($ratings);
+        $ratingDetails["average_rating"] = ($averageMentorRating + $averageMenteeRating)/2;
+        $ratingDetails["average_mentor_rating"] = $averageMentorRating;
+        $ratingDetails["average_mentee_rating"] = $averageMenteeRating;
+
         return $ratingDetails;
     }
 }

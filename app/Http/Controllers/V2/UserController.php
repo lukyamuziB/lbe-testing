@@ -67,11 +67,13 @@ class UserController extends Controller
         $user = $this->formatUserInfo($aisUser);
 
         $user["skills"] = $lenkenUser->getSkills();
-        $user["requestCount"] = $requestCount;
-        $user["loggedHours"] = $sessionDetails["totalHours"];
-        $user["totalSessions"] = $sessionDetails["totalSessions"];
+        $user["request_count"] = $requestCount;
+        $user["logged_hours"] = $sessionDetails["totalHours"];
+        $user["total_sessions"] = $sessionDetails["totalSessions"];
         $user["rating"] = $ratingDetails["average_rating"];
-        $user["totalRatings"] = $ratingDetails["total_ratings"];
+        $user["average_mentor_rating"] = $ratingDetails["average_mentor_rating"];
+        $user["average_mentee_rating"] = $ratingDetails["average_mentee_rating"];
+        $user["total_ratings"] = $ratingDetails["total_ratings"];
 
         return $this->respond(Response::HTTP_OK, (object)$user);
     }
