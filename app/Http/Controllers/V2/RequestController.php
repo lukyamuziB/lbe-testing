@@ -140,6 +140,10 @@ class RequestController extends Controller
             $params["category"] = $requestsType;
         }
 
+        if ($searchQuery = $this->getRequestParams($request, "q")) {
+            $params["q"] =  $searchQuery;
+        }
+
         if ($locations = $this->getRequestParams($request, "locations")) {
             $params["locations"] = explode(",", $locations);
         }
@@ -177,16 +181,22 @@ class RequestController extends Controller
     public function getUserHistory(Request $request)
     {
         $userId = $request->user()->uid;
+        $searchQuery = $this->getRequestParams($request, "q");
 
         $usersRequestsHistoryIds = RequestUsers::select("request_id")
                                             ->where("user_id", $userId)
                                             ->get();
 
         $mentorshipRequests = MentorshipRequest::where("status_id", STATUS::COMPLETED)
-                                                    ->whereIn("id", $usersRequestsHistoryIds)
-                                                    ->with("session.rating")
-                                                    ->with("requestSkills")
-                                                    ->get();
+                                                ->whereIn("id", $usersRequestsHistoryIds)
+                                                ->where(
+                                                    function ($query) use ($searchQuery) {
+                                                        $query->where("title", "ilike", "%$searchQuery%")
+                                                            ->orWhere("description", "ilike", "%$searchQuery%");
+                                                    }
+                                                )
+                                                ->with(["session.rating", "requestSkills"])
+                                                ->get();
         $this->appendRating($mentorshipRequests);
         $formattedRequests = formatMultipleRequestsForAPIResponse($mentorshipRequests);
         return $this->respond(Response::HTTP_OK, $formattedRequests);
@@ -203,11 +213,25 @@ class RequestController extends Controller
     public function getPendingPool(Request $request)
     {
         $userId = $request->user()->uid;
+        $searchQuery = $this->getRequestParams($request, "q");
+
         $requests = MentorshipRequest::where("created_by", $userId)
-                                        ->where("status_id", 1)
+                                        ->where("status_id", STATUS::OPEN)
                                         ->whereNotNull("interested")
-                                        ->orWhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
-                                        ->where("status_id", 1)
+                                        ->where(
+                                            function ($query) use ($searchQuery) {
+                                                $query->where("title", "ilike", "%$searchQuery%")
+                                                    ->orWhere("description", "ilike", "%$searchQuery%");
+                                            }
+                                        )
+                                        ->orwhereRaw("interested::jsonb @> to_jsonb('$userId'::text)")
+                                        ->where("status_id", STATUS::OPEN)
+                                        ->where(
+                                            function ($query) use ($searchQuery) {
+                                                $query->where("title", "ilike", "%$searchQuery%")
+                                                    ->orWhere("description", "ilike", "%$searchQuery%");
+                                            }
+                                        )
                                         ->orderBy("created_at", "desc")
                                         ->get();
 
@@ -226,6 +250,7 @@ class RequestController extends Controller
     public function getRequestsInProgress(Request $request)
     {
         $userId = $request->user()->uid;
+        $searchQuery = $this->getRequestParams($request, "q");
 
         $usersCurrentRequestsIds = RequestUsers::select("request_id")
                                                     ->where("user_id", $userId)
@@ -233,6 +258,12 @@ class RequestController extends Controller
 
         $requestsInProgress = MentorshipRequest::whereIn("id", $usersCurrentRequestsIds)
                                                     ->where("status_id", STATUS::MATCHED)
+                                                    ->where(
+                                                        function ($query) use ($searchQuery) {
+                                                            $query->where("title", "ilike", "%$searchQuery%")
+                                                                ->orWhere("description", "ilike", "%$searchQuery%");
+                                                        }
+                                                    )
                                                     ->orderBy("created_at", "desc")
                                                     ->get();
         $formattedRequestsInProgress = formatMultipleRequestsForAPIResponse($requestsInProgress);

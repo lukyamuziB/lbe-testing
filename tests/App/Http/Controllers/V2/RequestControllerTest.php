@@ -2,6 +2,7 @@
 
 namespace Test\App\Http\Controllers\V2;
 
+use App\Models\Status;
 use App\Models\User;
 use App\Models\Request;
 use App\Models\RequestUsers;
@@ -95,13 +96,13 @@ class RequestControllerTest extends TestCase
      *
      * @return void
      */
-    private function createRequest($createdBy, $interested, $statusId, $createdAt = "2017-09-19 20:55:24")
+    private function createRequest($createdBy, $title, $interested, $statusId, $createdAt = "2017-09-19 20:55:24")
     {
         $createdRequest = Request::create(
             [
                 "created_by" => $createdBy,
                 "request_type_id" => RequestType::MENTEE_REQUEST,
-                "title" => "Javascript",
+                "title" => $title,
                 "description" => "Learn Javascript",
                 "status_id" => $statusId,
                 "created_at" => $createdAt,
@@ -144,7 +145,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetRequestSuccess()
     {
-        $createdRequest = $this->createRequest("-K_nkl19N6-EGNa0W8LF", "-KesEogCwjq6lkOzKmLI", 2);
+        $createdRequest = $this->createRequest("-K_nkl19N6-EGNa0W8LF","javascript", "-KesEogCwjq6lkOzKmLI", 2);
         $createdRequestId = $createdRequest->id;
 
         $this->get("/api/v2/requests/$createdRequestId");
@@ -156,6 +157,21 @@ class RequestControllerTest extends TestCase
         $this->assertEquals($createdRequestId, $response->id);
     }
 
+    /**
+     * Test to get a single request.
+     *
+     * @return void
+     */
+    public function testSearchRequestSuccess()
+    {
+        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript","-KesEogCwjq6lkOzKmLI", Status::MATCHED);
+
+        $this->get("/api/v2/requests?q=javascript");
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(200);
+        $this->assertNotEmpty($response);
+    }
     /**
      * Test for get request failure when an invalid request id is passed.
      *
@@ -179,7 +195,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetCompletedRequestsSuccess()
     {
-        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "-KesEogCwjq6lkOzKmLI", 3);
+        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript", "-KesEogCwjq6lkOzKmLI", Status::COMPLETED);
         $this->get("/api/v2/requests/history");
 
         $response = json_decode($this->response->getContent());
@@ -196,7 +212,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetPendingPoolSuccess()
     {
-        $this->createRequest("-KXGy1MT1oimjQgFim7u", "-K_nkl19N6-EGNa0W8LF", 1);
+        $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-K_nkl19N6-EGNa0W8LF", Status::OPEN);
         $this->get("/api/v2/requests/pending");
 
         $response = json_decode($this->response->getContent());
@@ -212,7 +228,23 @@ class RequestControllerTest extends TestCase
             $response[1]->interested
         );
     }
+    /**
+     * Test pending requests are retrieved successfully
+     *
+     * @return void
+     */
+    public function testSearchPendingPoolForSuccess()
+    {
+        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript", "-KXGy1MT1oimjQgFim7u", Status::OPEN);
 
+        $this->get("/api/v2/requests/pending?q=javascript");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+        $this->assertNotEmpty($response);
+
+    }
     /**
      * Test to get requests that are in progress for a user
      *
@@ -225,12 +257,28 @@ class RequestControllerTest extends TestCase
         $this->assertResponseOk();
 
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
 
         $this->assertNotEmpty($response);
     }
 
+    /**
+     * Test to get requests that are in progress for a user
+     *
+     * @return void
+     */
+    public function testSearchRequestsInProgressSuccess()
+    {
+        $this->get("/api/v2/requests/in-progress?q=Itaque");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(200);
+
+        $this->assertNotEmpty($response);
+    }
     /**
      * Test that a mentee can cancel their own request succesfully
      *
@@ -650,7 +698,7 @@ class RequestControllerTest extends TestCase
     public function testGetRequestDateRangePoolSuccess()
     {
         $startDate = Carbon::now()->format("d-m-Y");
-        $this->createRequest("-KXGy1MT1oimjQgFim7u", "-KesEogCwjq6lkOzKmLI", 1, Carbon::now());
+        $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-KesEogCwjq6lkOzKmLI", Status::OPEN, Carbon::now());
         $endDate = Carbon::now()->format("d-m-Y");
 
         $this->get("api/v2/requests/pool?limit=5&page=1&status=&startDate=" . $startDate . "&endDate=" . $endDate);
@@ -693,7 +741,7 @@ class RequestControllerTest extends TestCase
     public function testGetAllRequestsDateRangeSuccess()
     {
         $startDate = Carbon::now()->format("d-m-Y");
-        $this->createRequest("-KXGy1MT1oimjQgFim7u", "-K_nkl19N6-EGNa0W8LF", 1, Carbon::now());
+        $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-K_nkl19N6-EGNa0W8LF", Status::OPEN, Carbon::now());
         $endDate = Carbon::now()->format("d-m-Y");
 
         $this->get("api/v2/requests?limit=5&page=1&status=&startDate="

@@ -322,8 +322,14 @@ class Request extends Model
             function ($query) use ($params) {
                 return $query->whereBetween("created_at", [$params["startDate"], $params["endDate"]]);
             }
+        )
+        ->when(
+            isset($params["q"]),
+            function ($query) use ($params) {
+                return $query->where("title", "ilike", "%". $params["q"]."%")
+                    ->orWhere("description", 'ilike', "%".$params["q"]."%");
+            }
         );
-
 
         return $mentorshipRequests;
     }

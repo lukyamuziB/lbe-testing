@@ -83,12 +83,26 @@ class SkillController extends Controller
     {
         $isTrashed = $request->input("isTrashed");
 
+        $searchQuery = $this->getRequestParams($request, "q");
+
         if (strval($isTrashed) === "true") {
-            $skills = Skill::withTrashed()->with(["requestSkills"])
-            ->orderBy("name", "asc")->get();
+            $skills = Skill::when(
+                $searchQuery,
+                function ($query) use ($searchQuery) {
+                    $query->where("name", "ilike", "%$searchQuery%");
+                }
+            )
+                            ->withTrashed()->with(["requestSkills"])
+                            ->orderBy("name", "asc")->get();
         } else {
-            $skills = Skill::with(["requestSkills"])
-                ->orderBy("name", "asc")->get();
+            $skills = Skill::when(
+                $searchQuery,
+                function ($query) use ($searchQuery) {
+                    $query->where("name", "ilike", "%$searchQuery%");
+                }
+            )
+                            ->with(["requestSkills"])
+                            ->orderBy("name", "asc")->get();
         }
 
         return $this->respond(Response::HTTP_OK, $skills);
