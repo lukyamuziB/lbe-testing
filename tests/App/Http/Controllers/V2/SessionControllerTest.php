@@ -402,4 +402,21 @@ class SessionControllerTest extends \TestCase
         $this->assertResponseStatus(401);
         $this->assertEquals("You do not have permission to confirm this session.", $response->message);
     }
+
+    public function testGetLogSessionRatingForSuccess()
+    {
+        $this->get("/api/v2/sessions/21");
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(200);
+        $this->assertObjectHasAttribute("comments", $response);
+        $this->assertObjectHasAttribute("rating", $response);
+    }
+
+    public function testGetLogSessionRatingForFailure()
+    {
+        $this->get("/api/v2/sessions/200");
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(404);
+        $this->assertEquals("Session not found.", $response->message);
+    }
 }

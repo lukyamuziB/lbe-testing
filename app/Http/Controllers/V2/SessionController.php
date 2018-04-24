@@ -98,6 +98,32 @@ class SessionController extends Controller
     }
 
     /**
+     * Get a single session.
+     *
+     * @param $sessionId - The id of the session
+     *
+     *  @throws NotFoundException
+     *
+     * @return Object - object containing a single session
+     */
+    public function getSingleSession($sessionId)
+    {
+         $session = Session::where('id', $sessionId)
+                            ->with("rating", "comments")
+                            ->first();
+
+        if (!$session) {
+            throw new NotFoundException('Session not found.');
+        }
+
+        if ($session->rating) {
+            $session->rating->values = json_decode($session->rating->values);
+        }
+
+        return $this->respond(Response::HTTP_OK, $session);
+    }
+
+    /**
      * Get all sessions of a request from the day the session started
      * to today and the next upcoming session
      *
@@ -385,7 +411,6 @@ class SessionController extends Controller
                 return $sessionToLog;
             }
         );
-
         return $this->respond(Response::HTTP_CREATED, $result);
     }
 
