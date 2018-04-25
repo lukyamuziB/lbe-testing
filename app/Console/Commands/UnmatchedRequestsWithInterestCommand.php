@@ -76,7 +76,7 @@ class UnmatchedRequestsWithInterestCommand extends Command
                                     ->toArray();
             $lenkenBaseUrl = getenv("LENKEN_FRONTEND_BASE_URL");
             $count = count($unmatchedRequests);
-            
+
             if (!$unmatchedRequests) {
                 $this
                 ->error("No unmatched request with interests over 3 days exist");

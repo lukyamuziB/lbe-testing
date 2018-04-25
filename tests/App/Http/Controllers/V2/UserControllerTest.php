@@ -36,7 +36,7 @@ class UserControllerTest extends \TestCase
     public function testGetUserDetailsSuccess()
     {
 
-        $this->get("/api/v2/users/-KcYSwKNhJbZtOkk9ciS");
+        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF");
 
         $this->assertResponseStatus(200);
 

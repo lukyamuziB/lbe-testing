@@ -26,6 +26,7 @@ class Kernel extends ConsoleKernel
         Commands\DumpRequestTableCommand::class,
         Commands\RestoreRequestDataFromBackupCommand::class,
         Commands\RemodelMenteeMentorRequestRelationshipCommand::class,
+        Commands\CacheUsersAverageRatingCommand::class,
 
 
     ];
@@ -47,5 +48,6 @@ class Kernel extends ConsoleKernel
             ->dailyAt("12:00");
         $schedule->command("update:requests:completed")->dailyAt("12:00");
         $schedule->command("notify:inactive-mentorships")->dailyAt("9:00");
+        $schedule->command("cache:user-average-rating")->dailyAt("12:00");
     }
 }

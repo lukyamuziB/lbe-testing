@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use App\Exceptions\ConflictException;
 use App\Repositories\LastActiveRepository;
 use Illuminate\Http\Request;
+use App\Repositories\UsersAverageRatingRepository;
 
 /**
  * Class SkillController
@@ -124,8 +125,8 @@ class SkillController extends Controller
         );
 
         foreach ($mentorsDetails as &$mentorDetail) {
-            $mentorDetail["last_active"] =
-                Carbon::parse($lastActives[$mentorDetail["user_id"]])->toFormattedDateString();
+            $mentorDetail->last_active =
+                Carbon::parse($lastActives[$mentorDetail->user_id])->toFormattedDateString();
         }
         return $mentorsDetails;
     }
@@ -142,7 +143,7 @@ class SkillController extends Controller
     private function appendMentorshipsCount($mentorsIds, &$mentorsDetails)
     {
         foreach ($mentorsDetails as &$mentorDetail) {
-            $mentorDetail["mentorships_count"] = count(array_keys($mentorsIds, $mentorDetail["user_id"]));
+            $mentorDetail->mentorships_count = count(array_keys($mentorsIds, $mentorDetail->user_id));
         }
         return $mentorsDetails;
     }
@@ -156,8 +157,12 @@ class SkillController extends Controller
      *
      * @return json - JSON object containing skill(s) mentors
      */
-    public function getSkillMentors(AISClient $aisClient, Request $request, $skillId)
-    {
+    public function getSkillMentors(
+        AISClient $aisClient,
+        UsersAverageRatingRepository $usersAverageRatingRepository,
+        Request $request,
+        $skillId
+    ) {
         if ((!filter_var($skillId, FILTER_VALIDATE_INT)) || (empty($skillId))) {
             throw new BadRequestException("Invalid parameter.");
         }
@@ -172,21 +177,27 @@ class SkillController extends Controller
 
         $skill = Skill::select("name", "id")->where("id", $skillId)->first();
         $requestIds = RequestSkill::select("request_id")->where($field);
-        $mentorsIds = RequestUsers::select("user_id")
-                                    ->whereIn("request_id", $requestIds)
-                                    ->where("role_id", ROLE::MENTOR);
-        $mentorsRatings = Rating::select("values", "scale", "user_id")
-                                    ->whereIn("user_id", $mentorsIds)
-                                    ->get()->groupBy("user_id");
+        $mentorsIds = RequestUsers::whereIn("request_id", $requestIds)
+                                    ->where("role_id", Role::MENTOR)
+                                    ->with("user")
+                                    ->get();
 
-        $mentorsAverageRating = User::getMentorsAverageRating($mentorsRatings);
+        $uniqueMentorIds = array_unique(array_map(
+            function ($mentorsId) {
+                return $mentorsId["user_id"];
+            },
+            $mentorsIds->toArray()
+        ));
+        
+        $mentorsAverageRating = $usersAverageRatingRepository->query($uniqueMentorIds);
 
         usort($mentorsAverageRating, function ($firstElement, $secondElement) {
-            return ($firstElement["average_rating"] > $secondElement["average_rating"]) ? -1 : 1;
+            return ($firstElement->average_mentor_rating > $secondElement->average_mentor_rating) ? -1 : 1;
         });
+
         array_splice($mentorsAverageRating, $limit);
 
-        $mentorsEmail = $this->getMentorsEmail($mentorsRatings);
+        $mentorsEmail = $this->getMentorsEmail($mentorsIds);
 
         $aisMentorsDetails = $aisClient->getUsersByEmail($mentorsEmail);
         $mentorsDetails = $this->appendMentorAvatarAndNameToRatings(
@@ -196,7 +207,7 @@ class SkillController extends Controller
 
         $this->appendMentorsLastActive($mentorsDetails);
         $this->appendMentorshipsCount(
-            array_column($mentorsIds->get()->toArray(), "user_id"),
+            $uniqueMentorIds,
             $mentorsDetails
         );
 
@@ -220,14 +231,14 @@ class SkillController extends Controller
             $name = "";
             $picture = "";
             foreach($aisMentorsDetails as $details) {
-                if($mentor["email"] == $details["email"]) {
+                if ($mentor->user_id === $details["id"]) {
                     $name = $details["name"];
                     $picture = $details["picture"];
                 }
             }
-            $mentor["name"] = $name;
-            $mentor["picture"] = $picture;
-            unset($mentor["email"]);
+            $mentor->name = $name;
+            $mentor->picture = $picture;
+            unset($mentor->email);
             $mentorsDetails[] = $mentor;
         }
 
@@ -245,8 +256,8 @@ class SkillController extends Controller
     {
         $mentorsEmail = [];
         foreach($mentors as $mentor) {
-            $mentor= $mentor[0]["user"]["email"];
-            $mentorsEmail[] = $mentor;
+            $email = $mentor->user->email;
+            $mentorsEmail[] = $email;
         }
         return $mentorsEmail;
     }

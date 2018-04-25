@@ -1,6 +1,7 @@
 <?php
 use \Laravel\Lumen\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -10,6 +11,7 @@ use Test\Mocks\SlackUsersRepositoryMock;
 use Test\Mocks\AISClientMock;
 use Test\Mocks\GoogleCloudStorageClientMock;
 use Test\Mocks\LastActiveRepositoryMock;
+use Test\Mocks\UsersAverageRatingMock;
 
 abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 {
@@ -40,7 +42,9 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $slackUserRepositoryMock = new SlackUsersRepositoryMock();
 
-        $lastActiveRepositoryMock= new LastActiveRepositoryMock();
+        $lastActiveRepositoryMock = new LastActiveRepositoryMock();
+
+        $usersAverageRatingMock = new UsersAverageRatingMock();
 
         $slackUtilityMock = new SlackUtilityMock($slackUserRepositoryMock);
 
@@ -58,7 +62,11 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $this->app->instance("App\Repositories\LastActiveRepository", $lastActiveRepositoryMock);
 
+        $this->app->instance("App\Repositories\UsersAverageRatingRepository", $usersAverageRatingMock);
+
         Mail::fake();
+
+        Cache::store("redis")->flush();
     }
 
     /**

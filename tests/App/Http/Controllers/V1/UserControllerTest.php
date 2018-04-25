@@ -13,7 +13,7 @@ use Test\Mocks\AISClientMock;
  */
 class UserControllerTest extends TestCase
 {
-    
+
     /**
      * Setup function to instantiate ais client mock
      *
@@ -43,15 +43,15 @@ class UserControllerTest extends TestCase
      */
     public function testGetUserDetailsSuccess()
     {
-        
-        $this->get("/api/v1/users/-KXGy1MTiQgFim7");
+
+        $this->get("/api/v1/users/-KXGy1MT1oimjQgFim7u");
 
         $this->assertResponseOk();
-        
+
         $response = $this->response->getContent();
-        
+
         $this->assertNotEmpty($response);
-        
+
         $this->assertContains("id", $response);
 
         $this->assertContains("email", $response);
@@ -79,9 +79,9 @@ class UserControllerTest extends TestCase
     public function testGetUserDetailsFailure()
     {
             $this->get("/api/v1/users/-KXGy1MTimjQgFim7uh");
-            
+
             $response = json_decode($this->response->getContent());
-            
+
             $this->assertEquals("User not found.", $response->message);
     }
 
@@ -93,7 +93,7 @@ class UserControllerTest extends TestCase
     public function testGetUserDetailsWithSkillsGainedSuccess()
     {
 
-        $this->get("/api/v1/users/-KXGy1MTiQgFim7?include=skills_gained");
+        $this->get("/api/v1/users/-KXGy1MT1oimjQgFim7u?include=skills_gained");
 
         $this->assertResponseOk();
 

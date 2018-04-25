@@ -79,37 +79,4 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     {
         return $this->hasMany("App\Models\SessionComment");
     }
-
-    /**
-     * Gets mentors average rating and email
-     *
-     * @param array $mentors data
-     *
-     * @return array $mentorsDetails
-     */
-    public static function getMentorsAverageRating($mentors)
-    {
-        $mentorsDetails = [];
-        foreach ($mentors as $mentorId => $mentor)
-        {
-            $ratings = [];
-            for ($i=0; $i < count($mentor); ++$i) {
-                $ratings[] = get_object_vars(json_decode($mentor[$i]["values"]));
-                $averageRating = 0;
-                foreach($ratings as $rating) {
-                    $averageRating += (
-                        (int)$rating["teaching"] + (int)$rating["reliability"]
-                        + (int)$rating["availability"] + (int)$rating["usefulness"]
-                        + (int)$rating["knowledge"]
-                    )/count($rating);
-                }
-            }
-                $mentorDetails["average_rating"] = number_format($averageRating/count($mentor), 1);
-                $mentorDetails["email"] = $mentor[0]["user"]["email"];
-                $mentorDetails["session_count"] = count($mentor);
-                $mentorDetails["user_id"] = $mentorId;
-                $mentorsDetails[] = $mentorDetails;
-        }
-        return $mentorsDetails;
-    }
 }

@@ -18,15 +18,8 @@ class SkillControllerTest extends TestCase
         "-L4g35ttuyfK5kpzyocv",
         "-KesEogCwjq6lkOzKmLI"
     ];
-    private $mentorsDetails = [
-        [
-            "average_rating" => "4.9",
-            "session_count" => 2,
-            "user_id" => "-L4g35ttuyfK5kpzyocv",
-            "name" => "Ekundayo Abiona",
-            "picture" => "dayo_picture.jpg",
-        ]
-    ];
+    private $mentorsDetails;
+
     private function setupMock()
     {
         $lastActiveMock = $this->createMock(LastActiveRepository::class);
@@ -303,7 +296,7 @@ class SkillControllerTest extends TestCase
     public function testGetSkillTopMentorsSuccess()
     {
         $this->get(
-            "/api/v2/skills/1/mentors"
+            "/api/v2/skills/18/mentors"
         );
 
         $response = json_decode($this->response->getContent());
@@ -354,6 +347,18 @@ class SkillControllerTest extends TestCase
         $method = new \ReflectionMethod('App\Http\Controllers\V2\SkillController', 'appendMentorsLastActive');
         $method->setAccessible(true);
 
+        $this->mentorsDetails = [
+            (object)[
+                "average_rating" => "2.5",
+                "average_mentor_rating" => '4.1',
+                'average_mentee_rating' => 0,
+                "session_count" => 2,
+                "user_id" => "-L4g35ttuyfK5kpzyocv",
+                "name" => "Ekundayo Abiona",
+                "picture" => "dayo_picture.jpg",
+            ]
+        ];
+
         $skillObject = $this->setupMock();
         $actualResult = $method->invokeArgs(
             $skillObject,
@@ -371,6 +376,18 @@ class SkillControllerTest extends TestCase
     {
         $method = new \ReflectionMethod('App\Http\Controllers\V2\SkillController', 'appendMentorshipsCount');
         $method->setAccessible(true);
+
+        $this->mentorsDetails = [
+            (object)[
+                "average_rating" => "2.5",
+                "average_mentor_rating" => '4.1',
+                'average_mentee_rating' => 0,
+                "session_count" => 2,
+                "user_id" => "-L4g35ttuyfK5kpzyocv",
+                "name" => "Ekundayo Abiona",
+                "picture" => "dayo_picture.jpg",
+            ]
+        ];
 
         $skillObject = $this->setupMock();
         $actualResult = $method->invokeArgs(

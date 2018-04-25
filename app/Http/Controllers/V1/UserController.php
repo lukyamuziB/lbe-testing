@@ -12,15 +12,20 @@ use App\Models\Session;
 use App\Models\Rating;
 use App\Models\Status;
 use App\Models\RequestSkill;
+use App\Repositories\UsersAverageRatingRepository;
 
 class UserController extends Controller
 {
     use RESTActions;
     private $aisClient;
+    private $usersAverageRatingRepository;
 
-    public function __construct(AISClient $aisClient)
-    {
+    public function __construct(
+        AISClient $aisClient,
+        UsersAverageRatingRepository $usersAverageRatingRepository
+    ) {
         $this->aisClient = $aisClient;
+        $this->usersAverageRatingRepository = $usersAverageRatingRepository;
     }
 
     /**
@@ -49,8 +54,8 @@ class UserController extends Controller
 
         $sessionDetails = Session::getSessionDetails($id);
 
-        $ratingDetails = Rating::getRatingDetails($id);
-    
+        $ratingDetails = $this->usersAverageRatingRepository->getById($id);
+
         $response = (object) [
             "id" => $userDetails["id"],
             "picture" => $userDetails["picture"],
@@ -66,8 +71,8 @@ class UserController extends Controller
             "request_count" => $requestCount,
             "logged_hours" => $sessionDetails["totalHours"],
             "total_sessions" => $sessionDetails["totalSessions"],
-            "rating" => $ratingDetails["average_rating"],
-            "total_ratings" => $ratingDetails["total_ratings"]
+            "rating" => $ratingDetails->average_rating ?? 0,
+            "total_ratings" => $ratingDetails->session_count ?? 0
         ];
 
         if ($this->getRequestParams($request, "include") === "skills_gained") {

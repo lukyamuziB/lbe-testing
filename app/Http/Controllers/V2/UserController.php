@@ -14,6 +14,7 @@ use App\Exceptions\ConflictException;
 use App\Exceptions\NotFoundException;
 use App\Repositories\SlackUsersRepository;
 use App\Models\Request as MentorshipRequest;
+use App\Repositories\UsersAverageRatingRepository;
 
 /**
  * Class UserController
@@ -25,13 +26,16 @@ class UserController extends Controller
     use RESTActions;
     private $aisClient;
     private $slackUsersRepository;
+    private $usersAverageRatingRepository;
 
     public function __construct(
         AISClient $aisClient,
-        SlackUsersRepository $slackUsersRepository
+        SlackUsersRepository $slackUsersRepository,
+        UsersAverageRatingRepository $usersAverageRatingRepository
     ) {
         $this->aisClient = $aisClient;
         $this->slackUsersRepository = $slackUsersRepository;
+        $this->usersAverageRatingRepository = $usersAverageRatingRepository;
     }
 
     /**
@@ -62,7 +66,7 @@ class UserController extends Controller
 
         $sessionDetails = Session::getSessionDetails($id);
 
-        $ratingDetails = Rating::getRatingDetails($id);
+        $ratingDetails = $this->usersAverageRatingRepository->getById($id);
 
         $user = $this->formatUserInfo($aisUser);
 
@@ -70,10 +74,10 @@ class UserController extends Controller
         $user["request_count"] = $requestCount;
         $user["logged_hours"] = $sessionDetails["totalHours"];
         $user["total_sessions"] = $sessionDetails["totalSessions"];
-        $user["rating"] = $ratingDetails["average_rating"];
-        $user["average_mentor_rating"] = $ratingDetails["average_mentor_rating"];
-        $user["average_mentee_rating"] = $ratingDetails["average_mentee_rating"];
-        $user["total_ratings"] = $ratingDetails["total_ratings"];
+        $user["rating"] = $ratingDetails->average_rating ?? 0;
+        $user["average_mentor_rating"] = $ratingDetails->average_mentor_rating ?? 0;
+        $user["average_mentee_rating"] = $ratingDetails->average_mentee_rating ?? 0;
+        $user["total_ratings"] = $ratingDetails->session_count ?? 0;
 
         return $this->respond(Response::HTTP_OK, (object)$user);
     }
@@ -105,11 +109,11 @@ class UserController extends Controller
         $users = [];
 
         foreach ($userIds as $id) {
-            $ratingDetails = Rating::getRatingDetails($id);
+            $ratingDetails = $this->usersAverageRatingRepository->getById($id);
 
             $user = $this->getUserInfo($id);
-            $user["rating"] = $ratingDetails["average_rating"];
-            $user["totalRatings"] = $ratingDetails["total_ratings"];
+            $user["rating"] = $ratingDetails->average_rating ?? 0;
+            $user["totalRatings"] = $ratingDetails->session_count ?? 0;
 
             $users[] = $user;
         }
