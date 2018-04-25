@@ -74,7 +74,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
         });
 
         $message = "Notifications have been ".
-            "sent for 9 placed fellows\nExternal ".
+            "sent for 3 placed fellows\nExternal ".
             "engagement notification sent to placed fellows\n";
 
         $this->assertEquals($command_tester->getDisplay(), $message);
@@ -99,7 +99,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
             );
         }
 
-        $message = "9 abandoned request(s) cancelled\n".
+        $message = "3 abandoned request(s) cancelled\n".
             "There are no unmatched requests\n";
 
         $this->assertEquals($commandTester->getDisplay(), $message);
@@ -131,7 +131,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
         Request::create(
             [
                 'created_by' => "-KXGy1MTimjQgFim7u",
-                'request_type_id' => 2,
+                'request_type_id' => 1,
                 'title' => "Javascript",
                 'description' => "Learn Javascript",
                 'status_id' => 1,
