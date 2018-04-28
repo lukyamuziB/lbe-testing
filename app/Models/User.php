@@ -57,7 +57,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public function getSkills()
     {
-        $userSkills = UserSkill::with("skill")->where("user_id", $this->user_id)->get();
+        $userSkills = UserSkill::with("skill")->where("user_id", $this->id)->get();
 
         $skills = [];
         foreach ($userSkills as $skill) {
