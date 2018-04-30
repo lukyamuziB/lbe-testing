@@ -119,7 +119,7 @@ class TestInactiveMentorshipNotificationCommand extends TestCase
         // create session for the request
         Session::create(
             [
-            'request_id' => 26,
+            'request_id' => 36,
             'date' => Carbon::today(),
             'start_time' => Carbon::now()->addHour(12),
             'end_time' => Carbon::now()->addHour(14),

@@ -53,11 +53,11 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
 
-        $this->assertEquals(25, $response->total);
+        $this->assertEquals(35, $response->total);
         $this->assertEquals(12, $response->open);
-        $this->assertEquals(13, $response->matched);
+        $this->assertEquals(17, $response->matched);
         $this->assertEquals(0, $response->cancelled);
-        $this->assertEquals(0, $response->completed);
+        $this->assertEquals(6, $response->completed);
     }
 
     /**

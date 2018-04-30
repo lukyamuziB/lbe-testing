@@ -18,6 +18,7 @@ class SessionsTableSeeder extends Seeder
 
         $this->seedBaseData($requestsCount, $requestUpperLimit, $today);
         $this->seedSkillMentorsData();
+        $this->seedConfirmSessionData();
     }
 
     /**
@@ -71,6 +72,26 @@ class SessionsTableSeeder extends Seeder
                     'end_time' => Carbon::instance($secondPairingDay)->addHour(14)->format("Y-m-d H:i:s"),
                     'mentee_approved' => $isMenteeApproved,
                     'mentor_approved' => $isMentorApproved,
+                    'mentee_logged_at' => Carbon::today()->subHours(2)->format("Y-m-d H:i:s"),
+                    'mentor_logged_at' => Carbon::now()->subHours(2)->format("Y-m-d H:i:s")
+                ]
+            );
+        }
+    }
+
+    private function seedConfirmSessionData() {
+        $customRequestIds = array(26, 27, 28, 29);
+        for ($i=0; $i < 4; $i++) {
+            $requestCreationDate = Carbon::now()->copy()->subMonths(23 - $i);
+            $secondPairingDay = $requestCreationDate->next(Carbon::MONDAY)->addWeek();
+            DB::table('sessions')->insert(
+                [
+                    'request_id' =>$customRequestIds[$i],
+                    'date' => $secondPairingDay,
+                    'start_time' => Carbon::instance($secondPairingDay)->addHour(13)->format("Y-m-d H:i:s"),
+                    'end_time' => Carbon::instance($secondPairingDay)->addHour(14)->format("Y-m-d H:i:s"),
+                    'mentee_approved' => ($customRequestIds[$i] === 26 || $customRequestIds[$i] === 29) ? true : false,
+                    'mentor_approved' => ($customRequestIds[$i] === 26 || $customRequestIds[$i] === 29) ? false : true,
                     'mentee_logged_at' => Carbon::today()->subHours(2)->format("Y-m-d H:i:s"),
                     'mentor_logged_at' => Carbon::now()->subHours(2)->format("Y-m-d H:i:s")
                 ]

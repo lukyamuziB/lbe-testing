@@ -590,7 +590,7 @@ class RequestControllerTest extends TestCase
         $this->assertEquals($this->validRequest["location"], $response->location);
         $this->assertEquals($this->validRequest["status_id"], $response->status_id);
         $this->assertEquals(1, $response->status_id);
-        $this->assertEquals(26, $response->id);
+        $this->assertEquals(36, $response->id);
         $response = json_decode($this->response->getContent(), true);
         $this->assertArrayHasKey("created_by", $response);
     }

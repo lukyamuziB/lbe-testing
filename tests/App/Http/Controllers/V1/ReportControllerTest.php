@@ -72,11 +72,11 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
 
-        $this->assertEquals(25, $response->totalRequests);
+        $this->assertEquals(35, $response->totalRequests);
         $this->assertEquals(12, $response->totalOpenRequests);
-        $this->assertEquals(13, $response->totalMatchedRequests);
+        $this->assertEquals(17, $response->totalMatchedRequests);
         $this->assertEquals(0, $response->totalCancelledRequests);
-        $this->assertEquals(0, $response->totalCompletedRequests);
+        $this->assertEquals(6, $response->totalCompletedRequests);
     }
 
     /**
@@ -140,7 +140,7 @@ class ReportControllerTest extends TestCase
             $this->assertObjectHasAttribute('open', $skill->count);
             $this->assertNotEmpty($skill->count->open);
         }
-        $this->assertEquals(25, $response->totalRequests);
+        $this->assertEquals(35, $response->totalRequests);
     }
 
     /**
@@ -180,7 +180,7 @@ class ReportControllerTest extends TestCase
         $startDate = $today->subWeek(2)->toDateString();
         $this->get("/api/v1/reports/inactive-mentorships?start_date=".$startDate);
         $response = json_decode($this->response->getContent(), true);
-        $this->assertEquals(13, $response[1]["count"]);
+        $this->assertEquals(17, $response[1]["count"]);
     }
 
     public function testGetInactiveMentorshipsReportFailureNotAdmin()

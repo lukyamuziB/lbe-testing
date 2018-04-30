@@ -94,12 +94,11 @@ class SessionControllerTest extends TestCase
      */
     public function testGetSessionsReportFailure()
     {
-        $this->get("/api/v1/sessions/35");
+        $this->get("/api/v1/sessions/45");
 
         $this->assertResponseStatus(404);
 
         $response = json_decode($this->response->getContent());
-
         $this->assertEquals(
             "The specified mentor request was not found",
             $response->message
