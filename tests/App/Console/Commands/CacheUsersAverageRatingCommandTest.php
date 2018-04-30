@@ -9,6 +9,7 @@
  */
 
 use Symfony\Component\Console\Application;
+use Illuminate\Support\Facades\Cache;
 
 use App\Console\Commands\CacheUsersAverageRatingCommand;
 use App\Models\Rating;
@@ -40,6 +41,8 @@ class TestCacheUsersAverageRatingCommand extends TestCase
      */
     public function testHandleSuccessForCachingUsersAverageRating()
     {
+        Cache::store("redis")->flush();
+
         $commandTester = $this->executeCommand(
             $this->application,
             "cache:user-average-rating",
@@ -57,12 +60,6 @@ class TestCacheUsersAverageRatingCommand extends TestCase
      */
     public function testHandleSuccessForNoNewRating()
     {
-        $commandTester = $this->executeCommand(
-            $this->application,
-            "cache:user-average-rating",
-            CacheUsersAverageRatingCommand::class
-        );
-
         $commandTester = $this->executeCommand(
             $this->application,
             "cache:user-average-rating",

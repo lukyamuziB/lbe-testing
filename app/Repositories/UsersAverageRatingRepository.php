@@ -41,7 +41,7 @@ class UsersAverageRatingRepository implements UsersAverageRatingInterface
     /**
      * Queries the cache with userIds
      *
-     * @param array $param parameters
+     * @param array $userIds - user ids
      *
      * @return array
      */
@@ -68,5 +68,79 @@ class UsersAverageRatingRepository implements UsersAverageRatingInterface
             $usersAverageRatings = [];
         }
         return $usersAverageRatings;
+    }
+
+    /**
+     * Gets users rating details
+     *
+     * @return array - users rating details
+     */
+    public function getAll()
+    {
+        $userRatingKeys = $this->redisClient::keys("*:averageRating");
+        $usersAverageRating = [];
+
+        if (count($userRatingKeys) > 0) {
+            $usersAverageRating = array_map(
+                function ($averageRatings) {
+                    return json_decode($averageRatings);
+                },
+                $this->redisClient::mget($userRatingKeys)
+            );
+        }
+        return $usersAverageRating;
+    }
+
+    /**
+     * Gets rating details by range
+     *
+     * @param array $averageRatings
+     * @param array $ratingValues
+     *
+     * @return array - users rating details
+     */
+    public function getRatingsByRange($averageRatings, $ratingValues)
+    {
+        $usersAverageRatings = [];
+
+        foreach ($averageRatings as $averageRating) {
+            if (in_array(round($averageRating->average_rating), $ratingValues)) {
+                $usersAverageRatings[] = $averageRating;
+            }
+        }
+        return $usersAverageRatings;
+    }
+
+    /**
+     * Gets user ids from rating details
+     *
+     * @param array $usersAverageRatings
+     *
+     * @return array - user ids
+     */
+    public function getUserIdsFromRatings($usersAverageRatings)
+    {
+        $userIds = [];
+
+        foreach ($usersAverageRatings as $userAverageRatings) {
+            $userIds[] = $userAverageRatings->user_id;
+        }
+        return $userIds;
+    }
+
+    /**
+     * Gets user Ids by ratings
+     *
+     * @param array $params
+     *
+     * @return array - user ids
+     */
+    public function getUserIdsByRatings($params)
+    {
+        $averageRatings = $this->getAll();
+        $usersAverageRatings = $this->getRatingsByRange($averageRatings, $params);
+        $userIds = $this->getUserIdsFromRatings($usersAverageRatings);
+
+        return $userIds;
     }
 }

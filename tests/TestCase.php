@@ -1,7 +1,6 @@
 <?php
 use \Laravel\Lumen\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -66,7 +65,6 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         Mail::fake();
 
-        Cache::store("redis")->flush();
     }
 
     /**

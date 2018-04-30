@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Repositories\UsersAverageRatingRepository;
 
 class Request extends Model
 {
@@ -328,6 +329,14 @@ class Request extends Model
             function ($query) use ($params) {
                 return $query->where("title", "ilike", "%". $params["q"]."%")
                     ->orWhere("description", 'ilike', "%".$params["q"]."%");
+            }
+        )
+        ->when(
+            isset($params["ratings"]),
+            function ($query) use ($params) {
+                $usersAverageRatingRepository = new UsersAverageRatingRepository;
+                $userIds = $usersAverageRatingRepository->getUserIdsByRatings($params["ratings"]);
+                return $query->whereIn("created_by", $userIds);
             }
         );
 

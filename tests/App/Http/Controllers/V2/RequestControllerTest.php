@@ -802,4 +802,30 @@ class RequestControllerTest extends TestCase
         ];
         $this->assertEquals($response, $errorResponse);
     }
+
+    /**
+     * Test to return an empty array when there are no
+     * request for the rating values passed in
+     *
+     */
+    public function testGetRequestsPoolWithoutMatchingRatings()
+    {
+        $this->get("api/v2/requests/pool?ratings=5,4,3,1");
+        $this->assertResponseOk();
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals(0, $response->pagination->total_count);
+    }
+
+    /**
+     * Test to return the list of requests of a particular
+     * rating value passed in
+     *
+     */
+    public function testGetRequestsPoolWithMatchingRatings()
+    {
+        $this->get("api/v2/requests/pool?ratings=2");
+        $this->assertResponseOk();
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals(25, $response->pagination->total_count);
+    }
 }

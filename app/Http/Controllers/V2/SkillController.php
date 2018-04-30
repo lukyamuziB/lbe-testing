@@ -188,7 +188,7 @@ class SkillController extends Controller
             },
             $mentorsIds->toArray()
         ));
-        
+
         $mentorsAverageRating = $usersAverageRatingRepository->query($uniqueMentorIds);
 
         usort($mentorsAverageRating, function ($firstElement, $secondElement) {

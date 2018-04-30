@@ -168,6 +168,10 @@ class RequestController extends Controller
             $params["endDate"] = Carbon::createFromFormat("d-m-Y", $endDate);
         }
 
+        if ($ratings = $this->getRequestParams($request, "ratings")) {
+            $params["ratings"] = explode(",", $ratings);
+        }
+
         return $params;
     }
 
