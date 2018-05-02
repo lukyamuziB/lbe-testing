@@ -456,7 +456,9 @@ class RequestController extends Controller
             $mentorshipRequest = MentorshipRequest::findOrFail(intval($id));
             $currentUser = $request->user();
 
-            if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by->id) {
+            if (!in_array("LENKEN_ADMIN", $request->user()->roles)
+                &&
+                $currentUser->uid !== $mentorshipRequest->created_by->id) {
                 throw new UnauthorizedException("You don't have permission to cancel this mentorship request", 1);
             }
 

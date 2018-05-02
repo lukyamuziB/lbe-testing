@@ -368,7 +368,8 @@ class RequestController extends Controller
             throw new NotFoundException("Mentorship Request not found.");
         }
 
-        if ($currentUser->role !== "Admin" && $currentUser->uid !== $mentorshipRequest->created_by->id) {
+        if (!in_array("LENKEN_ADMIN", $currentUser->roles)
+             && $currentUser->uid !== $mentorshipRequest->created_by->id) {
             throw new UnauthorizedException("You don't have permission to cancel this Mentorship Request.");
         }
 

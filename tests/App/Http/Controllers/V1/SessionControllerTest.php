@@ -18,7 +18,7 @@ class SessionControllerTest extends TestCase
                     "uid" => "-KXGy1MT1oimjQgFim7u",
                     "name" => "Adebayo Adesanya",
                     "email" => "inumidun.amao@andela.com",
-                    "role" => "Admin",
+                    "roles" => ["LENKEN_ADMIN"],
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
                 ]

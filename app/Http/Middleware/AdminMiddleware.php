@@ -18,8 +18,8 @@ class AdminMiddleware
      */
     public function handle($request, Closure $next)
     {
-        if ($request->user()->role !== "Admin")
-        {
+
+        if (!in_array("LENKEN_ADMIN", $request->user()->roles)) {
             throw new AccessDeniedException("You do not have permission to perform this action.");
         }
 

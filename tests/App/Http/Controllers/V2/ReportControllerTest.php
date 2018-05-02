@@ -24,7 +24,7 @@ class ReportControllerTest extends TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Admin"
+                    "roles" => ["LENKEN_ADMIN"]
                 ]
             )
         );
@@ -39,8 +39,8 @@ class ReportControllerTest extends TestCase
     {
         $this->get("/api/v2/requests/status-statistics");
 
-        $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
         $this->assertNotEmpty($response);
     }
 
@@ -76,7 +76,7 @@ class ReportControllerTest extends TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Fellow"
+                    "roles" => ["Fellow"]
                 ]
             )
         );

@@ -110,7 +110,7 @@ class RequestControllerTest extends TestCase
         "location" => "Lagos"
     ];
 
-    private function makeUser($id, $role = "Fellow")
+    private function makeUser($id, $roles = ["Fellow"])
     {
         $this->be(
             factory(User::class)->make(
@@ -118,7 +118,7 @@ class RequestControllerTest extends TestCase
                     "uid" => $id,
                     "name" => "Inumidun Amao",
                     "email" => "inumidun.amao@andela.com",
-                    "role" => $role,
+                    "roles" => $roles,
                     "slack_handle"=> "@amao",
                     "firstname" => "Inumidun",
                     "lastname" => "Amao",
@@ -552,7 +552,7 @@ class RequestControllerTest extends TestCase
      */
     public function testAdminCancelRequestSuccess()
     {
-        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", ["LENKEN_ADMIN"]);
         $this->patch("/api/v1/requests/14/cancel-request?reason=admin_cancelling");
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());

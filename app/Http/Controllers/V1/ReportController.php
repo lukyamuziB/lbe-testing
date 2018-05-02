@@ -39,7 +39,7 @@ class ReportController extends Controller
     public function all(Request $request)
     {
         try {
-            if ($request->user()->role !== 'Admin') {
+            if (!in_array("LENKEN_ADMIN", $request->user()->roles)) {
                 throw new AccessDeniedException('you do not have permission to perform this action');
             }
             // initialize params object

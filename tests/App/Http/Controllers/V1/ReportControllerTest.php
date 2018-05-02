@@ -23,7 +23,7 @@ class ReportControllerTest extends TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Admin"
+                    "roles" => ["LENKEN_ADMIN"]
                 ]
             )
         );
@@ -38,8 +38,8 @@ class ReportControllerTest extends TestCase
     {
         $this->get("/api/v1/reports");
 
-        $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
         foreach ($response->skillsCount as $skill) {
             $this->assertNotEmpty($skill->name);
             $this->assertNotEmpty($skill->count);
@@ -56,8 +56,8 @@ class ReportControllerTest extends TestCase
     public function testGetUnmatchedRequestsSuccess()
     {
         $this->get("/api/v1/reports/unmatched-requests");
-        $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
         $this->assertTrue(is_array($response->requests));
         $this->assertEquals(12, count($response->requests));
         $this->assertEquals(12, $response->pagination->totalCount);
@@ -159,13 +159,12 @@ class ReportControllerTest extends TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Fellow"
+                    "roles" => ["Fellow"]
                 ]
             )
         );
 
         $this->get("/api/v1/reports");
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(403);
         $this->assertEquals(
@@ -194,7 +193,7 @@ class ReportControllerTest extends TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Fellow"
+                    "roles" => ["Fellow"]
                 ]
             )
         );

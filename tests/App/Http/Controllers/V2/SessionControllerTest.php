@@ -26,7 +26,7 @@ class SessionControllerTest extends \TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Admin"
+                    "roles" => ["LENKEN_ADMIN"],
                 ]
             )
         );
@@ -34,7 +34,7 @@ class SessionControllerTest extends \TestCase
         $this->call("POST", "/api/v2/files", [], [], $this->fileDetails, []);
     }
 
-    private function makeUser($identifier, $role = "Fellow")
+    private function makeUser($identifier, $roles = ["Fellow"])
     {
         $this->be(
             factory(User::class)->make(
@@ -42,7 +42,7 @@ class SessionControllerTest extends \TestCase
                     "uid" => $identifier,
                     "name" => "jimoh hadi",
                     "email" => "jimoh.hadi@andela.com",
-                    "role" => $role,
+                    "roles" => $roles,
                     "slack_handle"=> "@johadi",
                     "firstname" => "Jimoh",
                     "lastname" => "Hadi",

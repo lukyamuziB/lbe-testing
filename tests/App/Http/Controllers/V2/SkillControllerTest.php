@@ -42,7 +42,7 @@ class SkillControllerTest extends TestCase
                     "slack_id" => "C63LPE124",
                     "firstname" => "Adebayo",
                     "lastname" => "Adesanya",
-                    "role" => "Admin"
+                    "roles" => ["LENKEN_ADMIN"],
                 ]
             )
         );

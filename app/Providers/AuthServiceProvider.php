@@ -41,7 +41,7 @@ class AuthServiceProvider extends ServiceProvider
                     'uid' => $parsed_token->getClaim('UserInfo')->id,
                     'name' => $parsed_token->getClaim('UserInfo')->first_name." ".$parsed_token->getClaim('UserInfo')->last_name,
                     'email' => $parsed_token->getClaim('UserInfo')->email,
-                    'role' => array_keys((array)$parsed_token->getClaim('UserInfo')->roles)[0],
+                    'roles' => array_keys((array)$parsed_token->getClaim('UserInfo')->roles),
                     'firstname' => $parsed_token->getClaim('UserInfo')->first_name,
                     'lastname' => $parsed_token->getClaim('UserInfo')->last_name,
                     'profile_pic' => $parsed_token->getClaim('UserInfo')->picture,

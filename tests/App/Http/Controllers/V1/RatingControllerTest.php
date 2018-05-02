@@ -22,7 +22,7 @@ class RatingsControllerTest extends TestCase
     private $user = [
         "name" => "Adebayo Adesanya",
         "email" => "adebayo.adesanya@andela.com",
-        "role" => "Admin",
+        "roles" => ["LENKEN_ADMIN"],
         "slack_id" => "C63LPE124",
         "firstname" => "Adebayo",
         "lastname" => "Adesanya"

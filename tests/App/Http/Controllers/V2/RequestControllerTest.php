@@ -70,7 +70,7 @@ class RequestControllerTest extends TestCase
         ]
     ];
 
-    private function makeUser($identifier, $role = "Fellow")
+    private function makeUser($identifier, $roles = ["Fellow"])
     {
         $this->be(
             factory(User::class)->make(
@@ -78,7 +78,7 @@ class RequestControllerTest extends TestCase
                     "uid" => $identifier,
                     "name" => "seyi Adeleke",
                     "email" => "adetokunbo.adeleke@andela.com",
-                    "role" => $role,
+                    "roles" => $roles,
                     "slack_handle"=> "@babyBoy",
                     "firstname" => "Adetkounbo",
                     "lastname" => "Adeleke",
@@ -274,7 +274,6 @@ class RequestControllerTest extends TestCase
         $this->assertResponseOk();
 
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
 
         $this->assertNotEmpty($response);
@@ -297,7 +296,7 @@ class RequestControllerTest extends TestCase
      */
     public function testCancelRequestSuccessByAdmin()
     {
-        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", ["LENKEN_ADMIN"]);
         $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
         $this->assertResponseOk();
     }
@@ -756,7 +755,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetSkillRequestsSuccess()
     {
-        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", ["LENKEN_ADMIN"]);
         $this->get(
             "/api/v2/skills/1/requests"
         );
@@ -773,7 +772,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetSkillRequestsSuccessForPrimarySkill()
     {
-        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", ["LENKEN_ADMIN"]);
         $this->get(
             "/api/v2/skills/18/requests"
         );
@@ -791,7 +790,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetSkillRequestsFailure()
     {
-        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", "Admin");
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF", ["LENKEN_ADMIN"]);
         $this->get(
             "/api/v2/skills/1aaaa1/requests"
         );
