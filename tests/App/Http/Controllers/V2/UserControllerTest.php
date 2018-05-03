@@ -184,4 +184,25 @@ class UserControllerTest extends \TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("User skill does not exist.", $response->message);
     }
+
+    /**
+     * Test for get user rating details successfully
+     *
+     * @return void
+     */
+    public function testGetUserRatingDetailsSuccess()
+    {
+        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF/rating");
+
+        $this->assertResponseStatus(200);
+
+        $response = $this->response->getContent();
+
+        $this->assertNotEmpty($response);
+
+        $this->assertContains("cumulative_average", $response);
+        $this->assertContains("mentee_average", $response);
+        $this->assertContains("mentor_average", $response);
+        $this->assertContains("rating_count", $response);
+    }
 }

@@ -71,8 +71,12 @@ class UserController extends Controller
             "request_count" => $requestCount,
             "logged_hours" => $sessionDetails["totalHours"],
             "total_sessions" => $sessionDetails["totalSessions"],
-            "rating" => $ratingDetails->average_rating ?? 0,
-            "total_ratings" => $ratingDetails->session_count ?? 0
+            "rating" => (object)[
+                "cumulative_average" => $ratingDetails->average_rating ?? 0,
+                "mentee_average" => $ratingDetails->average_mentee_rating ?? 0,
+                "mentor_average" => $ratingDetails->average_mentor_rating ?? 0,
+                "rating_count" => $ratingDetails->session_count ?? 0
+            ]
         ];
 
         if ($this->getRequestParams($request, "include") === "skills_gained") {
