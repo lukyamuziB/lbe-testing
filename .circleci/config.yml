@@ -49,11 +49,11 @@ jobs:
     working_directory: /tmp/lenken
     docker:
       - image: google/cloud-sdk
-    steps: 
+    steps:
       - checkout
       - run:
           name: Add GCloud Key to JSON file
-          command: | 
+          command: |
               echo $GCLOUD_SERVICE_KEY_TESTING > ${HOME}/auth_lenken_app.json
       - run:
           name: Deploy to Staging GCP VMs
@@ -62,15 +62,24 @@ jobs:
     working_directory: /tmp/lenken
     docker:
       - image: google/cloud-sdk
-    steps: 
+    steps:
       - checkout
       - run:
           name: Add GCloud key to JSON file
-          command: | 
+          command: |
               echo $GCLOUD_SERVICE_KEY_TESTING > ${HOME}/auth_lenken_app.json
       - run:
           name: Deploy to Production GCP VMs
           command: .circleci/deploy_lenken_production.sh
+  slack_notification:
+    working_directory: /tmp/lenken
+    docker:
+        - image: circleci/node:latest
+    steps:
+        - checkout
+        - run:
+            name: Slack notification
+            command: .circleci/slack_integration.sh
 workflows:
   version: 2
   build-and-deploy:
@@ -81,10 +90,20 @@ workflows:
             - build
           filters:
             branches:
-              only: develop
-      - deploy_to_production:
+              only: production-v2
+      - slack_notification:
           requires:
             - build
           filters:
             branches:
-              only: production
+                only: production-v2
+      - confirm_deployment:
+          type: approval
+          requires:
+            - slack_notification
+      - deploy_to_production:
+          requires:
+            - confirm_deployment
+          filters:
+            branches:
+              only: production-v2

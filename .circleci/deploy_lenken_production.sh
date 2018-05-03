@@ -12,9 +12,8 @@ deploy_change(){
 }
 
 main(){
-  # configure_gcloud
-  # deploy_change
-  echo "Production on GCP is not yet set up! :("
+  configure_gcloud
+  deploy_change
 }
- 
+
 main
