@@ -104,7 +104,8 @@ class UsersAverageRatingRepository implements UsersAverageRatingInterface
         $usersAverageRatings = [];
 
         foreach ($averageRatings as $averageRating) {
-            if (in_array(round($averageRating->average_rating), $ratingValues)) {
+            if ((in_array(round($averageRating->average_mentor_rating), $ratingValues)) ||
+            (in_array(round($averageRating->average_mentee_rating), $ratingValues))) {
                 $usersAverageRatings[] = $averageRating;
             }
         }
