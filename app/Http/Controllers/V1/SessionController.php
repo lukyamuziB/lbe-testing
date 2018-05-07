@@ -3,6 +3,8 @@ namespace App\Http\Controllers\V1;
 
 use App\Exceptions\AccessDeniedException;
 use App\Exceptions\NotFoundException;
+use App\Models\Rating;
+use App\Models\SessionComment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -312,7 +314,7 @@ class SessionController extends Controller
         $user_id = $request->input('user_id');
         $timezone = $mentorship_request->pairing['timezone'];
         $session_update_date = Carbon::now($timezone);
-        $mentorId = $mentorship_request->mentor->user_id;
+        $mentorId = $mentorship_request->mentor->id;
         $userRole = $user_id === $mentorId ? "mentor" : "mentee";
 
         if ($user_id === $mentorship_request[$userRole] ["id"]) {
@@ -321,11 +323,17 @@ class SessionController extends Controller
                 "mentor_approved" => false,
                 $userRole."_logged_at" => $session_update_date
             ];
+
+            $fields = ['session_id' => $id, 'user_id' => $user_id];
+            Rating::where($fields)->delete();
+
+            SessionComment::where($fields)->delete();
         } else {
-                throw new AccessDeniedException(
-                    "You do not have permission to reject this session"
-                );
+            throw new AccessDeniedException(
+                "You do not have permission to reject this session."
+            );
         }
+
         $session->fill($values)->save();
         return $this->respond(Response::HTTP_OK, $session);
     }

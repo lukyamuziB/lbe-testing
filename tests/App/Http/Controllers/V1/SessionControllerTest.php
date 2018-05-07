@@ -279,7 +279,7 @@ class SessionControllerTest extends TestCase
          $response = json_decode($this->response->getContent());
 
          $this->assertEquals(
-             "You do not have permission to reject this session",
+             "You do not have permission to reject this session.",
              $response->message
          );
     }

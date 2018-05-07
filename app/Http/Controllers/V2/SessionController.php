@@ -400,9 +400,7 @@ class SessionController extends Controller
                     ? $mentorshipRequest->mentor->id
                     : $mentorshipRequest->mentee->id;
 
-                if ($rating["comment"]) {
-                    $sessionToLog->saveComment($rating["comment"], $userToRate);
-                }
+                $sessionToLog->saveComment($rating["comment"], $userToRate);
 
                 if (($rating["values"])) {
                     $sessionToLog->saveRating($userToRate, $rating["values"], $rating["scale"]);
