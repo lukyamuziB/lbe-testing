@@ -201,7 +201,6 @@ class RequestController extends Controller
                                                 )
                                                 ->with(["session.rating", "requestSkills"])
                                                 ->get();
-        $this->appendRating($mentorshipRequests);
         $formattedRequests = formatMultipleRequestsForAPIResponse($mentorshipRequests);
         return $this->respond(Response::HTTP_OK, $formattedRequests);
     }
@@ -661,38 +660,6 @@ class RequestController extends Controller
         $skill["requests"] = $formattedRequests;
 
         return $this->respond(Response::HTTP_OK, ["skill" => $skill]);
-    }
-
-    /**
-     * Calculate and attach the rating of each request Object
-     *
-     * @param object $mentorshipRequests - mentorship requests
-     *
-     * @return void
-     */
-    private function appendRating(&$mentorshipRequests)
-    {
-        foreach ($mentorshipRequests as $request) {
-            $sessions = $request->session;
-            $ratings = [];
-            foreach ($sessions as $session) {
-                if ($session->rating) {
-                    $ratingValues = json_decode($session->rating->values);
-                    $availability = $ratingValues->availability;
-                    $usefulness = $ratingValues->usefulness;
-                    $reliability = $ratingValues->reliability;
-                    $knowledge = $ratingValues->knowledge;
-                    $teaching = $ratingValues->teaching;
-                    $rating = ($availability+ $usefulness + $reliability + $knowledge + $teaching)/5;
-                    $ratings[] = $rating;
-                }
-            }
-            if (count($sessions) > 0) {
-                $request->rating = (array_sum($ratings)/count($sessions));
-            } else {
-                $request->rating = 0;
-            }
-        };
     }
 
     /**
