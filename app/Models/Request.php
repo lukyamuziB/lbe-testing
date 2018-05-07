@@ -301,6 +301,13 @@ class Request extends Model
             }
         )
         ->when(
+            isset($params["category"]) && $params["category"] == "myRequests",
+            function ($query) use ($params) {
+                $userId = $params["user"];
+                return $query->where('created_by', $userId);
+            }
+        )
+        ->when(
             isset($params["lengths"]),
             function ($query) use ($params) {
                 return $query->whereIn("duration", $params["lengths"]);

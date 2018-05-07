@@ -189,6 +189,20 @@ class RequestControllerTest extends TestCase
     }
 
     /**
+     * Test for get all requests created by a user
+     * 
+     * @return void
+     */
+    public function testGetCreatedByUserRequestSuccess() 
+    {
+        $this->get("/api/v2/requests?category=myRequests");
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(200);
+        $this->assertNotEmpty($response);
+    }
+
+    /**
      * Test to get the completed requests of a user
      *
      * @return void
