@@ -86,14 +86,10 @@ workflows:
     jobs:
       - build
       - deploy_to_staging:
-          requires:
-            - build
           filters:
             branches:
-              only: production-v2
+              only: develop
       - slack_notification:
-          requires:
-            - build
           filters:
             branches:
                 only: production-v2
