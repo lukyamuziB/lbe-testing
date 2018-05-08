@@ -292,6 +292,78 @@ class RequestControllerTest extends TestCase
 
         $this->assertNotEmpty($response);
     }
+
+     /**
+     * Test to filter requests by seeking mentor
+     *
+     * @return void
+     */
+    public function testGetRequestsPoolForSeekingMentorSuccess()
+    {
+        $this->get("/api/v2/requests/pool?limit=5&page=1&type=1");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotEmpty($response);
+
+        $this->assertEquals($response->requests[1]->request_type_id, 1);
+    }
+
+    /**
+     * Test to filter requests by seeking mentee
+     *
+     * @return void
+     */
+    public function testGetRequestsPoolForSeekingMenteeSuccess()
+    {
+        $this->get("/api/v2/requests/pool?limit=5&page=1&type=2");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotEmpty($response);
+
+        $this->assertEquals($response->requests[1]->request_type_id, 2);
+    }
+
+    /**
+     * Test to filter requests by seeking mentee and seeking mentor
+     *
+     * @return void
+     */
+    public function testGetRequestsPoolForSeekingMentorMenteeSuccess()
+    {
+        $this->get("/api/v2/requests/pool?limit=20&page=1&type=1,2");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotEmpty($response);
+
+        $this->assertEquals($response->requests[19]->request_type_id, 1);
+        $this->assertEquals($response->requests[0]->request_type_id, 2);
+    }
+
+    /**
+     * Test to filter requests by seeking mentee or seeking mentor for in valid input
+     *
+     * @return void
+     */
+    public function testGetRequestsPoolForSeekingMentorMenteeInvalidInput()
+    {
+        $this->get("/api/v2/requests/pool?limit=20&page=1&type=john");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertEquals($response->requests, []);
+    }
+
     /**
      * Test that a mentee can cancel their own request succesfully
      *

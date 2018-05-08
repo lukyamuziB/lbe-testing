@@ -132,12 +132,14 @@ class RequestController extends Controller
      */
     private function buildPoolFilterParams($request)
     {
-
         $params = [];
-
         $params["user"] = $request->user()->uid;
-        if ($requestsType = $this->getRequestParams($request, "category")) {
-            $params["category"] = $requestsType;
+        if ($category = $this->getRequestParams($request, "category")) {
+            $params["category"] = $category;
+        }
+        
+        if ($requestTypes = $this->getRequestParams($request, "type")) {
+            $params["types"] = array_map('intval', explode(",", $requestTypes));
         }
 
         if ($searchQuery = $this->getRequestParams($request, "q")) {
@@ -159,7 +161,6 @@ class RequestController extends Controller
         if ($status = $this->getRequestParams($request, "status")) {
             $params["status"] = explode(",", $status);
         }
-
         if ($startDate = $this->getRequestParams($request, "startDate")) {
             $params["startDate"] = Carbon::createFromFormat("d-m-Y", $startDate);
         }

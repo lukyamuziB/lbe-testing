@@ -308,6 +308,12 @@ class Request extends Model
             }
         )
         ->when(
+            isset($params["types"]),
+            function ($query) use ($params) {
+                return $query->whereIn("request_type_id", $params["types"]);
+            }
+        )
+        ->when(
             isset($params["lengths"]),
             function ($query) use ($params) {
                 return $query->whereIn("duration", $params["lengths"]);

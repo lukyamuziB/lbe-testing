@@ -100,7 +100,7 @@ class TestUnmatchedRequestsSuccessCommand extends TestCase
         }
 
         $message = "3 abandoned request(s) cancelled\n".
-                    "There are no unmatched requests\n";
+            "There are no unmatched requests\n";
 
         $this->assertEquals($commandTester->getDisplay(), $message);
     }
