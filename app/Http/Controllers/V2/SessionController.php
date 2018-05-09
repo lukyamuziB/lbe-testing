@@ -17,6 +17,10 @@ use App\Utility\FilesUtility;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
+use App\Clients\FreckleClient;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\FailedFreckleLoggingMail;
+use GuzzleHttp\Exception\TransferException;
 
 /**
  * Class SessionController
@@ -28,15 +32,17 @@ class SessionController extends Controller
     use RESTActions;
 
     protected $filesUtility;
+    protected $freckleClient;
 
     /**
      * SessionController constructor.
      *
      * @param FilesUtility $filesUtility
      */
-    public function __construct(FilesUtility $filesUtility)
+    public function __construct(FilesUtility $filesUtility, FreckleClient $freckleClient)
     {
         $this->filesUtility = $filesUtility;
+        $this->freckleClient = $freckleClient;
     }
 
     /**
@@ -483,6 +489,10 @@ class SessionController extends Controller
             }
         );
 
+        if ($session->mentee_approved && $session->mentor_approved) {
+            $this->logSessionOnFreckle($session);
+        }
+
         return $this->respond(Response::HTTP_OK, $result);
     }
 
@@ -512,5 +522,49 @@ class SessionController extends Controller
         }
 
         return $approvalStatus;
+    }
+
+    /**
+     * Log mentorship session to mentor's freckle account
+     *
+     * @param Object $session - session being logged
+     *
+     */
+    private function logSessionOnFreckle($session)
+    {
+        $duration = (strtotime($session->end_time) - strtotime($session->start_time)) / 60;
+        $mentorEmail = $session->request->mentor->email;
+
+        $freckleUser = $this->freckleClient->getUserByEmail($mentorEmail);
+
+        if ($freckleUser) {
+            $menteeName = str_replace(" ", "", $session->request->mentee->fullname);
+            $this->freckleClient->postEntry(
+                [
+                    "date" => $session->date,
+                    "user_id" => $freckleUser[0]["id"],
+                    "minutes" => $duration,
+                    "description" => "#mentorshipWith" . $menteeName,
+                    "project_id" => intval(getenv("FRECKLE_PROJECT_ID"))
+                ]
+            );
+        } else {
+            $this->sendUnregisteredFreckleUserMail($session, $mentorEmail);
+        }
+    }
+
+    /**
+     * Notify unregistered freckle mentors of failed mentorship logging
+     *
+     * @param Object $session - session being logged
+     * @param String $email   - recipient's email address
+     *
+     * @return void
+     */
+    private function sendUnregisteredFreckleUserMail($session, $email)
+    {
+        Mail::to($email)->send(
+            new FailedFreckleLoggingMail($session->date)
+        );
     }
 }

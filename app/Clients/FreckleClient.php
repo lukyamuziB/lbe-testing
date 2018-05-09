@@ -12,8 +12,8 @@ use GuzzleHttp\Client;
 class FreckleClient
 {
     protected $client;
-    protected $api_url;
-    protected $freckle_token;
+    protected $apiUrl;
+    protected $freckleToken;
 
     /**
      * FreckleClient constructor.
@@ -21,8 +21,8 @@ class FreckleClient
     public function __construct()
     {
         $this->client = new Client();
-        $this->api_url = getenv('FRECKLE_API_URL');
-        $this->freckle_token = getenv('FRECKLE_API_TOKEN');
+        $this->apiUrl = getenv('FRECKLE_API_URL');
+        $this->freckleToken = getenv('FRECKLE_API_TOKEN');
     }
 
     /**
@@ -34,9 +34,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/entries',
+            $this->apiUrl . '/entries',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -57,9 +57,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/entries/' . $id,
+            $this->apiUrl . '/entries/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -80,10 +80,10 @@ class FreckleClient
     {
         $response = $this->client->request(
             'POST',
-            $this->api_url . '/entries',
+            $this->apiUrl . '/entries',
             [
                 "headers" => [
-                    "X-FreckleToken" => $this->freckle_token
+                    "X-FreckleToken" => $this->freckleToken
                 ],
                 "body" => json_encode($data),
                 "verify" => false
@@ -107,9 +107,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'PUT',
-            $this->api_url . '/entries/' . $id,
+            $this->apiUrl . '/entries/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "body" => json_encode($data),
                 "verify" => false
             ]
@@ -131,9 +131,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'DELETE',
-            $this->api_url . '/entries/' . $id,
+            $this->apiUrl . '/entries/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -153,9 +153,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/tags',
+            $this->apiUrl . '/tags',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -176,9 +176,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/tags/' . $id,
+            $this->apiUrl . '/tags/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -202,9 +202,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'POST',
-            $this->api_url . '/tags',
+            $this->apiUrl . '/tags',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "name" => $name,
                 "verify" => false
             ]
@@ -226,9 +226,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/tags/' . $id . '/entries',
+            $this->apiUrl . '/tags/' . $id . '/entries',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -250,9 +250,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'PUT',
-            $this->api_url . '/tags/' . $id,
+            $this->apiUrl . '/tags/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "name" => $name,
                 "verify" => false
             ]
@@ -274,9 +274,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'DELETE',
-            $this->api_url . '/tags/' . $id,
+            $this->apiUrl . '/tags/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -295,9 +295,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/projects',
+            $this->apiUrl . '/projects',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -318,9 +318,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/projects/' . $id,
+            $this->apiUrl . '/projects/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -341,9 +341,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'POST',
-            $this->api_url . '/projects',
+            $this->apiUrl . '/projects',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "name" => $name,
                 "verify" => false
             ]
@@ -365,9 +365,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/projects/' . $id . '/entries',
+            $this->apiUrl . '/projects/' . $id . '/entries',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -389,9 +389,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'PUT',
-            $this->api_url . '/projects/' . $id,
+            $this->apiUrl . '/projects/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "name" => $name,
                 "verify" => false
             ]
@@ -411,9 +411,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/account/',
+            $this->apiUrl . '/account/',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -432,9 +432,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/users',
+            $this->apiUrl . '/users',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -455,9 +455,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/users?email=' . $email_address,
+            $this->apiUrl . '/users?email=' . $email_address,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -478,9 +478,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/users/' . $id,
+            $this->apiUrl . '/users/' . $id,
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -501,9 +501,9 @@ class FreckleClient
     {
         $response = $this->client->request(
             'GET',
-            $this->api_url . '/users/' . $id . '/entries',
+            $this->apiUrl . '/users/' . $id . '/entries',
             [
-                "headers" => ["X-FreckleToken" => $this->freckle_token],
+                "headers" => ["X-FreckleToken" => $this->freckleToken],
                 "verify" => false
             ]
         );
@@ -524,10 +524,10 @@ class FreckleClient
     {
         $response = $this->client->request(
             'POST',
-            $this->api_url . '/users',
+            $this->apiUrl . '/users',
             [
                 "headers" => [
-                    "X-FreckleToken" => $this->freckle_token
+                    "X-FreckleToken" => $this->freckleToken
                 ],
                 "body" => json_encode($data),
                 "verify" => false
@@ -551,10 +551,10 @@ class FreckleClient
     {
         $response = $this->client->request(
             'PUT',
-            $this->api_url . '/users/' . $id,
+            $this->apiUrl . '/users/' . $id,
             [
                 "headers" => [
-                    "X-FreckleToken" => $this->freckle_token
+                    "X-FreckleToken" => $this->freckleToken
                 ],
                 "body" => json_encode($data),
                 "verify" => false

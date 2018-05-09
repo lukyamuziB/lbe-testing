@@ -12,8 +12,7 @@
 
   <body style="font-size: 16px; font-family: 'Avenir', 'Avenir Next', Helvetica; padding: 0; margin: 0; color: #666; width: 100%; height: 100%;">
     <p>Dear Mentor,</p>
-    <p>Lenken was unable to log your mentorship session held on {{ $failed_session_details['date'] }} 
-    in {{ $failed_session_details['session_request_url'] }} on Freckle. Kindly log this session on 
-    Freckle yourself.</p>
+    <p>Lenken was unable to log your mentorship session held on {{ $sessionDate }}
+    on Freckle. Kindly log this session on Freckle yourself or ask IT to enable your Freckle account.</p>
  </body>
 </html>

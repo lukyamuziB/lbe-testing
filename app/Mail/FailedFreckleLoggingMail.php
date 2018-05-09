@@ -6,16 +6,16 @@ use Illuminate\Mail\Mailable;
 
 class FailedFreckleLoggingMail extends Mailable
 {
-    public $failed_session_details;
+    public $sessionDate;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($failed_session_details)
+    public function __construct($sessionDate)
     {
-        $this->failed_session_details = $failed_session_details;
+        $this->sessionDate = $sessionDate;
     }
 
     /**
