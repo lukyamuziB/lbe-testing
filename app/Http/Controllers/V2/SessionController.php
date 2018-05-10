@@ -25,7 +25,6 @@ use App\Mail\LoggedSessionMail;
 use App\Mail\ConfirmedSessionMail;
 use App\Mail\FailedFreckleLoggingMail;
 use App\Mail\SessionFileNotificationMail;
-use GuzzleHttp\Exception\TransferException;
 
 /**
  * Class SessionController
