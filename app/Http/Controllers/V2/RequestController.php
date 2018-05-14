@@ -597,9 +597,90 @@ class RequestController extends Controller
     }
 
     /**
+     * Edit a mentorship request by updating the request table if no new request_skills exist,
+     * otherwise both request and request_skills tables are updated
+     *
+     * @param Request $request - HTTPRequest object
+     * @param integer $id      - unique id of the mentorship request
+     *
+     * @throws NotFoundException  | AccessDeniedException |  BadRequestException
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function editRequest(Request $request, $id)
+    {
+        $this->validate($request, MentorshipRequest::$rules);
+
+        $existingRequest = MentorshipRequest::find(intval($id));
+        if (!$existingRequest) {
+            throw new NotFoundException("Mentorship request not found.");
+        }
+
+        $currentUser = $request->user();
+        if ($currentUser->uid !== $existingRequest->created_by->id) {
+            throw new AccessDeniedException("You do not have permission to edit this mentorship request.");
+        }
+
+        if ($existingRequest->status_id !== Status::OPEN) {
+            throw new BadRequestException("You can only edit an open request.");
+        }
+
+        $requestDetails = $this->removeSkillsFields($request->all());
+
+        $requestSkills["primary"] = $request->input("primary");
+        $requestSkills["secondary"] = $request->input("secondary");
+        $requestSkills["preRequisite"] = $request->input("preRequisite");
+
+        $currentSkills = $existingRequest->requestSkills
+                                        ->pluck("skill_id")
+                                        ->toArray();
+        $newSkillsPresent = $this->areNewSkillsAdded($currentSkills, $requestSkills);
+
+        if (!$newSkillsPresent) {
+            $existingRequest->update($requestDetails);
+            $response = $existingRequest;
+        } else {
+            $response = DB::transaction(
+                function () use ($existingRequest, $requestDetails, $requestSkills) {
+                    $existingRequest->update($requestDetails);
+                    RequestSkill::where("request_id", $existingRequest->id)->delete();
+                    $requestSkills = $this->saveRequestSkills($requestSkills, $existingRequest);
+                    $existingRequest->request_skills = formatRequestSkills($requestSkills);
+                    $existingRequest->refresh();
+
+                    return $existingRequest;
+                }
+            );
+        }
+
+        return $this->respond(Response::HTTP_OK, formatRequestForAPIResponse($response));
+    }
+
+    /**
+     * Compares request skills to existing skills
+     * to check whether there are new skills
+     *
+     *  @param array  $requestSkills  - user updated skills
+     *  @param object $existingSkills - current skills unique to the request
+     *
+     *  @return boolean
+     */
+    private function areNewSkillsAdded($currentSkills, $requestSkills)
+    {
+        $updatedSkills = call_user_func_array("array_merge", $requestSkills);
+
+        $newSkills = array_diff($updatedSkills, $currentSkills);
+
+        if ((count($updatedSkills) === count($currentSkills)) && empty($newSkills)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Save request skills in the request_skills table
      *
-     * @param array $requestSkills - request skill
+     * @param array  $requestSkills  - request skill
      * @param object $createdRequest - created request
      *
      * @return void

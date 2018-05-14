@@ -20,6 +20,7 @@ $router->group(["prefix" => "api/v2/requests"], function ($router) {
     $router->get("history", "RequestController@getUserHistory");
     $router->get("in-progress", "RequestController@getRequestsInProgress");
     $router->get("pending", "RequestController@getPendingPool");
+    $router->put("{id}", "RequestController@editRequest");
     $router->patch("{id}/cancel-request", "RequestController@cancelRequest");
     $router->patch("{id}/withdraw-interest", "RequestController@withdrawInterest");
     $router->patch("{id}/indicate-interest", "RequestController@indicateInterest");

@@ -5,6 +5,7 @@ namespace Test\App\Http\Controllers\V2;
 use App\Models\Status;
 use App\Models\User;
 use App\Models\Request;
+use App\Models\RequestSkill;
 use App\Models\RequestUsers;
 use App\Models\Role;
 use App\Models\RequestType;
@@ -31,23 +32,7 @@ class RequestControllerTest extends TestCase
 
     const REQUESTS_URI = "/api/v2/requests";
 
-    private $validRequest = [
-        "title" => "Angular 2 and PHP",
-        "description" => "I need a mentor to help me level up in Angular 2 and PHP",
-        "duration" => "3",
-        "pairing" => [
-            "start_time" => "01:00",
-            "end_time" => "03:00",
-            "days" => [
-                "monday"
-            ],
-            "timezone" => "WAT"
-        ],
-        "primary" => ["1"],
-        "secondary" => ["1"],
-        "location" => "Lagos",
-        "status_id" => 1,
-    ];
+    private $validRequest;
 
     private $invalidResponse = [
         "title" => [
@@ -136,9 +121,10 @@ class RequestControllerTest extends TestCase
     {
         parent::setUp();
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->validRequest = $this->getValidRequest('4');
     }
 
-   /**
+    /**
      * Test to get a single request.
      *
      * @return void
@@ -190,10 +176,10 @@ class RequestControllerTest extends TestCase
 
     /**
      * Test for get all requests created by a user
-     * 
+     *
      * @return void
      */
-    public function testGetCreatedByUserRequestSuccess() 
+    public function testGetCreatedByUserRequestSuccess()
     {
         $this->get("/api/v2/requests?category=myRequests");
 
@@ -912,5 +898,130 @@ class RequestControllerTest extends TestCase
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
         $this->assertNotEmpty($response);
+    }
+
+    /**
+     *  Test request owner can edit an unmatched request successfully
+     *
+     *  @return {void}
+     */
+    public function testEditRequestSuccess()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->put(
+            "/api/v2/requests/01",
+            $this->validRequest
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(200);
+        $this->assertEquals($response->request_skills[0]->id,"4");
+        $this->assertEquals($response->title, "Angular 2 and PHP");
+        $this->assertEquals($response->description, "I need a mentor to help me level up in Angular 2 and PHP");
+    }
+
+    /**
+     *  Test request_skills table is not updated
+     *  when there are no new skills
+     *
+     *  @return {void}
+     */
+    public function testAreNewSkillsAddedSuccess()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $idBeforeUpdate = RequestSkill::where('request_id',23)
+                    ->pluck('id')->toArray();
+        $this->put(
+            "/api/v2/requests/23",
+            $this->getValidRequest('18')
+        );
+
+        $idAfterUpdate = RequestSkill::where('request_id',23)
+                    ->pluck('id')->toArray();
+        $this->assertEquals($idBeforeUpdate, $idAfterUpdate);
+        $this->assertResponseStatus(200);
+    }
+
+    /**
+     * Test a user cannot edit an invalid request
+     *
+     * @return {void}
+     */
+    public function testEditRequestFailureForInvalidRequestId()
+    {
+        $this->put("/api/v2/requests/368", $this->validRequest);
+        $this->assertResponseStatus(404);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals("Mentorship request not found.", $response->message);
+    }
+
+    /**
+     * Test only requests owner can edit a request
+     *
+     * @return {void}
+     */
+    public function testEditRequestFailureForUnauthorizedUser()
+    {
+        $this->makeUser("-KhMnFWEbnDtO72OHte7");
+        $this->put(
+            "/api/v2/requests/09",
+            $this->validRequest
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(403);
+        $this->assertEquals(
+            $response->message,
+            "You do not have permission to edit this mentorship request."
+        );
+    }
+    /**
+     * Test request owner can only edit an open request
+     *
+     * @return {void}
+     */
+    public function testEditRequestFailureForMatchedRequest()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->put(
+            "/api/v2/requests/10",
+            $this->validRequest
+        );
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(400);
+        $this->assertEquals(
+            $response->message,
+            "You can only edit an open request."
+        );
+    }
+
+    /**
+     * Gets a valid request
+     *
+     * @param $primarySkill - request primary skill
+     *
+     * @return array
+     */
+    private function getValidRequest($primarySkill)
+    {
+    return [
+        "title" => "Angular 2 and PHP",
+        "description" => "I need a mentor to help me level up in Angular 2 and PHP",
+        "duration" => "3",
+        "pairing" => [
+            "start_time" => "01:00",
+            "end_time" => "03:00",
+            "days" => [
+                "monday"
+            ],
+            "timezone" => "WAT"
+        ],
+        "primary" => [$primarySkill],
+        "secondary" => [],
+        "preRequisite" => [],
+        "location" => "Lagos",
+        "status_id" => 1,
+    ];
     }
 }
