@@ -5,6 +5,7 @@ jobs:
     docker:
       - image: circleci/php:7.1-browsers
         environment:
+          CC_TEST_REPORTER_ID: $CC_TEST_REPORTER_ID
           APP_ENV: testing
           POSTGRES_HOST: "127.0.0.1"
           CIRCLE_PROJECT_USERNAME: andela
@@ -40,11 +41,18 @@ jobs:
           paths:
             - vendor
       - run:
+          name: Setup Code Climate test-reporter
+          command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod +x ./cc-test-reporter
+      - run:
           name: Composer Test
-          command: composer test
+          command: |
+            ./cc-test-reporter before-build
+            composer test
       - run:
           name: Test Coverage Reporter
-          command: CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN vendor/bin/test-reporter
+          command: ./cc-test-reporter after-build --coverage-input-type clover --exit-code $?
   deploy_to_staging:
     working_directory: /tmp/lenken
     docker:
