@@ -144,21 +144,6 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Test to get a single request.
-     *
-     * @return void
-     */
-    public function testSearchRequestSuccess()
-    {
-        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript","-KesEogCwjq6lkOzKmLI", Status::MATCHED);
-
-        $this->get("/api/v2/requests?q=javascript");
-
-        $response = json_decode($this->response->getContent());
-        $this->assertResponseStatus(200);
-        $this->assertNotEmpty($response);
-    }
-    /**
      * Test for get request failure when an invalid request id is passed.
      *
      * @return void
@@ -227,23 +212,7 @@ class RequestControllerTest extends TestCase
             $response[1]->interested
         );
     }
-    /**
-     * Test pending requests are retrieved successfully
-     *
-     * @return void
-     */
-    public function testSearchPendingPoolForSuccess()
-    {
-        $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript", "-KXGy1MT1oimjQgFim7u", Status::OPEN);
 
-        $this->get("/api/v2/requests/pending?q=javascript");
-
-        $response = json_decode($this->response->getContent());
-
-        $this->assertResponseStatus(200);
-        $this->assertNotEmpty($response);
-
-    }
     /**
      * Test to get requests that are in progress for a user
      *
@@ -261,27 +230,10 @@ class RequestControllerTest extends TestCase
         $this->assertNotEmpty($response);
     }
 
-    /**
-     * Test to get requests that are in progress for a user
-     *
-     * @return void
-     */
-    public function testSearchRequestsInProgressSuccess()
-    {
-        $this->get("/api/v2/requests/in-progress?q=Itaque");
-
-        $this->assertResponseOk();
-
-        $response = json_decode($this->response->getContent());
-        $this->assertResponseStatus(200);
-
-        $this->assertNotEmpty($response);
-    }
-
      /**
      * Test to filter requests by seeking mentor
      *
-     * @return void
+     * @return void 
      */
     public function testGetRequestsPoolForSeekingMentorSuccess()
     {
@@ -289,11 +241,15 @@ class RequestControllerTest extends TestCase
 
         $this->assertResponseOk();
 
-        $response = json_decode($this->response->getContent());
+        $openRequests = json_decode(
+            $this->response->getContent()
+        )->requests;
 
-        $this->assertNotEmpty($response);
-
-        $this->assertEquals($response->requests[1]->request_type_id, 1);
+        foreach ($openRequests as $openRequest) {
+            $this->assertEquals($openRequest->request_type_id, 1);
+        }
+        
+        $this->assertNotEmpty($openRequests);
     }
 
     /**
@@ -307,11 +263,15 @@ class RequestControllerTest extends TestCase
 
         $this->assertResponseOk();
 
-        $response = json_decode($this->response->getContent());
+        $openRequests = json_decode(
+            $this->response->getContent()
+        )->requests;
 
-        $this->assertNotEmpty($response);
+        $this->assertNotEmpty($openRequests);
 
-        $this->assertEquals($response->requests[1]->request_type_id, 2);
+        foreach ($openRequests as $openRequest) {
+            $this->assertEquals($openRequest->request_type_id, 2);
+        }
     }
 
     /**
@@ -331,6 +291,7 @@ class RequestControllerTest extends TestCase
 
         $this->assertEquals($response->requests[19]->request_type_id, 1);
         $this->assertEquals($response->requests[0]->request_type_id, 2);
+
     }
 
     /**
@@ -343,6 +304,7 @@ class RequestControllerTest extends TestCase
         $this->get("/api/v2/requests/pool?limit=20&page=1&type=john");
 
         $this->assertResponseOk();
+
 
         $response = json_decode($this->response->getContent());
 
@@ -475,12 +437,15 @@ class RequestControllerTest extends TestCase
     {
         $this->get("api/v2/requests/pool?limit=5&page=1&status=1");
         $this->assertResponseStatus(200);
-        $randomNumber = rand(1, 4);
+    
         $mentorshipRequests = json_decode(
             $this->response->getContent()
         )->requests;
-        $this->assertEquals($mentorshipRequests[$randomNumber]->status_id, 1);
+        foreach ($mentorshipRequests as $mentorshipRequest) {
+            $this->assertEquals($mentorshipRequest->status_id, 1);
+        }   
     }
+
 
     /**
      * Test interested user is accepted succesfully

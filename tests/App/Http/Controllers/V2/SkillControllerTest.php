@@ -62,19 +62,6 @@ class SkillControllerTest extends TestCase
         $this->assertCount(50, $response);
     }
 
-    /**
-     * Test search for a particular skill success
-     *
-     * @return void
-     */
-    public function testSearchAllSkillsSuccess()
-    {
-        $this->get("/api/v2/skills?q=php");
-
-        $this->assertResponseOk();
-        $response = json_decode($this->response->getContent());
-        $this->assertNotEmpty($response);
-    }
 
     /**
      * Test get all skill with trashed skills success
@@ -88,20 +75,6 @@ class SkillControllerTest extends TestCase
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
         $this->assertCount(50, $response);
-    }
-
-    /**
-     * Test search for a particular skill success with withTrash params
-     *
-     * @return void
-     */
-    public function testSearchAllSkillsWithTrashedSuccess()
-    {
-        $this->get("/api/v2/skills?isTrashed=true&q=php");
-
-        $this->assertResponseOk();
-        $response = json_decode($this->response->getContent());
-        $this->assertNotEmpty($response);
     }
 
     /**
