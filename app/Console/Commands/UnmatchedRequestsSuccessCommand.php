@@ -47,7 +47,7 @@ class UnmatchedRequestsSuccessCommand extends Command
         parent::__construct();
 
         $this->aisClient = $aisClient;
-        $this->baseUrl = getenv("LENKEN_FRONTEND_baseUrl");
+        $this->baseUrl = getenv("LENKEN_FRONTEND_BASE_URL");
     }
 
     /**

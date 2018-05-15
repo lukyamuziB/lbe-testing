@@ -57,7 +57,7 @@ class UnmatchedRequestsFellowsCommand extends Command
     {
         parent::__construct();
 
-        $this->baseUrl = getenv("LENKEN_FRONTEND_baseUrl");
+        $this->baseUrl = getenv("LENKEN_FRONTEND_BASE_URL");
         $this->aisClient = $aisClient;
     }
 

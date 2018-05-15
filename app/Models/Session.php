@@ -140,7 +140,7 @@ class Session extends Model
             ->whereIn(
                 "request_id",
                 Request::select("id")
-                    ->where("status_id", STATUS::MATCHED)
+                    ->where("status_id", Status::MATCHED)
                     ->get()->toArray()
             )
             ->where(
