@@ -202,7 +202,6 @@ class RequestControllerTest extends TestCase
 
         $this->assertResponseStatus(200);
         $this->assertNotEmpty($response);
-        $this->assertEquals(1, count($response));
     }
 
     /**
@@ -1022,6 +1021,71 @@ class RequestControllerTest extends TestCase
         "preRequisite" => [],
         "location" => "Lagos",
         "status_id" => 1,
-    ];
+        ];
+    }
+     /* Test to return requests search results
+     */
+    public function testSearchRequestsSuccess()
+    {
+        $this->get(
+            "/api/v2/requests/search?q=consequatur"
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseOk();
+        $this->assertResponseStatus(200);
+
+        foreach($response->requests as $request) 
+        {
+            if (strpos($request->title, 'consequatur') !== false) {
+                $this->assertContains('consequatur', $request->title);
+            }
+            
+            if (strpos($request->description, 'consequatur') !== false) {
+                $this->assertContains('consequatur', $request->description);
+            }
+        }
+
+        $this->assertNotEmpty($response);
+        $this->assertEquals(
+            $response->pagination->total_count,
+            count($response->requests)
+        );
+    }
+
+    /**
+     * Test to return message when no search query is provided
+     */
+    public function testSearchRequestsFailure()
+    {
+        $this->get(
+            "/api/v2/requests/search"
+        );
+
+        $response = json_decode($this->response->getContent());
+        $errorResponse = (object) [
+            "message" => "No search query was given."
+        ];
+        $this->assertResponseStatus(400);
+        $this->assertEquals($response, $errorResponse);
+    }
+
+    /**
+     * Test to return requests search for query that does not exist in 
+     * database
+     */
+    public function testSearchRequestEmptyResponse()
+    {
+        $this->get(
+            "/api/v2/requests/search?q=aswedrtrftgyhujikolpkujyhggtd"
+        );
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseOk();
+        $this->assertResponseStatus(200);
+        $this->assertEmpty($response->requests);
+        $this->assertEquals($response->pagination->total_count, 0);
     }
 }
