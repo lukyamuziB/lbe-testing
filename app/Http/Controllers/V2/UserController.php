@@ -70,7 +70,6 @@ class UserController extends Controller
         $ratingDetails = $this->usersAverageRatingRepository->getById($id);
 
         $user = $this->formatUserInfo($aisUser);
-
         $user["skills"] = $lenkenUser->getSkills();
         $user["request_count"] = $requestCount;
         $user["logged_hours"] = $sessionDetails["totalHours"];
@@ -102,7 +101,46 @@ class UserController extends Controller
             "mentor_average" => $rating->average_mentor_rating ?? 0,
             "rating_count" => $rating->session_count ?? 0,
         ];
+        return $this->respond(Response::HTTP_OK, $response);
+    }
 
+    /**
+     * Search for users on Lenken.
+     *
+     * @param Request $request
+     * @throws NotFoundException
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        $searchTerm = $request->input("q");
+        $limit = $request->input("limit") ?
+            intval($request->input("limit")) : 20;
+
+        $users = User::where("email", "iLIKE", "%".$searchTerm."%")
+                            ->paginate($limit);
+        
+        $usersById = [];
+        foreach ($users as $user) {
+            $usersById[$user->id] = $user;
+        }
+
+        if (in_array("LENKEN_ADMIN", $request->user()->roles)) {
+            $userEmails = array_column($users->items(), "email");
+
+            $aisUsers = $this->aisClient->getUsersByEmail($userEmails);
+
+            foreach ($aisUsers["values"] as $aisUser) {
+                $usersById[$aisUser["id"]]["role"] = $aisUser["cohort"]["name"];
+                $usersById[$aisUser["id"]]["level"] = $aisUser["level"]["name"];
+            }
+        }
+
+        $response["users"] = array_values($usersById);
+        $response["pagination"] = [
+            "total_count" => $users->total(),
+            "page_size" => $users->perPage()
+        ];
         return $this->respond(Response::HTTP_OK, $response);
     }
 

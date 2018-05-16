@@ -29,6 +29,29 @@ class UserControllerTest extends \TestCase
     }
 
     /**
+     * Creates a new user
+     *
+     * @param string $identifier - user's id
+     * @param array  $roles      - user's roles
+     */
+    private function makeUser($identifier, $roles = ["Fellow"])
+    {
+        $this->be(
+            factory(User::class)->make(
+                [
+                    "uid" => $identifier,
+                    "name" => "Daniel Atebije",
+                    "email" => "daniel.atebije@andela.com",
+                    "roles" => $roles,
+                    "slack_handle"=> "@danny",
+                    "firstname" => "Daniel",
+                    "lastname" => "Atebije",
+                ]
+            )
+        );
+    }
+
+    /**
      * Test for get user details successfully
      *
      * @return void
@@ -108,6 +131,35 @@ class UserControllerTest extends \TestCase
         $this->assertAttributeContains("Inumidun Amao", "name", $response[1]);
 
         $this->assertCount(2, $response);
+    }
+
+    /**
+     * Test for user search success
+     *
+     * @return void
+     */
+    public function testForNonAdminSearchUsersSuccess()
+    {
+        $this->makeUser("-L4g3CXhX6cPHZXTEMNE"); 
+                     
+        $this->get("/api/v2/users/search?q=ad");
+        $response =json_decode($this->response->getContent());
+        $this->assertResponseOk();
+        $this->assertNotEmpty($response);
+        $this->assertAttributeContains("Adebayo Adesanya", "fullname", $response->users[0]);
+    }
+
+    /**
+     * Test for user search failure
+     *
+     */
+    public function testForNonAdminSearchUsersEmpty()
+    {
+        $this->makeUser("-L4g3CXhX6cPHZXTEMNE");
+
+        $this->get("/api/v2/users/search?q=jytr");
+        $response =json_decode($this->response->getContent());
+        $this->assertResponseStatus("200");
     }
 
     /**

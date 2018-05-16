@@ -54,6 +54,7 @@ $router->group(["prefix" => "api/v2/skills"], function ($router) {
  */
 $router->group(["prefix" => "api/v2/users"], function ($router) {
     $router->get("/", "UserController@getUsersByIds");
+    $router->get("/search", "UserController@search");
     $router->get("{id}", "UserController@get");
     $router->get("{id}/rating", "UserController@getUserRating");
     $router->post("{userId}/skills", "UserController@addUserSkill");
