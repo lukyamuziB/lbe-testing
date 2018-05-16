@@ -127,12 +127,14 @@ class UserController extends Controller
 
         if (in_array("LENKEN_ADMIN", $request->user()->roles)) {
             $userEmails = array_column($users->items(), "email");
+            
+            if (count($userEmails) !== 0) {
+                $aisUsers = $this->aisClient->getUsersByEmail($userEmails);
 
-            $aisUsers = $this->aisClient->getUsersByEmail($userEmails);
-
-            foreach ($aisUsers["values"] as $aisUser) {
-                $usersById[$aisUser["id"]]["role"] = $aisUser["cohort"]["name"];
-                $usersById[$aisUser["id"]]["level"] = $aisUser["level"]["name"];
+                foreach ($aisUsers["values"] as $aisUser) {
+                    $usersById[$aisUser["id"]]["role"] = $aisUser["cohort"]["name"];
+                    $usersById[$aisUser["id"]]["level"] = $aisUser["level"]["name"];
+                }
             }
         }
 
