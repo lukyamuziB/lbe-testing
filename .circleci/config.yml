@@ -100,7 +100,7 @@ workflows:
       - slack_notification:
           filters:
             branches:
-                only: production-v2
+                only: production
       - confirm_deployment:
           type: approval
           requires:
@@ -110,4 +110,4 @@ workflows:
             - confirm_deployment
           filters:
             branches:
-              only: production-v2
+              only: production
