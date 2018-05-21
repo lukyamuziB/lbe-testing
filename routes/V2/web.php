@@ -41,12 +41,12 @@ $router->group(["prefix" => "api/v2/skills"], function ($router) {
     $router->get("request-skills", "SkillController@getSkillsWithRequests");
     $router->get("/", "SkillController@getSkills");
     $router->get("{skillId}/requests", "RequestController@getSkillRequests");
+    $router->get("{skillId}/mentors", "SkillController@getSkillMentors");
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get('status-report', 'SkillController@getSkillsAndStatusCount');
         $router->get("{skillId}/requests", "RequestController@getSkillRequests");
         $router->patch("{skillId}/update-status", "SkillController@updateSkillStatus");
         $router->post("", 'SkillController@addSkill');
-        $router->get("{skillId}/mentors", "SkillController@getSkillMentors");
     });
 });
 /**
