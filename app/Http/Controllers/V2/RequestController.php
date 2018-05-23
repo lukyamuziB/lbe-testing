@@ -18,7 +18,7 @@ use App\Models\Request as MentorshipRequest;
 use App\Models\RequestUsers;
 use App\Models\Role;
 use App\Models\RequestType;
-use App\Models\RequestCancellationReason;
+use App\Models\RequestStatusUpdateReasons;
 use App\Utility\SlackUtility;
 
 /**
@@ -249,11 +249,10 @@ class RequestController extends Controller
         $usersRequestsHistoryIds = RequestUsers::select("request_id")
                                             ->where("user_id", $userId);
 
-        $mentorshipRequests = MentorshipRequest::where("status_id", STATUS::COMPLETED)
-            ->whereIn("id", $usersRequestsHistoryIds)
-            ->with(["session.rating", "requestSkills"])
-            ->get();
-
+        $mentorshipRequests = MentorshipRequest::whereIn("status_id", [Status::COMPLETED, Status::ABANDONED])
+                                                ->whereIn("id", $usersRequestsHistoryIds)
+                                                ->with(["session.rating", "requestSkills"])
+                                                ->get();
         $formattedRequests = formatMultipleRequestsForAPIResponse($mentorshipRequests);
         return $this->respond(Response::HTTP_OK, $formattedRequests);
     }
@@ -352,7 +351,7 @@ class RequestController extends Controller
     public function cancelRequest(Request $request, $id)
     {
         $currentUser = $request->user();
-        $mentorshipRequest = $this->validateRequestBeforeCancellation($id, $currentUser);
+        $mentorshipRequest = MentorshipRequest::validateRequestBeforeCancellation($id, $currentUser);
 
         $mentorshipRequest->status_id = Status::CANCELLED;
         $cancellationReason = $request->input("reason");
@@ -361,7 +360,7 @@ class RequestController extends Controller
             function () use ($mentorshipRequest, $currentUser, $cancellationReason) {
                 $mentorshipRequest->save();
                 if ($cancellationReason) {
-                    RequestCancellationReason::create(
+                    RequestStatusUpdateReasons::create(
                         [
                             "request_id" => $mentorshipRequest->id,
                             "user_id" => $currentUser->uid,
@@ -377,35 +376,6 @@ class RequestController extends Controller
         if ($result) {
             $this->respond(Response::HTTP_OK);
         }
-    }
-
-    /**
-     * Validate whether mentorship request belongs to user and whether its
-     * already cancelled before cancellation
-     *
-     * @param integer $id          - Mentorship Request ID
-     * @param object  $currentUser - User requesting to cancel request
-     *
-     * @throws NotFoundException | ConflictException | UnauthorizedException
-     *
-     * @return object $mentorshipRequest
-     */
-    private function validateRequestBeforeCancellation($id, $currentUser)
-    {
-        $mentorshipRequest = MentorshipRequest::find(intval($id));
-        if (!$mentorshipRequest) {
-            throw new NotFoundException("Mentorship Request not found.");
-        }
-
-        if (!in_array("LENKEN_ADMIN", $currentUser->roles)
-             && $currentUser->uid !== $mentorshipRequest->created_by->id) {
-            throw new UnauthorizedException("You don't have permission to cancel this Mentorship Request.");
-        }
-
-        if ($mentorshipRequest->status_id == Status::CANCELLED) {
-            throw new ConflictException("Mentorship Request already cancelled.");
-        }
-        return $mentorshipRequest;
     }
 
     /**
@@ -429,6 +399,50 @@ class RequestController extends Controller
         $slackMessage = "Your Mentorship Request `$requestTitle`
             opened on `$creationDate` has been cancelled \nREASON: `$cancellationReason`.";
         $this->slackUtility->sendMessage([$recipientSlackID], $slackMessage);
+    }
+
+    /**
+     * Updates the status of a mentorship request
+     * by setting the request status to be cancelled or abandoned
+     *
+     * @param Request $request - the request object
+     * @param integer $id      - Unique ID used to identify the request
+     *
+     * @throws NotFoundException | ConflictException | UnauthorizedException | BadRequestException
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $currentUser = $request->user();
+
+        $newStatus = $request->input("status");
+
+        if ($newStatus === Status::CANCELLED) {
+            $mentorshipRequest = MentorshipRequest::validateRequestBeforeCancellation($id, $currentUser);
+        } else if ($newStatus === Status::ABANDONED) {
+            $mentorshipRequest = MentorshipRequest::validateRequestBeforeAbandon($id, $currentUser);
+        } else {
+            throw new BadRequestException("No request status.");
+        }
+        $mentorshipRequest->status_id = $newStatus;
+        $statusUpdateReason = $request->input("reason");
+
+        $result = DB::transaction(
+            function () use ($mentorshipRequest, $currentUser, $statusUpdateReason) {
+                $mentorshipRequest->save();
+                if ($statusUpdateReason) {
+                    RequestStatusUpdateReasons::create(
+                        [
+                          "request_id" => $mentorshipRequest->id,
+                          "user_id" => $currentUser->uid,
+                          "reason" => ucfirst($statusUpdateReason)
+                        ]
+                    );
+                }
+
+                return $mentorshipRequest;
+            }
+        );
+            return $this->respond(Response::HTTP_OK, $result);
     }
 
     /**

@@ -23,6 +23,7 @@ $router->group(["prefix" => "api/v2/requests"], function ($router) {
     $router->put("{id}", "RequestController@editRequest");
     $router->get('search', "RequestController@searchRequests");
     $router->patch("{id}/cancel-request", "RequestController@cancelRequest");
+    $router->patch("{id}/update-status", "RequestController@updateStatus");
     $router->patch("{id}/withdraw-interest", "RequestController@withdrawInterest");
     $router->patch("{id}/indicate-interest", "RequestController@indicateInterest");
     $router->get("{id}/sessions", "SessionController@getRequestSessions");

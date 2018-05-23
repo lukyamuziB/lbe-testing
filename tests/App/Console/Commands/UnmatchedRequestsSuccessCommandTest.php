@@ -11,7 +11,7 @@
 namespace Tests\App\Console\Commands;
 
 use App\Mail\SuccessUnmatchedRequestsMail;
-use App\Models\RequestCancellationReason;
+use App\Models\RequestStatusUpdateReasons;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Application;
 

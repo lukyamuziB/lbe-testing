@@ -20,7 +20,7 @@ use App\Models\Status;
 use App\Models\Role;
 use App\Models\RequestType;
 use App\Models\RequestSkill;
-use App\Models\RequestCancellationReason;
+use App\Models\RequestStatusUpdateReasons;
 use App\Models\UserNotification;
 use App\Models\Notification;
 use App\Models\Request as MentorshipRequest;
@@ -466,7 +466,7 @@ class RequestController extends Controller
             $mentorshipRequest->save();
 
             $reason = ucfirst($request->input("reason"));
-            RequestCancellationReason::create(
+            RequestStatusUpdateReasons::create(
                 [
                     "request_id" => $mentorshipRequest->id,
                     "user_id" => $currentUser->uid,

@@ -1,7 +1,10 @@
 <?php
 
 namespace App\Models;
-
+use App\Exceptions\ConflictException;
+use App\Exceptions\BadRequestException;
+use App\Exceptions\NotFoundException;
+use App\Exceptions\UnauthorizedException;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Repositories\UsersAverageRatingRepository;
@@ -143,7 +146,7 @@ class Request extends Model
      */
     public function requestCancellationReason()
     {
-        return $this->hasOne("App\Models\RequestCancellationReason");
+        return $this->hasOne("App\Models\RequestStatusUpdateReasons");
     }
     /**
      * Defines Foreign Key Relationship to the status model
@@ -424,6 +427,70 @@ class Request extends Model
         }, $loggedSessionDates);
 
         return $formattedLoggedSessionDates;
+    }
+
+    /**
+     * Validate whether mentorship request belongs to user and whether its
+     * already abandoned before setting status to abandoned
+     *
+     * @param integer $id          - Mentorship Request ID
+     * @param object  $currentUser - User requesting to abandon request
+     *
+     * @throws NotFoundException | ConflictException | UnauthorizedException
+     *
+     * @return object $mentorshipRequest
+     */
+    public static function validateRequestBeforeAbandon($id, $currentUser)
+    {
+        $mentorshipRequest = Request::find(intval($id));
+
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        if (!in_array($mentorshipRequest->status_id, [Status::MATCHED, Status::ABANDONED])) {
+            throw new BadRequestException("You can only abandon a matched request.");
+        }
+
+        if (!in_array($currentUser->uid, [$mentorshipRequest->mentor->id, $mentorshipRequest->mentee->id]))
+        {
+            throw new UnauthorizedException("You don't have permission to abandon this Mentorship Request.");
+        }
+
+        if ($mentorshipRequest->status_id == Status::ABANDONED) {
+            throw new ConflictException("Mentorship Request already abandoned.");
+        }
+        return $mentorshipRequest;
+    }
+
+    /**
+     * Validate whether mentorship request belongs to user and whether its
+     * already cancelled before cancellation
+     *
+     * @param integer $id          - Mentorship Request ID
+     * @param object  $currentUser - User requesting to cancel request
+     *
+     * @throws NotFoundException | ConflictException | UnauthorizedException
+     *
+     * @return object $mentorshipRequest
+     */
+    public static function validateRequestBeforeCancellation($id, $currentUser)
+    {
+        $mentorshipRequest = Request::find(intval($id));
+        
+        if (!$mentorshipRequest) {
+            throw new NotFoundException("Mentorship Request not found.");
+        }
+
+        if (!in_array("LENKEN_ADMIN", $currentUser->roles)
+            && $currentUser->uid !== $mentorshipRequest->created_by->id) {
+            throw new UnauthorizedException("You don't have permission to cancel this Mentorship Request.");
+        }
+
+        if ($mentorshipRequest->status_id == Status::CANCELLED) {
+            throw new ConflictException("Mentorship Request already cancelled.");
+        }
+        return $mentorshipRequest;
     }
 
     /**

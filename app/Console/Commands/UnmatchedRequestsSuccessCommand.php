@@ -14,7 +14,7 @@ use App\Models\Status;
 use App\Models\User;
 use App\Models\RequestType;
 use App\Models\Request as MentorshipRequest;
-use App\Models\RequestCancellationReason;
+use App\Models\RequestStatusUpdateReasons;
 use App\Mail\SuccessUnmatchedRequestsMail;
 
 class UnmatchedRequestsSuccessCommand extends Command
@@ -189,7 +189,7 @@ class UnmatchedRequestsSuccessCommand extends Command
 
         // Add cancellation reasons
         foreach ($requests as $request) {
-            RequestCancellationReason::create(
+            RequestStatusUpdateReasons::create(
                 [
                     "request_id" => $request["request_id"],
                     "user_id" => $request["mentee_id"],

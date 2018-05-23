@@ -21,6 +21,7 @@ class RequestControllerTest extends TestCase
     private $cancellationReason = [
         "reason"=> "test cancellations reason."
     ];
+
     private $validAcceptOrRejectUserData = [
         "interestedUserId" => "-KesEogCwjq6lkOzKmLI",
         "interestedUserName" => "Test Admin",
@@ -184,7 +185,6 @@ class RequestControllerTest extends TestCase
         $this->get("/api/v2/requests/history");
 
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
         $this->assertNotEmpty($response);
     }
@@ -373,9 +373,70 @@ class RequestControllerTest extends TestCase
     {
         $this->patch("/api/v2/requests/14/cancel-request");
         $this->patch("/api/v2/requests/14/cancel-request");
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseStatus(409);
+        $this->assertEquals("Mentorship Request already cancelled.", $response->message);
+    }
+
+    /**
+     * Test that a user can abandon an ongoing mentorship request succesfully
+     *
+     * @return {void}
+     */
+    public function testAbandonRequestSuccess()
+    {
+        $this->patch("/api/v2/requests/2/update-status",
+            ["status" => Status::ABANDONED, "reason"=> "test abandon reason."]);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that a user can't abandon an ongoing request in which they
+     * are not involved in
+     *
+     * @return {void}
+     */
+    public function testAbandonRequestFailureForNoPermission()
+    {
+        $this->makeUser("-KXKtD8TK2dAXdUF3dPF");
+        $this->patch("/api/v2/requests/2/update-status",
+            ["status" => Status::ABANDONED, "reason"=> "test abandon reason."]);
+        $this->assertResponseStatus(401);
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals(
+            "You don't have permission to abandon this Mentorship Request.",
+            $response->message
+        );
+    }
+
+    /**
+     * Test user can't abandon request that doesn't exist
+     *
+     * @return {void}
+     */
+    public function testAbandonRequestFailureForInvalidRequestId()
+    {
+        $this->patch("/api/v2/requests/2389/update-status",
+        ["status" => Status::ABANDONED, "reason"=> "test abandon reason."]);
+            $response = json_decode($this->response->getContent());
+            $this->assertResponseStatus(404);
+        $this->assertEquals("Mentorship Request not found.", $response->message);
+    }
+
+    /**
+     * Test user can't abandon a request twice.
+     *
+     * @return {void}
+     */
+    public function testAbandonRequestForAlreadyAbandonedRequest()
+    {
+        $this->patch("/api/v2/requests/2/update-status",
+            ["status" => Status::ABANDONED, "reason"=> "test abandon reason."]);
+        $this->patch("/api/v2/requests/2/update-status",
+            ["status" => Status::ABANDONED, "reason"=> "test abandon reason."]);
         $this->assertResponseStatus(409);
         $response = json_decode($this->response->getContent());
-        $this->assertEquals("Mentorship Request already cancelled.", $response->message);
+        $this->assertEquals("Mentorship Request already abandoned.", $response->message);
     }
 
     /**
@@ -861,7 +922,7 @@ class RequestControllerTest extends TestCase
         $this->get("api/v2/requests/pool?ratings=2");
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertNotEmpty($response);
+        $this->assertNotFalse($response->pagination->total_count > 0);
     }
 
     /**

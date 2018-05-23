@@ -14,4 +14,5 @@ class Status extends Model
     const MATCHED = 2;
     const COMPLETED = 3;
     const CANCELLED = 4;
+    const ABANDONED = 5;
 }
