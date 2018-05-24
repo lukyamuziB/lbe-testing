@@ -19,50 +19,50 @@ $router->get('/', function () use ($router) {
  * Routes for resource requests
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->get('requests', 'RequestController@all');
-    $router->get('requests/{id}', 'RequestController@get');
-    $router->post('requests', 'RequestController@add');
-    $router->put('requests/{id}', 'RequestController@update');
-    $router->patch('requests/{id}/update-interested', 'RequestController@updateInterested');
-    $router->patch('requests/{id}/update-mentor', 'RequestController@updateMentor');
-    $router->patch('requests/{id}/cancel-request', 'RequestController@cancelRequest');
-    $router->delete('requests/{id}', 'RequestController@remove');
-    $router->put("requests/{id}/extend-mentorship", "RequestController@requestExtension");
-    $router->patch("requests/{id}/approve-extension", "RequestController@approveExtensionRequest");
-    $router->patch("requests/{id}/reject-extension", "RequestController@rejectExtensionRequest");
+    $router->get('requests', 'DeprecationMessageController@get');
+    $router->get('requests/{id}', 'DeprecationMessageController@get');
+    $router->post('requests', 'DeprecationMessageController@get');
+    $router->put('requests/{id}', 'DeprecationMessageController@get');
+    $router->patch('requests/{id}/update-interested', 'DeprecationMessageController@get');
+    $router->patch('requests/{id}/update-mentor', 'DeprecationMessageController@get');
+    $router->patch('requests/{id}/cancel-request', 'DeprecationMessageController@get');
+    $router->delete('requests/{id}', 'DeprecationMessageController@get');
+    $router->put("requests/{id}/extend-mentorship", "DeprecationMessageController@get");
+    $router->patch("requests/{id}/approve-extension", "DeprecationMessageController@get");
+    $router->patch("requests/{id}/reject-extension", "DeprecationMessageController@get");
 });
 
 /**
  * Routes for resource skills
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->get('skills', 'SkillController@all');
-    $router->get('skills/{id}', 'SkillController@get');
-    $router->post('skills', 'SkillController@add');
-    $router->put('skills/{id}', 'SkillController@put');
-    $router->delete('skills/{id}', 'SkillController@remove');
+    $router->get('skills', 'DeprecationMessageController@get');
+    $router->get('skills/{id}', 'DeprecationMessageController@get');
+    $router->post('skills', 'DeprecationMessageController@get');
+    $router->put('skills/{id}', 'DeprecationMessageController@get');
+    $router->delete('skills/{id}', 'DeprecationMessageController@get');
 });
 
 /**
  * Routes for status
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->get('status', 'StatusController@all');
+    $router->get('status', 'DeprecationMessageController@get');
 });
 
 /**
  * Routes for user information
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->get('users/{id}', 'UserController@get');
+    $router->get('users/{id}', 'DeprecationMessageController@get');
 });
 
 /**
  * Routes for reports
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->get('reports', 'ReportController@all');
-    $router->get('reports/unmatched-requests', 'ReportController@getUnmatchedRequests');
+    $router->get('reports', 'DeprecationMessageController@get');
+    $router->get('reports/unmatched-requests', 'DeprecationMessageController@get');
     $router->group([ 'middleware' => 'admin'], function ($router) {
         $router->get('reports/inactive-mentorships', 'ReportController@getInactiveMentorshipsReport');
     });
@@ -72,24 +72,24 @@ $router->group(['prefix' => 'api/v1'], function ($router) {
  * Routes for messages
  */
 $router->group(['prefix' => 'api/v1/messages'], function ($router) {
-    $router->post('slack/send', 'SlackController@sendMessage');
+    $router->post('slack/send', 'DeprecationMessageController@get');
 });
 
 /**
  * Routes for sessions
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->get('sessions/{id}', 'SessionController@getSessionsReport');
-    $router->post('sessions', 'SessionController@logSession');
-    $router->patch('sessions/{id}/approve', 'SessionController@approveSession');
-    $router->patch('sessions/{id}/reject', 'SessionController@rejectSession');
+    $router->get('sessions/{id}', 'DeprecationMessageController@get');
+    $router->post('sessions', 'DeprecationMessageController@get');
+    $router->patch('sessions/{id}/approve', 'DeprecationMessageController@get');
+    $router->patch('sessions/{id}/reject', 'DeprecationMessageController@get');
 });
 
 /**
  * Routes for resource session-rating
  */
 $router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->post('ratings', 'RatingController@rateSession');
+    $router->post('ratings', 'DeprecationMessageController@get');
 });
 
 /**

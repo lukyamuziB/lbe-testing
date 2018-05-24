@@ -73,51 +73,6 @@ class RequestControllerTest extends TestCase
         );
     }
 
-    /**
-     * Creates a request with the status id provided as argument
-     *
-     * @param string $createdBy  - The ID of the user making a request
-     * @param string $interested - The ID of the user interested
-     * @param int    $statusId   - The status of the request.
-     *
-     * @return void
-     */
-    private function createRequest($createdBy, $title, $interested, $statusId, $createdAt = "2017-09-19 20:55:24")
-    {
-        $createdRequest = Request::create(
-            [
-                "created_by" => $createdBy,
-                "request_type_id" => RequestType::MENTEE_REQUEST,
-                "title" => $title,
-                "description" => "Learn Javascript",
-                "status_id" => $statusId,
-                "created_at" => $createdAt,
-                "match_date" => null,
-                "interested" => [$interested],
-                "duration" => 2,
-                "pairing" => (
-                    [
-                        "start_time" => "01:00",
-                        "end_time" => "02:00",
-                        "days" => ["monday"],
-                        "timezone" => "EAT"
-                    ]
-                ),
-                "location" => "Nairobi"
-            ]
-        );
-
-        RequestUsers::create(
-            [
-                "user_id" => $createdBy,
-                "role_id" => Role::MENTEE,
-                "request_id" => $createdRequest["id"]
-            ]
-        );
-
-        return $createdRequest;
-    }
-
     public function setUp()
     {
         parent::setUp();

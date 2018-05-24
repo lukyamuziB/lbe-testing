@@ -3,6 +3,7 @@
 namespace Test\App\Http\Controllers\V2;
 
 use App\Models\User;
+use App\Models\Status;
 use App\Http\Controllers\V2\SkillController;
 use TestCase;
 use Carbon\Carbon;
@@ -96,15 +97,27 @@ class ReportControllerTest extends TestCase
      */
     public function testGetRequestDateRangeStatusCountSuccess()
     {
-        $this->get("/api/v2/requests/status-statistics?start_date=01-03-2017&end_date=01-02-2018");
+        $statusIds = [
+            Status::OPEN,
+            Status::MATCHED,
+            Status::CANCELLED,
+            Status::COMPLETED,
+        ];
+
+        foreach ($statusIds as $statusId) {
+            $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-K_nkl19N6-EGNa0W8LF", $statusId, Carbon::now());
+        }
+
+        $startAndEndDate = Carbon::now()->format("d-m-Y");
+
+        $this->get("/api/v2/requests/status-statistics?start_date=".$startAndEndDate."&end_date=".$startAndEndDate);
+
         $response = json_decode($this->response->getContent());
 
-        $this->assertResponseStatus(200);
-        $this->assertNotNull($response);
-        $this->assertObjectHasAttribute('total', $response);
-        $this->assertObjectHasAttribute('open', $response);
-        $this->assertObjectHasAttribute('matched', $response);
-        $this->assertObjectHasAttribute('cancelled', $response);
-        $this->assertObjectHasAttribute('completed', $response);
+        $this->assertEquals(4, $response->total);
+        $this->assertEquals(1, $response->open);
+        $this->assertEquals(1, $response->matched);
+        $this->assertEquals(1, $response->cancelled);
+        $this->assertEquals(1, $response->completed);
     }
 }
