@@ -19,6 +19,8 @@ use Illuminate\Http\Response;
 use Carbon\Carbon;
 use App\Clients\FreckleClient;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\LoggedSessionMail;
+use App\Mail\ConfirmedSessionMail;
 use App\Mail\FailedFreckleLoggingMail;
 use GuzzleHttp\Exception\TransferException;
 
@@ -386,6 +388,7 @@ class SessionController extends Controller
         );
 
         $sessionToLog = Session::find(intval($sessionId));
+
         if (!$sessionToLog) {
             throw new NotFoundException("Session not found.");
         }
@@ -407,7 +410,6 @@ class SessionController extends Controller
                     : $mentorshipRequest->mentee->id;
 
                 $sessionToLog->saveComment($rating["comment"], $userToRate);
-
                 if (($rating["values"])) {
                     $sessionToLog->saveRating($userToRate, $rating["values"], $rating["scale"]);
                 }
@@ -415,6 +417,8 @@ class SessionController extends Controller
                 return $sessionToLog;
             }
         );
+
+        $this->sendLoggedSessionNotification($sessionToLog->recipient, $sessionToLog);
         return $this->respond(Response::HTTP_CREATED, $result);
     }
 
@@ -431,7 +435,6 @@ class SessionController extends Controller
     public function confirmSession(Request $request, $id)
     {
         $session = Session::with('request')->find((int)$id);
-
         if (!$session) {
             throw new NotFoundException("Session not found.");
         }
@@ -492,6 +495,8 @@ class SessionController extends Controller
         if ($session->mentee_approved && $session->mentor_approved) {
             $this->logSessionOnFreckle($session);
         }
+
+        $this->sendConfirmSessionNotification($session->recipient, $session);
 
         return $this->respond(Response::HTTP_OK, $result);
     }
@@ -566,5 +571,58 @@ class SessionController extends Controller
         Mail::to($email)->send(
             new FailedFreckleLoggingMail($session->date)
         );
+    }
+    
+
+    /**
+     * Sends logged session notification
+     *
+     * @param String $recipient - Receiver of the mail
+     * @param Object $payload - notification payload
+     *
+     * @return void
+     */
+    private function sendLoggedSessionNotification($recipient, $payload)
+    {
+        $lenkenBaseUrl = getenv("LENKEN_FRONTEND_BASE_URL");
+        $sessionUrl = "$lenkenBaseUrl/request-pool/in-progress/$payload->request_id";
+        $recipient = ($payload->mentee_approved) ?
+            $payload->request->mentor->email: $payload->request->mentee->email;
+        $loggedData = new LoggedSessionMail(
+            [
+            "sessionDate" => $payload->date,
+            "currentUser" => ($payload->mentee_approved) ?
+            $payload->request->mentee->fullname : $payload->request->mentor->fullname,
+            "sessionDuration" => $payload->request->duration,
+            "sessionUrl" => $sessionUrl
+            ],
+            $recipient
+        );
+
+        return sendEmailNotification($recipient, $loggedData);
+    }
+
+    /**
+     * Sends confirmed session notification
+     *
+     * @param String $recipient - Receiver of the mail
+     * @param Object $payload - notification payload
+     *
+     * @return void
+     */
+    private function sendConfirmSessionNotification($recipient, $payload)
+    {
+        $recipient = ($payload->mentee_approved) ?
+            $payload->request->mentor->email: $payload->request->mentee->email;
+        $loggedData = new ConfirmedSessionMail(
+            [
+            "date" => $payload->date,
+            "currentUser" => ($payload->mentee_approved) ?
+            $payload->request->mentee->fullname : $payload->request->mentor->fullname,
+            ],
+            $recipient
+        );
+
+        return sendEmailNotification($recipient, $loggedData);
     }
 }

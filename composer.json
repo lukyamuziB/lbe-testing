@@ -45,7 +45,8 @@
         },
         "files": [
             "app/Helpers/GoogleCalendarHelper.php",
-            "app/Helpers/RequestFormatterHelper.php"
+            "app/Helpers/RequestFormatterHelper.php",
+            "app/Helpers/SendEmailHelper.php"
         ],
         "classmap": [ "./vendor/google/apiclient/src/Google" ]
     },
@@ -56,7 +57,8 @@
         ],
         "files": [
             "app/Helpers/GoogleCalendarHelper.php",
-            "app/Helpers/RequestFormatterHelper.php"
+            "app/Helpers/RequestFormatterHelper.php",
+            "app/Helpers/SendEmailHelper.php"
         ],
         "psr-4": {
             "App\\": "app/",
