@@ -19,7 +19,6 @@ class Kernel extends ConsoleKernel
         Commands\GenerateGoogleCredentials::class,
         Commands\UnmatchedRequestsFellowsCommand::class,
         Commands\EncryptGoogleCredentialsCommand::class,
-        Commands\UnmatchedRequestsWithInterestCommand::class,
         Commands\UpdateRatingsUserCommand::class,
         Commands\UpdateCompletedRequestStatusCommand::class,
         Commands\InactiveMentorshipNotificationCommand::class,
