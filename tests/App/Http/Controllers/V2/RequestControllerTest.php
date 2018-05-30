@@ -10,6 +10,7 @@ use App\Models\RequestUsers;
 use App\Models\Role;
 use App\Models\RequestType;
 use App\Http\Controllers\V2\RequestController;
+use Test\Mocks\GoogleCalendarClientMock;
 
 use Illuminate\Http\UploadedFile;
 use TestCase;
@@ -34,6 +35,8 @@ class RequestControllerTest extends TestCase
     const REQUESTS_URI = "/api/v2/requests";
 
     private $validRequest;
+
+    private $googleCalendarClientMock;
 
     private $invalidResponse = [
         "title" => [
@@ -76,8 +79,14 @@ class RequestControllerTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+
         $this->validRequest = $this->getValidRequest('4');
+
+        $this->googleCalendarClientMock = new GoogleCalendarClientMock();
+
+        $this->app->instance("App\Clients\GoogleCalendarClient", $this->googleCalendarClientMock);
     }
 
     /**
@@ -87,7 +96,7 @@ class RequestControllerTest extends TestCase
      */
     public function testGetRequestSuccess()
     {
-        $createdRequest = $this->createRequest("-K_nkl19N6-EGNa0W8LF","javascript", "-KesEogCwjq6lkOzKmLI", 2);
+        $createdRequest = $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript", "-KesEogCwjq6lkOzKmLI", 2);
         $createdRequestId = $createdRequest->id;
 
         $this->get("/api/v2/requests/$createdRequestId");
@@ -478,6 +487,8 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
 
         $this->assertResponseStatus(200);
+
+        $this->assertTrue($this->googleCalendarClientMock->called);
 
         $this->assertEquals($response->status_id, 2);
 

@@ -20,6 +20,7 @@ use App\Models\Role;
 use App\Models\RequestType;
 use App\Models\RequestStatusUpdateReasons;
 use App\Utility\SlackUtility;
+use App\Clients\GoogleCalendarClient;
 
 /**
  * Class RequestController
@@ -487,14 +488,19 @@ class RequestController extends Controller
      * Accept a user who has shown interest in users mentorship request.
      *
      * @param Request $request - Request object
+     * @param GoogleCalendarClient $googleCalendar google client
      * @param integer $mentorshipRequestId - mentorship request id with interested user
      *
      * @throws NotFoundException if mentorship request is not found
      *
      * @return Response object
      */
-    public function acceptInterestedUser(Request $request, $mentorshipRequestId)
-    {
+    public function acceptInterestedUser(
+        Request $request,
+        GoogleCalendarClient $googleCalendar,
+        $mentorshipRequestId
+    ) {
+    
         $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
 
         $this->validateBeforeAcceptOrRejectUser($request, $mentorshipRequest);
@@ -517,6 +523,11 @@ class RequestController extends Controller
                 "request_id" => $mentorshipRequestId,
                 "role_id" => $roleId
             ]
+        );
+
+        schedulePairingSessionsOnCalendar(
+            $googleCalendar,
+            $mentorshipRequest
         );
 
         return $this->respond(Response::HTTP_OK, $mentorshipRequest);

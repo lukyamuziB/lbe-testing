@@ -94,6 +94,8 @@ class ReportControllerTest extends TestCase
 
     /**
      * Test to check if the date range filter is accurate.
+     * 
+     * @return void
      */
     public function testGetRequestDateRangeStatusCountSuccess()
     {
@@ -114,6 +116,7 @@ class ReportControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
 
+        $this->assertResponseStatus(200);
         $this->assertEquals(4, $response->total);
         $this->assertEquals(1, $response->open);
         $this->assertEquals(1, $response->matched);

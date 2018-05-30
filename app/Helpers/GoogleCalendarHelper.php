@@ -5,28 +5,28 @@ use App\Exceptions\NotFoundException;
 /**
  * Set the recurring rule for selected days
  *
- * @param array  $session_days session days as per user choice [monday,tuesday,...]
- * @param string $end_date     last date for this event
+ * @param array  $sessionDays session days as per user choice [monday,tuesday,...]
+ * @param string $endDate     last date for this event
  *
  * @return string formatted recursion Rule
  * @throws InvalidArgumentException
  */
-function getCalendarRecursionRule($session_days, $end_date)
+function getCalendarRecursionRule($sessionDays, $endDate)
 {
-    if (!is_array($session_days)) {
+    if (!is_array($sessionDays)) {
         throw new InvalidArgumentException("Days must be passed as an array");
     }
 
-    if (count($session_days) == 0) {
+    if (count($sessionDays) == 0) {
         throw new InvalidArgumentException("Missing days values");
     }
 
-    if ($end_date === "") {
+    if ($endDate === "") {
         throw new InvalidArgumentException("Missing date value");
     }
 
-    $until = preg_replace("/:|-/", "", $end_date) . "Z";
-    $week_days = [
+    $until = preg_replace("/:|-/", "", $endDate) . "Z";
+    $weekDays = [
         "monday" => "MO",
         "tuesday" => "TU",
         "wednesday" => "WE",
@@ -36,7 +36,7 @@ function getCalendarRecursionRule($session_days, $end_date)
         "sunday" => "SU"
     ];
 
-    $days = array_intersect_key($week_days, array_flip($session_days));
+    $days = array_intersect_key($weekDays, array_flip($sessionDays));
     $days = implode(",", array_values($days));
 
     return "RRULE:FREQ=WEEKLY;BYDAY=$days;UNTIL=$until";
@@ -45,19 +45,19 @@ function getCalendarRecursionRule($session_days, $end_date)
 /**
  * Calculate and event start date
  *
- * @param array  $session_days session days as per user choice [monday,tuesday,...]
+ * @param array  $sessionDays session days as per user choice [monday,tuesday,...]
  * @param string $date         sast date for this event
  *
- * @return string $date_time
+ * @return string $dateTime
  * @throws InvalidArgumentException
  */
-function calculateEventStartDate($session_days, $date = "")
+function calculateEventStartDate($sessionDays, $date = "")
 {
-    if (!is_array($session_days)) {
+    if (!is_array($sessionDays)) {
         throw new InvalidArgumentException("Days must be passed as an array");
     }
 
-    if (count($session_days) == 0) {
+    if (count($sessionDays) == 0) {
         throw new InvalidArgumentException("Missing days values");
     }
 
@@ -65,15 +65,15 @@ function calculateEventStartDate($session_days, $date = "")
         throw new InvalidArgumentException("Missing date value");
     }
 
-    $date_time = date("Y-m-d", strtotime($date));
-    $date_day = date("l", strtotime($date_time));
+    $dateTime = date("Y-m-d", strtotime($date));
+    $dateDay = date("l", strtotime($dateTime));
 
-    while (!in_array(strtolower($date_day), $session_days)) {
-        $date_time = date("Y-m-d", strtotime("+1 days", strtotime($date_time)));
-        $date_day = date("l", strtotime($date_time));
+    while (!in_array(strtolower($dateDay), $sessionDays)) {
+        $dateTime = date("Y-m-d", strtotime("+1 days", strtotime($dateTime)));
+        $dateDay = date("l", strtotime($dateTime));
     }
 
-    return $date_time;
+    return $dateTime;
 }
 
 /**
@@ -111,4 +111,118 @@ function formatCalendarDate($date = "", $time = "", $duration = 0)
     }
 
     return $date . "T" . $time;
+}
+
+/**
+ * Format timezone to suit google calendar API
+ *
+ * @param string $timezone timezone to format
+ *
+ * @return string $timezone  formatted calendar date
+ */
+function formatTimezone($timezone = "Africa/Lagos")
+{
+    if ($timezone === "WAT") {
+        $timezone = "Africa/Lagos";
+    } elseif ($timezone === "EAT") {
+        $timezone = "Africa/Nairobi";
+    }
+    return $timezone;
+}
+
+/**
+ * Format event details for google calendar
+ *
+ * @param object $mentorshipRequest mentorship request made
+ *
+ * @return array $formattedEventDetails formatted Event details for google calendar
+ */
+function formatEventDetailsForGoogleCalendar($mentorshipRequest)
+{
+    $formattedEventDetails["timezone"] = formatTimezone($mentorshipRequest->pairing["timezone"]);
+
+    $formattedEventDetails["startDate"] = calculateEventStartDate(
+        $mentorshipRequest->pairing["days"],
+        $mentorshipRequest->match_date
+    );
+
+    $formattedEventDetails["startTime"] = formatCalendarDate(
+        $formattedEventDetails["startDate"],
+        $mentorshipRequest->pairing["start_time"] . ":00"
+    );
+
+    $formattedEventDetails["endTime"] = formatCalendarDate(
+        $formattedEventDetails["startDate"],
+        $mentorshipRequest->pairing["end_time"] . ":00"
+    );
+
+    $formattedEventDetails["endDate"] = formatCalendarDate(
+        $formattedEventDetails["startDate"],
+        $mentorshipRequest->pairing["end_time"] . ":00",
+        $mentorshipRequest->duration
+    );
+
+    $formattedEventDetails["recursionRule"] = getCalendarRecursionRule(
+        $mentorshipRequest->pairing["days"],
+        $formattedEventDetails["endDate"]
+    );
+
+    return $formattedEventDetails;
+}
+
+/**
+ * Get event details for google calendar
+ *
+ * @param object $mentorshipRequest mentorship request made
+ *
+ * @return array $eventDetails formatted Event details for google calendar
+ */
+function getEventDetails($mentorshipRequest)
+{
+    $formattedEventDetails = formatEventDetailsForGoogleCalendar($mentorshipRequest);
+
+    $mentorName = explode(" ", $mentorshipRequest->mentor->fullname);
+    $menteeName = explode(" ", $mentorshipRequest->mentee->fullname);
+
+    $eventDetails = [
+        "summary" => $mentorName[0]."<>".$menteeName[0],
+        "description" => $mentorshipRequest->description,
+        "start" => [
+            "dateTime" => $formattedEventDetails["startTime"],
+            "timeZone" => $formattedEventDetails["timezone"]
+        ],
+        "end" => [
+            "dateTime" => $formattedEventDetails["endTime"],
+            "timeZone" => $formattedEventDetails["timezone"]
+        ],
+        "recurrence" => [$formattedEventDetails["recursionRule"]],
+        "attendees" => [
+            ["email" => $mentorshipRequest->mentor->email],
+            ["email" => $mentorshipRequest->mentee->email],
+        ],
+        "reminders" => [
+            "useDefault" => false,
+            "overrides" => [
+                ["method" => "email", "minutes" => 24 * 60],
+                ["method" => "popup", "minutes" => 10],
+            ],
+        ]
+    ];
+    return $eventDetails;
+}
+
+/**
+ * Schedule pairing session on calendar
+ *
+ * @param GoogleCalendarClient $googleCalendar google client
+ * @param object $mentorshipRequest mentorship request made
+ *
+ * @return void
+ */
+function schedulePairingSessionsOnCalendar(
+    $googleCalendar,
+    $mentorshipRequest
+) {
+        $eventDetails = getEventDetails($mentorshipRequest);
+        $googleCalendar->createEvent($eventDetails);
 }
