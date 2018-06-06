@@ -572,7 +572,7 @@ class SessionController extends Controller
             new FailedFreckleLoggingMail($session->date)
         );
     }
-    
+
 
     /**
      * Sends logged session notification

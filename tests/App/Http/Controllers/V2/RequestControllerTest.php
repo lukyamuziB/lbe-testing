@@ -197,7 +197,7 @@ class RequestControllerTest extends TestCase
      /**
      * Test to filter requests by seeking mentor
      *
-     * @return void 
+     * @return void
      */
     public function testGetRequestsPoolForSeekingMentorSuccess()
     {
@@ -212,7 +212,7 @@ class RequestControllerTest extends TestCase
         foreach ($openRequests as $openRequest) {
             $this->assertEquals($openRequest->request_type_id, 1);
         }
-        
+
         $this->assertNotEmpty($openRequests);
     }
 
@@ -282,7 +282,7 @@ class RequestControllerTest extends TestCase
      */
     public function testCancelRequestSuccessByMentee()
     {
-        $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
+        $this->patch("/api/v2/requests/19/cancel-request", $this->cancellationReason);
         $this->assertResponseOk();
     }
 
@@ -294,7 +294,7 @@ class RequestControllerTest extends TestCase
     public function testCancelRequestSuccessByAdmin()
     {
         $this->makeUser("-KXKtD8TK2dAXdUF3dPF", ["LENKEN_ADMIN"]);
-        $this->patch("/api/v2/requests/14/cancel-request", $this->cancellationReason);
+        $this->patch("/api/v2/requests/19/cancel-request", $this->cancellationReason);
         $this->assertResponseOk();
     }
 
@@ -462,13 +462,13 @@ class RequestControllerTest extends TestCase
     {
         $this->get("api/v2/requests/pool?limit=5&page=1&status=1");
         $this->assertResponseStatus(200);
-    
+
         $mentorshipRequests = json_decode(
             $this->response->getContent()
         )->requests;
         foreach ($mentorshipRequests as $mentorshipRequest) {
             $this->assertEquals($mentorshipRequest->status_id, 1);
-        }   
+        }
     }
 
 
@@ -1028,12 +1028,12 @@ class RequestControllerTest extends TestCase
         $this->assertResponseOk();
         $this->assertResponseStatus(200);
 
-        foreach($response->requests as $request) 
+        foreach($response->requests as $request)
         {
             if (strpos($request->title, 'consequatur') !== false) {
                 $this->assertContains('consequatur', $request->title);
             }
-            
+
             if (strpos($request->description, 'consequatur') !== false) {
                 $this->assertContains('consequatur', $request->description);
             }
@@ -1064,7 +1064,7 @@ class RequestControllerTest extends TestCase
     }
 
     /**
-     * Test to return requests search for query that does not exist in 
+     * Test to return requests search for query that does not exist in
      * database
      */
     public function testSearchRequestEmptyResponse()

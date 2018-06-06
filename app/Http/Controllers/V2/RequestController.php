@@ -21,6 +21,8 @@ use App\Models\RequestType;
 use App\Models\RequestStatusUpdateReasons;
 use App\Utility\SlackUtility;
 use App\Clients\GoogleCalendarClient;
+use App\Mail\NewRequestMail;
+use App\Mail\CancelRequestMail;
 
 /**
  * Class RequestController
@@ -144,7 +146,7 @@ class RequestController extends Controller
                 "total_count" => $searchResults->total(),
                 "page_size" => $searchResults->perPage(),
             ];
-        
+
             return $this->respond(Response::HTTP_OK, $response);
     }
 
@@ -177,8 +179,8 @@ class RequestController extends Controller
      *
      * @param - splitSearchParams
      *
-     * @return void 
-     * 
+     * @return void
+     *
      */
     private function searchQueryCallback($query, $splitSearchParams, $field)
     {
@@ -201,7 +203,7 @@ class RequestController extends Controller
         if ($category = $this->getRequestParams($request, "category")) {
             $params["category"] = $category;
         }
-        
+
         if ($requestTypes = $this->getRequestParams($request, "type")) {
             $params["types"] = array_map('intval', explode(",", $requestTypes));
         }
@@ -353,7 +355,6 @@ class RequestController extends Controller
     {
         $currentUser = $request->user();
         $mentorshipRequest = MentorshipRequest::validateRequestBeforeCancellation($id, $currentUser);
-
         $mentorshipRequest->status_id = Status::CANCELLED;
         $cancellationReason = $request->input("reason");
 
@@ -374,8 +375,31 @@ class RequestController extends Controller
             }
         );
 
+        $this->sendCancelRequestEmail($mentorshipRequest, $currentUser);
         if ($result) {
             $this->respond(Response::HTTP_OK);
+        }
+    }
+
+    /**
+     * Sends an email to users interested in a canceled request
+     *
+     * @param Object $mentorshipRequest.
+     */
+    private function sendCancelRequestEmail($mentorshipRequest, $currentUser)
+    {
+        $payload = [
+            "currentUser" => $currentUser->name,
+            "title" => $mentorshipRequest->title,
+            "request_type" => $mentorshipRequest->request_type_id == 1 ? "mentor": "mentee",
+        ];
+
+        $interestedUserEmails = User::whereIn("id", $mentorshipRequest->interested)->pluck("email");
+        if (!empty($interestedUserEmails)) {
+            foreach ($interestedUserEmails as $userEmail) {
+                $emailPayload = new CancelRequestMail($payload, $userEmail);
+                return sendEmailNotification($userEmail, $emailPayload);
+            }
         }
     }
 
@@ -500,7 +524,7 @@ class RequestController extends Controller
         GoogleCalendarClient $googleCalendar,
         $mentorshipRequestId
     ) {
-    
+
         $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
 
         $this->validateBeforeAcceptOrRejectUser($request, $mentorshipRequest);
@@ -647,7 +671,55 @@ class RequestController extends Controller
             }
         );
 
+        $payload = [
+            "currentUser" => $user->name,
+            "title" => $requestDetails["title"]
+        ];
+
+        if ($result && $requestDetails["request_type_id"] === RequestType::MENTEE_REQUEST) {
+            $openMentorshipRequests = $this->getOpenMentorshipRequests($requestDetails);
+            $this->notifyMatchingRequestAuthors($openMentorshipRequests, $payload);
+        }
+
         return $this->respond(Response::HTTP_CREATED, formatRequestForAPIResponse($result));
+    }
+
+    /**
+     * Gets a list users with matching open mentorship requests.
+     *
+     * @param Object $requestDetails - Request details object
+     */
+    private function getOpenMentorshipRequests($requestDetails)
+    {
+        return MentorshipRequest::where("status_id", STATUS::OPEN)
+                                                    ->where("request_type_id", RequestType::MENTOR_REQUEST)
+                                                    ->where("title", $requestDetails["title"])
+                                                    ->get();
+    }
+
+    /**
+     * Notifies authors of the matching mentee request
+     *
+     * @param $openMentorshipRequests - List of matching mentorship request.
+     * @param $payload - notification payload.
+     */
+    private function notifyMatchingRequestAuthors($openMentorshipRequests, $payload)
+    {
+        foreach ($openMentorshipRequests as $openMentorshipRequest) {
+            $this->sendMenteeRequestNotification($openMentorshipRequest["created_by"]["email"], $payload);
+        }
+    }
+
+    /**
+     * Sends an email to users with open mentor request
+     *
+     * @param String $recipient - Email recipient
+     * @param Object $payload - Email payload.
+     */
+    private function sendMenteeRequestNotification($recipient, $requestPayload)
+    {
+        $payload = new NewRequestMail($requestPayload, $recipient);
+        return sendEmailNotification($recipient, $payload);
     }
 
     /**
