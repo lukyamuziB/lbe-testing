@@ -15,7 +15,6 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\UnmatchedRequestsSuccessCommand::class,
         Commands\CacheSlackUsersCommand::class,
-        Commands\UnapprovedSessionsReminderCommand::class,
         Commands\GenerateGoogleCredentials::class,
         Commands\UnmatchedRequestsFellowsCommand::class,
         Commands\EncryptGoogleCredentialsCommand::class,

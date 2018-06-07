@@ -15,8 +15,10 @@ class UserNotificationsTableSeeder extends Seeder
 
         $user_ids = ['-KXGy1MT1oimjQgFim7u', '-KesEogCwjq6lkOzKmLI',
         '-K_nkl19N6-EGNa0W8LF'];
-        $notification_id = ["INDICATES_INTEREST", "SELECTED_AS_MENTOR",
-        "LOG_SESSIONS_REMINDER", "WEEKLY_REQUESTS_REPORTS"];
+        $notification_id = ["REQUESTS_MATCHING_YOUR_SKILLS", "REQUEST_ACCEPTED_OR_REJECTED",
+        "SESSION_NOTIFICATIONS", "FILE_NOTIFICATIONS",
+        "INDICATES_INTEREST", "WITHDRAWN_INTEREST",
+        "REQUESTS_MATCHING_YOUR_OPEN_SKILLS"];
 
         for ($i = 0; $i < $limit; $i++) {
             foreach ($notification_id as $id) {
@@ -24,7 +26,7 @@ class UserNotificationsTableSeeder extends Seeder
                     [
                     'user_id' => $user_ids[$i],
                     'id' => $id,
-                    'slack' => true,
+                    'in_app' => true,
                     'email' => true
                     ]
                 );

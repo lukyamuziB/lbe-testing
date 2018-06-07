@@ -91,3 +91,26 @@ $router->group(["prefix" => "api/v2/files"], function ($router) {
     $router->post("/", "FilesController@uploadFile");
     $router->delete("{id}", "FilesController@deleteFile");
 });
+
+/**
+ * Routes for notifications
+ */
+$router->group(["prefix" => "api/v2/notifications"], function ($router) {
+    $router->get("request-withdrawn/{requestId}", "NotificationController@getInterestedUsers");
+    $router->get("request-matches-skills/{requestId}", "NotificationController@getUsersWithMatchingRequestSkills");
+    $router->group(["middleware" => "admin"], function ($router) {
+        $router->get("/", "NotificationController@all");
+        $router->post("/", "NotificationController@add");
+        $router->put("/{id}", "NotificationController@put");
+        $router->delete("/{id}", "NotificationController@delete");
+    });
+});
+
+/**
+ * Routes for user notification settings
+ */
+$router->group(["prefix" => "api/v2/user"], function ($router) {
+    $router->get("{userId}/notifications/{notificationId}", "NotificationController@getUserNotificationSettings");
+    $router->put("{userId}/notifications/{notificationId}", "NotificationController@updateUserSettings");
+    $router->get("{userId}/notifications", "NotificationController@getUserSettings");
+});

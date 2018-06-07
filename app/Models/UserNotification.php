@@ -13,14 +13,15 @@ class UserNotification extends Model
         "user_id",
         "id",
         "slack",
-        "email"
+        "email",
+        "in_app"
     ];
 
     public static $rules = [
         "user_id" => "required|string",
         "id" => "required|string",
-        "slack" => "required|boolean",
-        "email" => "required|boolean"
+        "email" => "required|boolean",
+        "in_app" => "required|boolean"
     ];
 
     public function notification()
@@ -48,41 +49,39 @@ class UserNotification extends Model
                 $query->select('id', 'description');
             }]
         )
-            ->where("user_id", $userId)
-            ->select("id", "slack", "email")
+        ->where("user_id", $userId)
+        ->select("id", "in_app", "email")
+        ->orderBy("id")
+        ->get();
+
+        $notifications = Notification::whereNotIn(
+            "id",
+            $userSettings->pluck("id")
+        )->select("id", "default", "description")
             ->orderBy("id")
             ->get();
-
-        if (Notification::count() > count($userSettings)) {
-            $notifications = Notification::whereNotIn(
-                "id",
-                $userSettings->pluck("id")
-            )->select("id", "default", "description")
-                ->orderBy("id")
-                ->get();
-            $defaultSettings = [];
-            foreach ($notifications as $notification) {
-                $defaultSettings[] = [
-                    "id" => $notification["id"],
-                    "description" => $notification["description"],
-                    "email" => $notification["default"] === "email",
-                    "slack" => $notification["default"] === "slack",
-                ];
-            }
-
-            $userSettings = array_map(
-                function ($setting) {
-                    $setting["description"] = $setting["notification"]["description"];
-                    unset($setting["notification"]);
-                    return $setting;
-                },
-                $userSettings->toArray()
-            );
-            $allUserSettings = array_merge(
-                $defaultSettings,
-                $userSettings
-            );
+        $defaultSettings = [];
+        foreach ($notifications as $notification) {
+            $defaultSettings[] = [
+                "id" => $notification["id"],
+                "description" => $notification["description"],
+                "email" => $notification["default"] === "email",
+                "in_app" => $notification["default"] === "in_app",
+            ];
         }
+
+        $userSettings = array_map(
+            function ($setting) {
+                $setting["description"] = $setting["notification"]["description"];
+                unset($setting["notification"]);
+                return $setting;
+            },
+            $userSettings->toArray()
+        );
+        $allUserSettings = array_merge(
+            $defaultSettings,
+            $userSettings
+        );
         return $allUserSettings;
     }
 
@@ -107,7 +106,7 @@ class UserNotification extends Model
 
             $userSetting = (object)[
                 "notification_id" => $notificationId,
-                "slack" => $defaultSetting["default"] === "slack",
+                "in_app" => $defaultSetting["default"] === "in_app",
                 "email" => $defaultSetting["default"] === "email"
             ];
         }
@@ -125,7 +124,7 @@ class UserNotification extends Model
      */
     public static function getUsersSettingById($userIds, $notificationId)
     {
-        $usersSetting = UserNotification::select("user_id", "email", "slack")
+        $usersSetting = UserNotification::select("user_id", "email", "in_app")
             ->whereIn("user_id", $userIds)
             ->where("id", $notificationId)
             ->get()
@@ -143,7 +142,7 @@ class UserNotification extends Model
                 $usersSetting[] = [
                     "user_id" => $userId,
                     "email" => $defaultSetting["default"] === "email",
-                    "slack" => $defaultSetting["default"] === "slack"
+                    "in_app" => $defaultSetting["default"] === "in_app"
                 ];
             }
         }

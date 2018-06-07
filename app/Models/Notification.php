@@ -4,13 +4,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
-{   
-    const INDICATES_INTEREST = "INDICATES_INTEREST";
-    const SELECTED_AS_MENTOR = "SELECTED_AS_MENTOR";
-    const LOG_SESSIONS_REMINDER = "LOG_SESSIONS_REMINDER";
-    const WEEKLY_REQUESTS_REPORTS = "WEEKLY_REQUESTS_REPORTS";
-    const REQUESTS_MATCHING_SKILLS = "REQUESTS_MATCHING_SKILLS";
-
+{
+    
     protected $table = 'notifications';
     protected $primaryKey = 'id';
     public $incrementing = false;

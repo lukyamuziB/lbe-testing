@@ -125,42 +125,6 @@ class Session extends Model
     }
 
     /**
-     * Gets unapproved sessions, whose request status is matched, that were logged
-     * by one of the participants before the specified time
-     *
-     * @param integer $duration hours since last unapproved session
-     *
-     * @return array $unapproved_sessions
-     */
-    public static function getUnapprovedSessions($duration)
-    {
-        $threshold_time = Carbon::now()->subHours($duration);
-
-        $unapproved_sessions = Session::with('request')
-            ->whereIn(
-                "request_id",
-                Request::select("id")
-                    ->where("status_id", Status::MATCHED)
-                    ->get()->toArray()
-            )
-            ->where(
-                function ($query) use ($threshold_time) {
-                    $query->where('mentor_approved', null)
-                        ->where('mentee_approved', true)
-                        ->where('mentee_logged_at', '<=', $threshold_time);
-                }
-            )->orWhere(
-                function ($query) use ($threshold_time) {
-                    $query->where('mentee_approved', null)
-                        ->where('mentor_approved', true)
-                        ->where('mentor_logged_at', '<=', $threshold_time);
-                }
-            )->get();
-
-        return $unapproved_sessions;
-    }
-
-    /**
      * Calculates the total logged mentorship hours and sessions of the user and
      * returns the total hours and sessions count
      *

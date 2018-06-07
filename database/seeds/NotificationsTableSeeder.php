@@ -12,20 +12,27 @@ class NotificationsTableSeeder extends Seeder
     public function run()
     {
         $data = [
-            ["INDICATES_INTEREST" => ["default" => "slack",
-            "description" => 
-            "You'll be notified when someone indicates interest"]],
-            ["SELECTED_AS_MENTOR" => ["default" => "slack",
-            "description" => 
-            "You'll be notified when someone selects you as a mentor"]],
-            ["LOG_SESSIONS_REMINDER" => ["default" => "slack",
-            "description" => 
-            "You'll be notified when someone logs a session"]],
-            ["WEEKLY_REQUESTS_REPORTS" => ["default" => "email",
-            "description" => 
-            "You'll receive a weekly list of open requests"]],
-            ["REQUESTS_MATCHING_SKILLS" => ["default" => "slack",
-            "description" => "You'll be notified when someone requests one of your skills"]]
+            ["REQUESTS_MATCHING_YOUR_SKILLS" => ["default" => "in_app",
+            "description" =>
+            "When there are new requets in the pool matching skills in your profile"]],
+            ["REQUEST_ACCEPTED_OR_REJECTED" => ["default" => "in_app",
+            "description" =>
+            "Whenever a request is either accepted or rejected"]],
+            ["SESSION_NOTIFICATIONS" => ["default" => "in_app",
+            "description" =>
+            "When a session is logged, accepted or rejected"]],
+            ["FILE_NOTIFICATIONS" => ["default" => "in_app",
+            "description" =>
+            "Whenever a file is uploaded or deleted"]],
+            ["INDICATES_INTEREST" => ["default" => "in_app",
+            "description" =>
+             "Whenever anyone indicates interest on a request you created"]],
+            ["WITHDRAWN_INTEREST" => ["default" => "in_app",
+            "description" =>
+            "Whenever anyone withdraws a request after showing interest on the request"]],
+            ["REQUESTS_MATCHING_YOUR_OPEN_SKILLS" => ["default" => "in_app",
+            "description" =>
+            "Whenever a request is created for a skill you have an opening for"]],
         ];
         foreach ($data as $entry) {
             foreach ($entry as $title => $body) {
