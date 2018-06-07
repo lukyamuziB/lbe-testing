@@ -197,7 +197,6 @@ class SessionController extends Controller
                     "mentor_logged" => false,
                     "files" => []
                 ];
-                break;
             }
         }
 
