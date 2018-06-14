@@ -12,9 +12,9 @@ class NotificationsTableSeeder extends Seeder
     public function run()
     {
         $data = [
-            ["REQUESTS_MATCHING_YOUR_SKILLS" => ["default" => "in_app",
+            ["REQUESTS_MATCHING_USER_SKILLS" => ["default" => "in_app",
             "description" =>
-            "When there are new requets in the pool matching skills in your profile"]],
+            "When there are new requests in the pool matching skills in your profile"]],
             ["REQUEST_ACCEPTED_OR_REJECTED" => ["default" => "in_app",
             "description" =>
             "Whenever a request is either accepted or rejected"]],
@@ -30,7 +30,7 @@ class NotificationsTableSeeder extends Seeder
             ["WITHDRAWN_INTEREST" => ["default" => "in_app",
             "description" =>
             "Whenever anyone withdraws a request after showing interest on the request"]],
-            ["REQUESTS_MATCHING_YOUR_OPEN_SKILLS" => ["default" => "in_app",
+            ["MATCHING_OPEN_REQUEST_SKILLS" => ["default" => "in_app",
             "description" =>
             "Whenever a request is created for a skill you have an opening for"]],
         ];

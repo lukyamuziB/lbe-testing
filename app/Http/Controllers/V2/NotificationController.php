@@ -171,9 +171,9 @@ class NotificationController extends Controller
         $interestedUsersList = Requests::select('interested')->where('id', $id)->get();
 
         $usersToBeNotified = UserNotification::select('user_id')
-        ->where('in_app', true)
-        ->where('id', 'WITHDRAWN_INTEREST')
-        ->whereIn('user_id', $interestedUsersList->toArray())
+        ->where("in_app", true)
+        ->where("id", Notification::WITHDRAWN_INTEREST)
+        ->whereIn("user_id", $interestedUsersList->toArray())
         ->get();
 
         return $this->respond(Response::HTTP_OK, $usersToBeNotified);
@@ -191,18 +191,18 @@ class NotificationController extends Controller
      */
     public function getUsersWithMatchingRequestSkills($id)
     {
-        $requestSkills = RequestSkill::select('skill_id')
-        ->where('request_id', $id)
+        $requestSkills = RequestSkill::select("skill_id")
+        ->where("request_id", $id)
         ->get();
       
-        $usersWithThoseSkills = UserSkill::select('user_id')
-        ->whereIn('skill_id', $requestSkills->toArray())
+        $usersWithThoseSkills = UserSkill::select("user_id")
+        ->whereIn("skill_id", $requestSkills->toArray())
         ->get();
 
-        $notificationEligibleUsers = UserNotification::select('user_id')
-        ->where('in_app', true)
-        ->where('id', 'REQUESTS_MATCHING_YOUR_SKILLS')
-        ->whereIn('user_id', $usersWithThoseSkills->toArray())
+        $notificationEligibleUsers = UserNotification::select("user_id")
+        ->where("in_app", true)
+        ->where("id", Notification::REQUESTS_MATCHING_USER_SKILLS)
+        ->whereIn("user_id", $usersWithThoseSkills->toArray())
         ->get();
 
         return $this->respond(Response::HTTP_OK, $notificationEligibleUsers);
@@ -224,18 +224,18 @@ class NotificationController extends Controller
      */
     public function getUserNotificationSettings(Request $request, $userId, $notificationId)
     {
-        if (!Notification::where('id', $notificationId)->exists()) {
-            throw new NotFoundException('Notification Not Found Exception.');
+        if (!Notification::where("id", $notificationId)->exists()) {
+            throw new NotFoundException("Notification does not exist.");
         }
 
         $currentUser = $request->user();
         if ($currentUser->uid !== $userId) {
-            throw new AccessDeniedException('You do not have permission to edit this notification settings.');
+            throw new AccessDeniedException("You do not have permission to access this notification settings.");
         }
 
-        $userSettings = UserNotification::select('user_id', 'id', 'in_app')
-        ->where('id', $notificationId)
-        ->where('user_id', $userId)
+        $userSettings = UserNotification::select("user_id", "id", "in_app")
+        ->where("id", $notificationId)
+        ->where("user_id", $userId)
         ->get();
 
         return $this->respond(Response::HTTP_OK, $userSettings);
