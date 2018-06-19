@@ -17,6 +17,9 @@ class UserNotification extends Model
         "in_app"
     ];
 
+    const ACCEPT_USER = "accept_user";
+    const REJECT_USER = "reject_user";
+
     public static $rules = [
         "user_id" => "required|string",
         "id" => "required|string",

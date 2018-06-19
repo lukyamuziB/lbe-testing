@@ -11,6 +11,8 @@ use App\Exceptions\NotFoundException;
 use App\Models\File;
 use App\Models\Session;
 use App\Models\Rating;
+use App\Models\Role;
+use App\Models\RequestType;
 use App\Models\Request as MentorshipRequest;
 use App\Models\SessionComment;
 use App\Utility\FilesUtility;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\LoggedSessionMail;
 use App\Mail\ConfirmedSessionMail;
 use App\Mail\FailedFreckleLoggingMail;
+use App\Mail\SessionFileNotificationMail;
 use GuzzleHttp\Exception\TransferException;
 
 /**
@@ -61,8 +64,7 @@ class SessionController extends Controller
         $uploadedFile = $request->file("file");
         $optionalFileName = $request->input('name');
         $sessionId = (int)$sessionId;
-
-
+        
         $fileName = $optionalFileName ?? $uploadedFile->getClientOriginalName();
         $file = new File();
         $file->name = $fileName;
@@ -76,6 +78,13 @@ class SessionController extends Controller
             "file" => $file,
             "session_id" => $session->id,
         ];
+
+        $this->sendSessionFileNotification(
+            $session,
+            $fileName,
+            $request->user()->uid,
+            Session::UPLOAD_FILE
+        );
 
         return $this->respond(Response::HTTP_CREATED, $response);
     }
@@ -213,11 +222,10 @@ class SessionController extends Controller
      * @return Response
      *
      */
-    public function deleteSessionFile($id, $fileId)
+    public function deleteSessionFile(Request $request, $id, $fileId)
     {
         $session = Session::find($id);
         $file = File::find($fileId);
-
         $sessionCount = $file->sessions()->count();
         $session->files()->detach($fileId);
 
@@ -225,6 +233,13 @@ class SessionController extends Controller
             $file->delete();
             $this->filesUtility->deleteFile($file->generated_name);
         }
+
+        $this->sendSessionFileNotification(
+            $session,
+            $file->name,
+            $request->user()->uid,
+            Session::DELETE_FILE
+        );
 
         return $this->respond(Response::HTTP_OK);
     }
@@ -572,6 +587,45 @@ class SessionController extends Controller
         );
     }
 
+    /**
+     * Checks who should recieve a file upload notification,
+     * composes the notification and then sends the
+     * notification to the right user
+     *
+     * @param Object  $session        - the session
+     * @param String  $fileName       - the filename
+     * @param String  $userId         - current userId
+     * @param Boolean $isFileUploaded - To check if a file is being uploaded or deleted 
+     * 
+     * @return Object - Email object
+     */
+    function sendSessionFileNotification(
+        $session, 
+        $fileName, 
+        $userId, 
+        $typeOfAction
+    ) {
+        $recipient = "";
+        $notificationDetails = [
+            "fileName" =>  $fileName,
+            "sessionDate" => date("F jS, Y", strtotime($session->date)),
+            "typeOfAction" => $typeOfAction
+        ];
+
+        if ($session->request->mentee->id === $userId) {
+            $recipient = $session->request->mentor->email;
+            $notificationDetails["requesterName"] = $session->request->mentee->fullname;
+        } else {
+            $recipient = $session->request->mentee->email;
+            $notificationDetails["requesterName"] = $session->request->mentor->fullname;
+        }
+        $sessionFileEmailInstance = new SessionFileNotificationMail(
+            $recipient, 
+            $notificationDetails
+        );
+
+        return sendEmailNotification($recipient, $sessionFileEmailInstance);
+    }
 
     /**
      * Sends logged session notification

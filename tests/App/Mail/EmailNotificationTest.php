@@ -4,6 +4,8 @@ use TestCase;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CancelRequestMail;
 use App\Mail\NewRequestMail;
+use\App\Mail\SessionFileNotificationMail;
+use App\Mail\UserAcceptanceOrRejectionNotificationMail;
 use App\Helpers\SendEmailHelper;
 use App\Jobs\SendNotificationJob;
 
@@ -56,6 +58,128 @@ class EmailNotificationTest extends TestCase
             $mail->build();
             return $mail->hasTo($recipientEmail);
         });
+
+    }
+
+    /**
+     * This test handles user notification when either a mentor
+     * or a mentee accepts a mentee or mentor who has 
+     * indicated interest in a request
+     * 
+     */
+    public function testAcceptInterestedUserMailSuccess()
+    {
+        $payload = [
+            "fullname" =>  "Michael Briggs",
+            "requestedSkill" =>  "Babel",
+            "userRole" => "Mentor",
+            "notificationType" => "accept-user",
+            "emailSubject" => "Interested User Rejection Notification"
+        ];
+        $recipientEmail = "test-user-admin@andela.com";
+
+        $emailPayload = new UserAcceptanceOrRejectionNotificationMail(
+            $recipientEmail,
+            $payload
+        );
+        dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
+        Mail::assertSent(
+            UserAcceptanceOrRejectionNotificationMail::class, 
+            function ($mail) use ($recipientEmail, $payload) {
+                $mail->build();
+                return $mail->hasTo($recipientEmail);
+            }
+        );
+
+    }
+
+    /**
+     * This test handles user notification when either a mentor
+     * or a mentee rejects a mentee or mentor who has 
+     * indicated interest in a request
+     * 
+     */
+    public function testRejectInterestedUserMailSuccess()
+    {
+        $payload = [
+            "fullname" =>  "Michael Briggs",
+            "requestedSkill" =>  "Babel",
+            "userRole" => "Mentor",
+            "notificationType" => "reject-user",
+            "emailSubject" => "Interested User Rejection Notification"
+        ];
+        $recipientEmail = "test-user-admin@andela.com";
+
+        $emailPayload = new UserAcceptanceOrRejectionNotificationMail(
+            $recipientEmail,
+            $payload
+        );
+        dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
+        Mail::assertSent(
+            UserAcceptanceOrRejectionNotificationMail::class, 
+            function ($mail) use ($recipientEmail, $payload) {
+                $mail->build();
+                return $mail->hasTo($recipientEmail);
+            }
+        );
+
+    }
+
+    /**
+     * Test if email is sent when a mentee or a mentor
+     * uploads a session file
+     * 
+     */
+    public function testAttachSessionFileNotificationMailSuccess()
+    {
+        $payload = [
+            "fileName" =>  "test-file-name",
+            "sessionDate" => "June 18th, 2018",
+            "typeOfAction" => "upload_file"
+        ];
+        $recipientEmail = "test-user-admin@andela.com";
+
+        $emailPayload = new SessionFileNotificationMail(
+            $recipientEmail,
+            $payload
+        );
+        dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
+        Mail::assertSent(
+            SessionFileNotificationMail::class, 
+            function ($mail) use ($recipientEmail, $payload) {
+                $mail->build();
+                return $mail->hasTo($recipientEmail);
+            }
+        );
+
+    }
+
+    /**
+     * Test if email is sent when a mentee or a mentor
+     * deletes a session file
+     * 
+     */
+    public function testDetachSessionFileNotificationMailSuccess()
+    {
+        $payload = [
+            "fileName" =>  "test-file-name",
+            "sessionDate" => "June 18th, 2018",
+            "typeOfAction" => "delete_file"
+        ];
+        $recipientEmail = "test-user-admin@andela.com";
+
+        $emailPayload = new SessionFileNotificationMail(
+            $recipientEmail,
+            $payload
+        );
+        dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
+        Mail::assertSent(
+            SessionFileNotificationMail::class, 
+            function ($mail) use ($recipientEmail, $payload) {
+                $mail->build();
+                return $mail->hasTo($recipientEmail);
+            }
+        );
 
     }
 }

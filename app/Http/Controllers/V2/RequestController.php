@@ -17,12 +17,14 @@ use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestUsers;
 use App\Models\Role;
+use App\Models\UserNotification;
 use App\Models\RequestType;
 use App\Models\RequestStatusUpdateReasons;
 use App\Utility\SlackUtility;
 use App\Clients\GoogleCalendarClient;
 use App\Mail\NewRequestMail;
 use App\Mail\CancelRequestMail;
+use App\Mail\UserAcceptanceOrRejectionNotificationMail;
 
 /**
  * Class RequestController
@@ -172,7 +174,6 @@ class RequestController extends Controller
             formatRequestForAPIResponse($mentorshipRequest)
         );
     }
-
 
     /**
      * Query callback
@@ -504,7 +505,6 @@ class RequestController extends Controller
         $mentorshipRequest->interested = $interested;
 
         $mentorshipRequest->save();
-
         return $this->respond(Response::HTTP_OK);
     }
 
@@ -524,13 +524,11 @@ class RequestController extends Controller
         GoogleCalendarClient $googleCalendar,
         $mentorshipRequestId
     ) {
-
         $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
-
+       
         $this->validateBeforeAcceptOrRejectUser($request, $mentorshipRequest);
 
         $interestedUserId = $request->get("interestedUserId");
-
         $mentorshipRequest->match_date = Carbon::now();
         $mentorshipRequest->status_id = Status::MATCHED;
         $mentorshipRequest->save();
@@ -548,12 +546,16 @@ class RequestController extends Controller
                 "role_id" => $roleId
             ]
         );
-
         schedulePairingSessionsOnCalendar(
             $googleCalendar,
             $mentorshipRequest
         );
 
+        $this->sendUserActionNotification(
+            $mentorshipRequest,
+            UserNotification::ACCEPT_USER
+        );
+    
         return $this->respond(Response::HTTP_OK, $mentorshipRequest);
     }
 
@@ -580,9 +582,66 @@ class RequestController extends Controller
         array_splice($allInterestedUsers, $interestedUserIndex, 1);
         $mentorshipRequest->interested
             = count($allInterestedUsers) > 0 ? $allInterestedUsers : null;
+
         $mentorshipRequest->save();
 
+        $this->sendUserActionNotification(
+            $mentorshipRequest,
+            UserNotification::REJECT_USER,
+            $interestedUserId
+        );
+
         return $this->respond(Response::HTTP_OK, $mentorshipRequest);
+    }
+    
+    /**
+     * Checks the type of notification to be sent, whether it's a rejection
+     * or acceptance notification, composes the payload and finally
+     * sends the notification email
+     *
+     * @param Object $request          - the mentorship request
+     * @param String $notificationType - the type of notification to send
+     * @param String $interestedUserId - Id of a user who has shown interest
+     *
+     * @return {Object} email object
+     */
+    private function sendUserActionNotification(
+        $request,
+        $notificationType,
+        $interestedUserId = null
+    ) {
+        $recipient = "";
+
+        $request->request_type_id === RequestType::MENTOR_REQUEST 
+        ? $roleId = Role::MENTOR : $roleId = Role::MENTEE;
+
+        if ($interestedUserId) {
+            $$recipient = User::select("email")
+            ->where("id", $interestedUserId)
+            ->get();
+        } else {
+            $recipient = $roleId === Role::MENTOR
+            ? $request->mentor->email : $request->mentee->email;
+        }
+
+        $emailDetails = [
+            "fullname" =>  $request->created_by->fullname,
+            "requestedSkill" =>  $request->title,
+            "userRole" => $roleId == Role::MENTOR ? 'Mentor' : 'Mentee',
+        ];
+
+        $emailInstance = new \stdClass();
+        if ($notificationType === UserNotification::ACCEPT_USER) {
+            $emailDetails["notificationType"] = UserNotification::ACCEPT_USER;
+            $emailDetails["emailSubject"] = "Interested User Acceptance Notification";
+        } else {
+            $emailDetails["notificationType"] = UserNotification::REJECT_USER;
+            $emailDetails["emailSubject"] = "Interested User Rejection Notification";
+        }
+
+        $emailInstance = new UserAcceptanceOrRejectionNotificationMail($recipient, $emailDetails);
+
+        return sendEmailNotification($recipient, $emailInstance);
     }
 
     /**
@@ -616,6 +675,7 @@ class RequestController extends Controller
         }
 
         $interestedUserId = $request->get("interestedUserId");
+       
         $allInterestedUsers = $mentorshipRequest->interested ?? [];
         if (!(in_array($interestedUserId, $allInterestedUsers))) {
             throw new NotFoundException("The fellow is not an interested user");

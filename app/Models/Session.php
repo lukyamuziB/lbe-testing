@@ -32,6 +32,9 @@ class Session extends Model
         "mentor_logged_at" => 'date_format:"Y-m-d H:i:s"'
     ];
 
+    const UPLOAD_FILE = "upload_file";
+    const DELETE_FILE = "delete_file";
+
     public function request()
     {
         return $this->belongsTo("App\Models\Request", "request_id", "id");
