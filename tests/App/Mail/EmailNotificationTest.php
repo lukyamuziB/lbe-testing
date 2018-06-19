@@ -6,14 +6,19 @@ use App\Mail\CancelRequestMail;
 use App\Mail\NewRequestMail;
 use\App\Mail\SessionFileNotificationMail;
 use App\Mail\UserAcceptanceOrRejectionNotificationMail;
+use App\Mail\CodementorGuidelineMail;
 use App\Helpers\SendEmailHelper;
 use App\Jobs\SendNotificationJob;
+
+use App\console\Commands\UnmatchedRequestNotificationCommand;
+use Symfony\Component\Console\Application;
 
 class EmailNotificationTest extends TestCase
 {
     public function setUp()
     {
         parent::setup();
+        $this->application = new Application();
     }
 
     /**
@@ -63,9 +68,9 @@ class EmailNotificationTest extends TestCase
 
     /**
      * This test handles user notification when either a mentor
-     * or a mentee accepts a mentee or mentor who has 
+     * or a mentee accepts a mentee or mentor who has
      * indicated interest in a request
-     * 
+     *
      */
     public function testAcceptInterestedUserMailSuccess()
     {
@@ -84,7 +89,7 @@ class EmailNotificationTest extends TestCase
         );
         dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
         Mail::assertSent(
-            UserAcceptanceOrRejectionNotificationMail::class, 
+            UserAcceptanceOrRejectionNotificationMail::class,
             function ($mail) use ($recipientEmail, $payload) {
                 $mail->build();
                 return $mail->hasTo($recipientEmail);
@@ -95,9 +100,9 @@ class EmailNotificationTest extends TestCase
 
     /**
      * This test handles user notification when either a mentor
-     * or a mentee rejects a mentee or mentor who has 
+     * or a mentee rejects a mentee or mentor who has
      * indicated interest in a request
-     * 
+     *
      */
     public function testRejectInterestedUserMailSuccess()
     {
@@ -116,7 +121,7 @@ class EmailNotificationTest extends TestCase
         );
         dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
         Mail::assertSent(
-            UserAcceptanceOrRejectionNotificationMail::class, 
+            UserAcceptanceOrRejectionNotificationMail::class,
             function ($mail) use ($recipientEmail, $payload) {
                 $mail->build();
                 return $mail->hasTo($recipientEmail);
@@ -128,7 +133,7 @@ class EmailNotificationTest extends TestCase
     /**
      * Test if email is sent when a mentee or a mentor
      * uploads a session file
-     * 
+     *
      */
     public function testAttachSessionFileNotificationMailSuccess()
     {
@@ -145,7 +150,7 @@ class EmailNotificationTest extends TestCase
         );
         dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
         Mail::assertSent(
-            SessionFileNotificationMail::class, 
+            SessionFileNotificationMail::class,
             function ($mail) use ($recipientEmail, $payload) {
                 $mail->build();
                 return $mail->hasTo($recipientEmail);
@@ -157,7 +162,7 @@ class EmailNotificationTest extends TestCase
     /**
      * Test if email is sent when a mentee or a mentor
      * deletes a session file
-     * 
+     *
      */
     public function testDetachSessionFileNotificationMailSuccess()
     {
@@ -174,12 +179,27 @@ class EmailNotificationTest extends TestCase
         );
         dispatch(new SendNotificationJob($recipientEmail, $emailPayload));
         Mail::assertSent(
-            SessionFileNotificationMail::class, 
+            SessionFileNotificationMail::class,
             function ($mail) use ($recipientEmail, $payload) {
                 $mail->build();
                 return $mail->hasTo($recipientEmail);
             }
         );
+    }
 
+    /**
+     * Tests if placed fellows with open  mentorship
+     * request recieve an email notification if not
+     * matched within 24 hours
+     *
+     */
+    public function testCodementorGuidelineMail()
+    {
+        $command_tester = $this->executeCommand(
+            $this->application,
+            "notify:unmatched-fellow-requests",
+            UnmatchedRequestNotificationCommand::class
+        );
+        Mail::assertSent(CodementorGuidelineMail::class);
     }
 }
