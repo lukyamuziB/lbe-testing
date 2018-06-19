@@ -3,6 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Exceptions\AccessDeniedException;
+use App\Exceptions\NotFoundException;
+use App\Models\RequestSkill;
+use App\Models\Request;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Status;
 
 class UserNotification extends Model
 {
@@ -68,7 +75,7 @@ class UserNotification extends Model
             $defaultSettings[] = [
                 "id" => $notification["id"],
                 "description" => $notification["description"],
-                "email" => $notification["default"] === "email",
+                "email" => true,
                 "in_app" => $notification["default"] === "in_app",
             ];
         }
@@ -151,5 +158,118 @@ class UserNotification extends Model
         }
 
         return $usersSetting;
+    }
+
+    /**
+     * Gets users email settings for a
+     * specified notification type
+     *
+     * @param string $userEmail user's unique email
+     * @param string $notificationId notification's unique id
+     *
+     * @throws NotFoundException
+     *
+     * @return boolean $userSettings user's email settings for
+     * a given notification type
+     */
+    public static function hasUserAcceptedEmail($userEmail, $notificationId)
+    {
+        if (!Notification::where("id", $notificationId)->exists()) {
+            throw new NotFoundException("Notification Not Found Exception.");
+        }
+
+        $userId = User::where("email", $userEmail)
+            ->pluck("id");
+ 
+        $userSettings = UserNotification::where("id", $notificationId)
+            ->where("user_id", $userId)
+            ->pluck("email");
+    
+        return $userSettings;
+    }
+
+    /**
+     * Gets users that should be notified when a
+     * a request with skills that match skills in
+     * their profile is made
+     *
+     * @param intenger $id Unique Request Id
+     *
+     * @return array $notificationEligibleUsers
+     *
+     */
+    public static function getUsersWithMatchingRequestSkills($id)
+    {
+        $requestSkills = RequestSkill::where("request_id", $id)
+            ->pluck("skill_id");
+        
+        $usersWithThoseSkills = UserSkill::whereIn("skill_id", $requestSkills)
+            ->pluck("user_id");
+
+        $usersToBeNotified = UserNotification::where("email", true)
+            ->where("id", Notification::REQUESTS_MATCHING_USER_SKILLS)
+            ->whereIn("user_id", $usersWithThoseSkills)
+            ->pluck("user_id");
+    
+        return $usersToBeNotified;
+    }
+
+    /**
+     * Gets users that are eligible to receive email
+     * notifications when a request they expressed
+     * interest in is withdrawn
+     *
+     * @param intenger $id Unique Request Id
+     *
+     * @return array $usersToBeNotified
+     */
+    public static function getInterestedUsers($id)
+    {
+        $interestedUsersList = Request::select("interested")
+            ->where("id", $id)
+            ->get();
+
+        $usersToBeNotified = UserNotification::where("email", true)
+            ->where("id", Notification::WITHDRAWN_INTEREST)
+            ->whereIn("user_id", $interestedUsersList[0]->interested)
+            ->pluck("user_id");
+        
+        return $usersToBeNotified;
+    }
+
+    /**
+     * Gets users that are eligible to receieve email
+     * notifications when a request with skills
+     *  they have an opening for is made
+     *
+     * @param intenger $id Unique Request Id
+     *
+     * @return array $usersToBeNotified
+     */
+    public static function getUsersWithMatchingOpenSkills($id)
+    {
+        $requestSkills = RequestSkill::where("request_id", $id)
+            ->pluck("skill_id");
+        
+        $mentorsMatchingSkills = Request::select('created_by')
+            ->where("request_type_id", ROLE::MENTEE)
+            ->where("status_id", STATUS::OPEN)
+            ->where("id", "<>", $id)
+            ->whereIn("id", RequestSkill::whereIn("skill_id", $requestSkills)
+                ->pluck("request_id")
+                ->toArray())
+            ->get();
+
+        $mentorIds = [];
+        foreach ($mentorsMatchingSkills as $mentor) {
+            array_push($mentorIds, $mentor->created_by->id);
+        }
+
+        $usersToBeNotified = UserNotification::where("email", true)
+            ->where("id", Notification::MATCHING_OPEN_REQUEST_SKILLS)
+            ->whereIn("user_id", $mentorIds)
+            ->pluck("user_id");
+        
+        return $usersToBeNotified;
     }
 }
