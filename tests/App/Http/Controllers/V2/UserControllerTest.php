@@ -59,7 +59,7 @@ class UserControllerTest extends \TestCase
     public function testGetUserDetailsSuccess()
     {
 
-        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF");
+        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF?categories=rating,skills,statistics,comments");
 
         $this->assertResponseStatus(200);
 
@@ -81,17 +81,18 @@ class UserControllerTest extends \TestCase
 
         $this->assertContains("roles", $response);
 
+        $this->assertContains("placement", $response);
+
+        $this->assertContains("location", $response);
+
         $this->assertContains("rating", $response);
 
         $this->assertContains("skills", $response);
 
-        $this->assertContains("total_sessions", $response);
+        $this->assertContains("comments", $response);
 
-        $this->assertContains("request_count", $response);
+        $this->assertContains("statistics", $response);
 
-        $this->assertContains("placement", $response);
-
-        $this->assertContains("location", $response);
     }
 
     /**
@@ -140,8 +141,8 @@ class UserControllerTest extends \TestCase
      */
     public function testForNonAdminSearchUsersSuccess()
     {
-        $this->makeUser("-L4g3CXhX6cPHZXTEMNE"); 
-                     
+        $this->makeUser("-L4g3CXhX6cPHZXTEMNE");
+
         $this->get("/api/v2/users/search?q=ad");
         $response =json_decode($this->response->getContent());
         $this->assertResponseOk();
@@ -151,7 +152,6 @@ class UserControllerTest extends \TestCase
 
     /**
      * Test for user search failure
-     *
      */
     public function testForNonAdminSearchUsersEmpty()
     {
@@ -256,5 +256,113 @@ class UserControllerTest extends \TestCase
         $this->assertContains("mentee_average", $response);
         $this->assertContains("mentor_average", $response);
         $this->assertContains("rating_count", $response);
+    }
+  
+    /**
+     * Test for get user skills successfully.
+     *
+     * @return void
+     */
+    public function testGetUserSkillsSuccess()
+    {
+        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF/skills");
+
+        $this->assertResponseStatus(200);
+
+        $response = $this->response->getContent();
+
+        $this->assertNotEmpty($response);
+
+        $this->assertContains("id", $response);
+        $this->assertContains("name", $response);
+    }
+
+    /**
+     * Test for get user skills failure with invalid ID.
+     *
+     * @return void
+     */
+    public function testGetUserSkillsForInvalidUser()
+    {
+      $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LFr/skills");
+
+      $this->assertResponseStatus(404);
+
+      $response = json_decode($this->response->getContent());
+
+      $this->assertEquals("User not found.", $response->message);
+    }
+
+    /**
+     * Test for get user statistics successfully.
+     *
+     * @return void
+     */
+    public function testGetUserStatisticsSuccess()
+    {
+        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF/statistics");
+
+        $this->assertResponseStatus(200);
+
+        $response = $this->response->getContent();
+
+        $this->assertNotEmpty($response);
+
+        $this->assertContains("request_count", $response);
+        $this->assertContains("logged_hours", $response);
+        $this->assertContains("total_sessions", $response);
+    }
+
+    /**
+     * Test for get user statistics failure with invalid ID.
+     *
+     * @return void
+     */
+    public function testGetUserStatisticsForInvalidUser()
+    {
+      $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LFr/statistics");
+
+      $this->assertResponseStatus(404);
+
+      $response = json_decode($this->response->getContent());
+
+      $this->assertEquals("User not found.", $response->message);
+    }
+
+    /**
+     * Test for get user comments successfully.
+     *
+     * @return void
+     */
+    public function testGetUserCommentsSuccess()
+    {
+        $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LF/comments");
+
+        $this->assertResponseStatus(200);
+
+        $response = $this->response->getContent();
+
+        $this->assertNotEmpty($response);
+
+        $this->assertContains("date", $response);
+        $this->assertContains("comment", $response);
+        $this->assertContains("commentor", $response);
+        $this->assertContains("request_title", $response);
+    }
+
+    /**
+     * Test for get user comments failure with invalid ID.
+     *
+     * @return void
+     */
+    public function testGetUserCommentsForInvalidUser()
+    {
+      $this->get("/api/v2/users/-K_nkl19N6-EGNa0W8LFr/comments");
+
+      $this->assertResponseStatus(404);
+
+      $response = json_decode($this->response->getContent());
+
+      $this->assertEquals("User not found.", $response->message);
     }
 }

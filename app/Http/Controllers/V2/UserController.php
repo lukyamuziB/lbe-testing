@@ -4,17 +4,13 @@ namespace App\Http\Controllers\V2;
 
 use App\Models\User;
 use App\Models\Skill;
-use App\Models\Rating;
-use App\Models\Session;
 use App\Models\UserSkill;
 use App\Clients\AISClient;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Exceptions\ConflictException;
 use App\Exceptions\NotFoundException;
-use App\Exceptions\BadRequestException;
 use App\Repositories\SlackUsersRepository;
-use App\Models\Request as MentorshipRequest;
 use App\Repositories\UsersAverageRatingRepository;
 
 /**
@@ -40,67 +36,148 @@ class UserController extends Controller
     }
 
     /**
-     * Gets a user's infomation based on their user id.
+     * Gets a user's information based on their user id.
      *
-     * @param integer $id - user id
+     * @param integer $userId  Unique id of the user
+     * @param Request $request HttpRequest object
      *
      * @throws NotFoundException
      *
-     * @return object Response object
+     * @return \Illuminate\Http\JsonResponse User details object
      */
-    public function get($id)
+    public function get(Request $request, $userId)
     {
-        $aisUser = $this->aisClient->getUserById($id);
+        $aisUser = $this->aisClient->getUserById($userId);
         $slackUser = $this->slackUsersRepository->getByEmail($aisUser["email"]);
 
         $lenkenUser = User::find($aisUser["id"]);
 
         if (!$lenkenUser) {
-            $lenkenUser = User::create([
+            $lenkenUser = User::create(
+                [
                 "id" => $aisUser["id"],
                 "email" => $aisUser["email"],
                 "slack_id" => $slackUser->id ?? ""
-                ]);
+                ]
+            );
         }
 
-        $requestCount = $this->getMenteeRequestCount($id);
-
-        $sessionDetails = Session::getSessionDetails($id);
-
-        $ratingDetails = $this->usersAverageRatingRepository->getById($id);
-
         $user = $this->formatUserInfo($aisUser);
-        $user["skills"] = $lenkenUser->getSkills();
-        $user["request_count"] = $requestCount;
-        $user["logged_hours"] = $sessionDetails["totalHours"];
-        $user["total_sessions"] = $sessionDetails["totalSessions"];
-        $user["rating"] = (object)[
-            "cumulative_average" => $ratingDetails->average_rating ?? 0,
-            "mentee_average" => $ratingDetails->average_mentee_rating ?? 0,
-            "mentor_average" => $ratingDetails->average_mentor_rating ?? 0,
-            "rating_count" => $ratingDetails->session_count ?? 0
-        ];
+
+        if ($categories = $this->getRequestParams($request, "categories")) {
+            $categories= explode(",", $categories);
+
+            $userDetails = $lenkenUser->appendProfileCategoryDetails($categories);
+
+            if (in_array("rating", $categories)) {
+                $userDetails["rating"] = $this->getUserRating($userId);
+            }
+
+            $user += $userDetails;
+        }
 
         return $this->respond(Response::HTTP_OK, (object)$user);
     }
 
     /**
-     * Gets a user rating details
+     * Get user skills.
      *
-     * @param integer $id - user id
+     * @param $id  Unique id of the user
      *
-     * @return object - user rating details
+     * @throws NotFoundException
+     *
+     * @return \Illuminate\Http\JsonResponse User skills object
      */
-    public function getUserRating($id)
+    public function getSkills($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            throw new NotFoundException("User not found.");
+        }
+
+        $skills = $user->getSkills();
+
+        return $this->respond(Response::HTTP_OK, $skills);
+    }
+
+    /**
+     * Gets user statistics.
+     *
+     * @param $id Unique id of the user
+     *
+     * @throws NotFoundException
+     *
+     * @return \Illuminate\Http\JsonResponse User statistics object
+     */
+    public function getStatistics($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            throw new NotFoundException("User not found.");
+        }
+
+        $statistics =  $user->getStatistics();
+
+        return $this->respond(Response::HTTP_OK, $statistics);
+    }
+
+    /**
+     * Gets user session comments.
+     *
+     * @param $id Unique id of the user
+     *
+     * @throws NotFoundException
+     *
+     * @return \Illuminate\Http\JsonResponse User comments object
+     */
+    public function getComments($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            throw new NotFoundException("User not found.");
+        }
+
+        $comments = $user->getComments();
+
+        return $this->respond(Response::HTTP_OK, $comments);
+    }
+
+
+    /**
+     * Gets and formats user ratings
+     *
+     * @param $id
+     *
+     * @return object User ratings
+     */
+    private function getUserRating($id)
     {
         $rating = $this->usersAverageRatingRepository->getById($id);
 
         $response = (object)[
-            "cumulative_average" => $rating->average_rating ?? 0,
-            "mentee_average" => $rating->average_mentee_rating ?? 0,
-            "mentor_average" => $rating->average_mentor_rating ?? 0,
-            "rating_count" => $rating->session_count ?? 0,
+          "cumulative_average" => $rating->average_rating ?? 0,
+          "mentee_average" => $rating->average_mentee_rating ?? 0,
+          "mentor_average" => $rating->average_mentor_rating ?? 0,
+          "rating_count" => $rating->session_count ?? 0,
         ];
+
+        return $response;
+    }
+
+    /**
+     * Gets a user rating details.
+     *
+     * @param integer $id - user id
+     *
+     * @return \Illuminate\Http\JsonResponse User ratings object
+     */
+    public function getRating($id)
+    {
+        $response = $this->getUserRating($id);
+
         return $this->respond(Response::HTTP_OK, $response);
     }
 
@@ -119,7 +196,7 @@ class UserController extends Controller
 
         $users = User::where("email", "iLIKE", "%".$searchTerm."%")
                             ->paginate($limit);
-        
+
         $usersById = [];
         foreach ($users as $user) {
             $usersById[$user->id] = $user;
@@ -127,7 +204,7 @@ class UserController extends Controller
 
         if (in_array("LENKEN_ADMIN", $request->user()->roles)) {
             $userEmails = array_column($users->items(), "email");
-            
+
             if (count($userEmails) !== 0) {
                 $aisUsers = $this->aisClient->getUsersByEmail($userEmails);
 
@@ -144,19 +221,6 @@ class UserController extends Controller
             "page_size" => $users->perPage()
         ];
         return $this->respond(Response::HTTP_OK, $response);
-    }
-
-    /**
-     * Returns the requests for a particular mentee
-     *
-     * @param string $userId - user id
-     *
-     * @return integer total number of mentorship request made
-     */
-    private function getMenteeRequestCount($userId)
-    {
-        return MentorshipRequest::where("created_by", $userId)
-            ->count();
     }
 
     /**
@@ -200,25 +264,13 @@ class UserController extends Controller
     {
         $userDetails = $this->aisClient->getUserById($id);
 
+        $lenkenUser = User::find($id);
+
         $user = $this->formatUserInfo($userDetails);
-        $user["skills"] = $this->getUserSkills($id);
+
+        $user["skills"] = $lenkenUser->getSkills();
 
         return $user;
-    }
-
-    private function getUserSkills($id)
-    {
-        $userSkills = UserSkill::with("skill")->where("user_id", $id)->get();
-
-        $skills = [];
-        foreach ($userSkills as $skill) {
-            $skills[] = (object)[
-                "id" => $skill->skill_id,
-                "name" => $skill->skill->name
-            ];
-        }
-
-        return $skills;
     }
 
     /**
@@ -279,7 +331,7 @@ class UserController extends Controller
     /**
      * Delete a user skill
      *
-     * @param integer $userId - user id
+     * @param integer $userId  - user id
      * @param integer $skillId - skill id
      *
      * @throws NotFoundException

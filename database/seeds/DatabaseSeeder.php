@@ -25,5 +25,6 @@ class DatabaseSeeder extends Seeder
         $this->call("RequestExtensionsTableSeeder");
         $this->call("RequestTypeTableSeeder");
         $this->call("RoleTableSeeder");
+        $this->call("SessionCommentsTableSeeder");
     }
 }
