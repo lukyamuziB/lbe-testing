@@ -357,7 +357,7 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute("user_id", $response[0]);
+        $this->assertContains("-K_nkl19N6-EGNa0W8LF", $response);
     }
 
     /**
@@ -372,7 +372,7 @@ class NotificationControllerTest extends TestCase
 
         $this->assertResponseOk();
         $response = json_decode($this->response->getContent());
-        $this->assertObjectHasAttribute("user_id", $response[0]);
+        $this->assertNotEmpty($response);
     }
 
     /**

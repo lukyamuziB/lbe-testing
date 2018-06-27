@@ -96,6 +96,34 @@ class UserNotification extends Model
     }
 
     /**
+     * factor in default settings when
+     * checking for a user's eligibility to
+     * receive notifications
+     *
+     * @param array $notificationPotentialUsers - all users associated with a given request
+     * @param array $customNotificationSettings - users who have their settings in the user_notifications table
+     * @param string $type - Notification type, which can either be in_app or email
+     */
+    public static function addDefaultSettings($potentialNotficationRecipients, $customNotificationSettings, $type)
+    {
+        $usersToBeNotified = [];
+        $usersWithCustomSettings = [];
+        
+        foreach ($customNotificationSettings as $setting) {
+            array_push($usersWithCustomSettings, $setting["user_id"]);
+            if ($setting[$type] === true) {
+                array_push($usersToBeNotified, $setting["user_id"]);
+            }
+        }
+
+        $usersWithoutCustomSettings = array_diff($potentialNotficationRecipients, $usersWithCustomSettings);
+
+        $usersEligibleForNotification = array_merge($usersToBeNotified, $usersWithoutCustomSettings);
+
+        return $usersEligibleForNotification;
+    }
+
+    /**
      * Get user notification setting by user_id and notification id
      *
      * @param integer $userId Unique ID used to identify the users
@@ -184,7 +212,11 @@ class UserNotification extends Model
         $userSettings = UserNotification::where("id", $notificationId)
             ->where("user_id", $userId)
             ->pluck("email");
-    
+
+        if (empty($userSettings->toArray())) {
+            $userSettings = "true";
+        }
+
         return $userSettings;
     }
 
@@ -206,11 +238,17 @@ class UserNotification extends Model
         $usersWithThoseSkills = UserSkill::whereIn("skill_id", $requestSkills)
             ->pluck("user_id");
 
-        $usersToBeNotified = UserNotification::where("email", true)
+        $notificationEligibleUsers = UserNotification::select("user_id", "email")
             ->where("id", Notification::REQUESTS_MATCHING_USER_SKILLS)
             ->whereIn("user_id", $usersWithThoseSkills)
-            ->pluck("user_id");
-    
+            ->get();
+        
+        $usersToBeNotified = UserNotification::addDefaultSettings(
+            $usersWithThoseSkills->toArray(),
+            $notificationEligibleUsers->toArray(),
+            "email"
+        );
+        
         return $usersToBeNotified;
     }
 
@@ -228,11 +266,21 @@ class UserNotification extends Model
         $interestedUsersList = Request::select("interested")
             ->where("id", $id)
             ->get();
+        
+        if (is_null($interestedUsersList[0]->interested)) {
+            return [];
+        }
 
-        $usersToBeNotified = UserNotification::where("email", true)
+        $notificationEligibleUsers = UserNotification::select("user_id", "email")
             ->where("id", Notification::WITHDRAWN_INTEREST)
             ->whereIn("user_id", $interestedUsersList[0]->interested)
-            ->pluck("user_id");
+            ->get();
+    
+        $usersToBeNotified = UserNotification::addDefaultSettings(
+            $interestedUsersList[0]->interested,
+            $notificationEligibleUsers->toArray(),
+            "email"
+        );
         
         return $usersToBeNotified;
     }
@@ -265,10 +313,16 @@ class UserNotification extends Model
             array_push($mentorIds, $mentor->created_by->id);
         }
 
-        $usersToBeNotified = UserNotification::where("email", true)
+        $notificationEligibleUsers = UserNotification::where("email", true)
             ->where("id", Notification::MATCHING_OPEN_REQUEST_SKILLS)
             ->whereIn("user_id", $mentorIds)
             ->pluck("user_id");
+        
+        $usersToBeNotified = UserNotification::addDefaultSettings(
+            $mentorIds,
+            $notificationEligibleUsers->toArray(),
+            "email"
+        );
         
         return $usersToBeNotified;
     }

@@ -168,13 +168,24 @@ class NotificationController extends Controller
      */
     public function getInterestedUsers($id)
     {
-        $interestedUsersList = Requests::select('interested')->where('id', $id)->get();
+        $interestedUsersList = Requests::select("interested")
+            ->where("id", $id)
+            ->get();
 
-        $usersToBeNotified = UserNotification::select('user_id')
-        ->where("in_app", true)
-        ->where("id", Notification::WITHDRAWN_INTEREST)
-        ->whereIn("user_id", $interestedUsersList->toArray())
-        ->get();
+        if (is_null($interestedUsersList[0]->interested)) {
+            return [];
+        }
+
+        $userSettings = UserNotification::select("user_id", "in_app")
+            ->where("id", Notification::WITHDRAWN_INTEREST)
+            ->whereIn("user_id", $interestedUsersList)
+            ->get();
+
+        $usersToBeNotified = UserNotification::addDefaultSettings(
+            $interestedUsersList[0]->interested,
+            $userSettings->toArray(),
+            "in_app"
+        );
 
         return $this->respond(Response::HTTP_OK, $usersToBeNotified);
     }
@@ -191,21 +202,24 @@ class NotificationController extends Controller
      */
     public function getUsersWithMatchingRequestSkills($id)
     {
-        $requestSkills = RequestSkill::select("skill_id")
-        ->where("request_id", $id)
-        ->get();
+        $requestSkills = RequestSkill::where("request_id", $id)
+            ->pluck("skill_id");
       
-        $usersWithThoseSkills = UserSkill::select("user_id")
-        ->whereIn("skill_id", $requestSkills->toArray())
-        ->get();
+        $usersWithThoseSkills = UserSkill::whereIn("skill_id", $requestSkills)
+            ->pluck("user_id");
 
-        $notificationEligibleUsers = UserNotification::select("user_id")
-        ->where("in_app", true)
-        ->where("id", Notification::REQUESTS_MATCHING_USER_SKILLS)
-        ->whereIn("user_id", $usersWithThoseSkills->toArray())
-        ->get();
+        $notificationEligibleUsers = UserNotification::select("user_id", "in_app")
+            ->where("id", Notification::REQUESTS_MATCHING_USER_SKILLS)
+            ->whereIn("user_id", $usersWithThoseSkills)
+            ->get();
 
-        return $this->respond(Response::HTTP_OK, $notificationEligibleUsers);
+        $usersToBeNotified = UserNotification::addDefaultSettings(
+            $usersWithThoseSkills->toArray(),
+            $notificationEligibleUsers->toArray(),
+            "in_app"
+        );
+
+        return $this->respond(Response::HTTP_OK, $usersToBeNotified);
     }
 
     /**
@@ -234,9 +248,17 @@ class NotificationController extends Controller
         }
 
         $userSettings = UserNotification::select("user_id", "id", "in_app")
-        ->where("id", $notificationId)
-        ->where("user_id", $userId)
-        ->get();
+            ->where("id", $notificationId)
+            ->where("user_id", $userId)
+            ->get();
+
+        if (empty($userSettings->toArray())) {
+            $userSettings = [[
+                "user_id" => $userId,
+                "id" => $notificationId,
+                "in_app" => true
+            ]];
+        }
 
         return $this->respond(Response::HTTP_OK, $userSettings);
     }
