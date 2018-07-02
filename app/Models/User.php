@@ -107,13 +107,13 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         $sessionDetails = Session::getSessionDetails($this->id);
 
         $statistics = [];
-        $statistics[] = (object)[
+        $statistics = (object)[
             "request_count" => $requestCount,
             "logged_hours" => $sessionDetails["totalHours"],
             "total_sessions" => $sessionDetails["totalSessions"],
         ];
 
-        return (object) $statistics;
+        return $statistics;
     }
 
 
