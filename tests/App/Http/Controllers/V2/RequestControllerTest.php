@@ -1,7 +1,5 @@
 <?php
-
 namespace Test\App\Http\Controllers\V2;
-
 use App\Models\Status;
 use App\Models\User;
 use App\Models\Request;
@@ -11,18 +9,15 @@ use App\Models\Role;
 use App\Models\RequestType;
 use App\Http\Controllers\V2\RequestController;
 use Test\Mocks\GoogleCalendarClientMock;
-
 use Illuminate\Http\UploadedFile;
 use TestCase;
 use Carbon\Carbon;
 use App\Utility\SlackUtility;
-
 class RequestControllerTest extends TestCase
 {
     private $cancellationReason = [
         "reason"=> "test cancellations reason."
     ];
-
     private $validAcceptOrRejectUserData = [
         "interestedUserId" => "-KesEogCwjq6lkOzKmLI",
         "interestedUserName" => "Test Admin",
@@ -31,13 +26,9 @@ class RequestControllerTest extends TestCase
         "interestedUserId" => "wrongUserId",
         "interestedUserName" => "Test Admin",
     ];
-
     const REQUESTS_URI = "/api/v2/requests";
-
     private $validRequest;
-
     private $googleCalendarClientMock;
-
     private $invalidResponse = [
         "title" => [
             "The title field is required."
@@ -58,7 +49,6 @@ class RequestControllerTest extends TestCase
             "The pairing.timezone field is required."
         ]
     ];
-
     private function makeUser($identifier, $roles = ["Fellow"])
     {
         $this->be(
@@ -75,20 +65,14 @@ class RequestControllerTest extends TestCase
             )
         );
     }
-
     public function setUp()
     {
         parent::setUp();
-
         $this->makeUser("-K_nkl19N6-EGNa0W8LF");
-
         $this->validRequest = $this->getValidRequest('4');
-
         $this->googleCalendarClientMock = new GoogleCalendarClientMock();
-
         $this->app->instance("App\Clients\GoogleCalendarClient", $this->googleCalendarClientMock);
     }
-
     /**
      * Test to get a single request.
      *
@@ -98,16 +82,12 @@ class RequestControllerTest extends TestCase
     {
         $createdRequest = $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript", "-KesEogCwjq6lkOzKmLI", 2);
         $createdRequestId = $createdRequest->id;
-
         $this->get("/api/v2/requests/$createdRequestId");
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
         $this->assertNotEmpty($response);
         $this->assertEquals($createdRequestId, $response->id);
     }
-
     /**
      * Test for get request failure when an invalid request id is passed.
      *
@@ -117,13 +97,10 @@ class RequestControllerTest extends TestCase
     {
         $fakeRequestId = 1223;
         $this->get("/api/v2/requests/$fakeRequestId");
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(404);
         $this->assertEquals("Request not found.", $response->message);
     }
-
     /**
      * Test for get all requests created by a user
      *
@@ -132,12 +109,10 @@ class RequestControllerTest extends TestCase
     public function testGetCreatedByUserRequestSuccess()
     {
         $this->get("/api/v2/requests?category=myRequests");
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(200);
         $this->assertNotEmpty($response);
     }
-
     /**
      * Test to get the completed requests of a user
      *
@@ -147,12 +122,10 @@ class RequestControllerTest extends TestCase
     {
         $this->createRequest("-K_nkl19N6-EGNa0W8LF", "javascript", "-KesEogCwjq6lkOzKmLI", Status::COMPLETED);
         $this->get("/api/v2/requests/history");
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(200);
         $this->assertNotEmpty($response);
     }
-
     /**
      * Test pending requests are retrieved successfully
      *
@@ -162,21 +135,17 @@ class RequestControllerTest extends TestCase
     {
         $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-K_nkl19N6-EGNa0W8LF", Status::OPEN);
         $this->get("/api/v2/requests/pending");
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
         $this->assertEquals(
             "-K_nkl19N6-EGNa0W8LF",
             $response[1]->created_by->id
         );
-
         $this->assertContains(
             "-KesEogCwjq6lkOzKmLI",
             $response[1]->interested
         );
     }
-
     /**
      * Test to get requests that are in progress for a user
      *
@@ -185,15 +154,11 @@ class RequestControllerTest extends TestCase
     public function testGetRequestsInProgressSuccess()
     {
         $this->get("/api/v2/requests/in-progress");
-
         $this->assertResponseOk();
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(200);
-
         $this->assertNotEmpty($response);
     }
-
      /**
      * Test to filter requests by seeking mentor
      *
@@ -202,20 +167,15 @@ class RequestControllerTest extends TestCase
     public function testGetRequestsPoolForSeekingMentorSuccess()
     {
         $this->get("/api/v2/requests/pool?limit=5&page=1&type=1");
-
         $this->assertResponseOk();
-
         $openRequests = json_decode(
             $this->response->getContent()
         )->requests;
-
         foreach ($openRequests as $openRequest) {
             $this->assertEquals($openRequest->request_type_id, 1);
         }
-
         $this->assertNotEmpty($openRequests);
     }
-
     /**
      * Test to filter requests by seeking mentee
      *
@@ -224,20 +184,15 @@ class RequestControllerTest extends TestCase
     public function testGetRequestsPoolForSeekingMenteeSuccess()
     {
         $this->get("/api/v2/requests/pool?limit=5&page=1&type=2");
-
         $this->assertResponseOk();
-
         $openRequests = json_decode(
             $this->response->getContent()
         )->requests;
-
         $this->assertNotEmpty($openRequests);
-
         foreach ($openRequests as $openRequest) {
             $this->assertEquals($openRequest->request_type_id, 2);
         }
     }
-
     /**
      * Test to filter requests by seeking mentee and seeking mentor
      *
@@ -246,18 +201,12 @@ class RequestControllerTest extends TestCase
     public function testGetRequestsPoolForSeekingMentorMenteeSuccess()
     {
         $this->get("/api/v2/requests/pool?limit=20&page=1&type=1,2");
-
         $this->assertResponseOk();
-
         $response = json_decode($this->response->getContent());
-
         $this->assertNotEmpty($response);
-
         $this->assertEquals($response->requests[19]->request_type_id, 1);
         $this->assertEquals($response->requests[0]->request_type_id, 2);
-
     }
-
     /**
      * Test to filter requests by seeking mentee or seeking mentor for in valid input
      *
@@ -266,15 +215,10 @@ class RequestControllerTest extends TestCase
     public function testGetRequestsPoolForSeekingMentorMenteeInvalidInput()
     {
         $this->get("/api/v2/requests/pool?limit=20&page=1&type=john");
-
         $this->assertResponseOk();
-
-
         $response = json_decode($this->response->getContent());
-
         $this->assertEquals($response->requests, []);
     }
-
     /**
      * Test that a mentee can cancel their own request succesfully
      *
@@ -285,7 +229,6 @@ class RequestControllerTest extends TestCase
         $this->patch("/api/v2/requests/19/cancel-request", $this->cancellationReason);
         $this->assertResponseOk();
     }
-
     /**
      * Test that admin can cancel request succesfully
      *
@@ -297,7 +240,6 @@ class RequestControllerTest extends TestCase
         $this->patch("/api/v2/requests/19/cancel-request", $this->cancellationReason);
         $this->assertResponseOk();
     }
-
     /**
      * Test that user can't delete request that doesn't belong to them
      *
@@ -314,7 +256,6 @@ class RequestControllerTest extends TestCase
             $response->message
         );
     }
-
     /**
      * Test user can't cancel request that doesn't exist
      *
@@ -327,7 +268,6 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Mentorship Request not found.", $response->message);
     }
-
     /**
      * Test user can't cancel request twice.
      *
@@ -341,7 +281,6 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(409);
         $this->assertEquals("Mentorship Request already cancelled.", $response->message);
     }
-
     /**
      * Test that a user can abandon an ongoing mentorship request succesfully
      *
@@ -353,7 +292,6 @@ class RequestControllerTest extends TestCase
             ["status" => Status::ABANDONED, "reason"=> "test abandon reason."]);
         $this->assertResponseOk();
     }
-
     /**
      * Test that a user can't abandon an ongoing request in which they
      * are not involved in
@@ -372,7 +310,6 @@ class RequestControllerTest extends TestCase
             $response->message
         );
     }
-
     /**
      * Test user can't abandon request that doesn't exist
      *
@@ -386,7 +323,6 @@ class RequestControllerTest extends TestCase
             $this->assertResponseStatus(404);
         $this->assertEquals("Mentorship Request not found.", $response->message);
     }
-
     /**
      * Test user can't abandon a request twice.
      *
@@ -402,7 +338,6 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Mentorship Request already abandoned.", $response->message);
     }
-
     /**
      * Test user can withdraw interest from mentorship succesfully
      *
@@ -420,7 +355,6 @@ class RequestControllerTest extends TestCase
         $this->patch("api/v2/requests/14/withdraw-interest");
         $this->assertResponseOk();
     }
-
     /**
      * Test user can not withdraw interest from a Mentorship that doesn't exist
      * or request that they are not interested in
@@ -434,7 +368,6 @@ class RequestControllerTest extends TestCase
         $this->patch("api/v2/requests/14/withdraw-interest");
         $this->assertResponseStatus(400);
     }
-
     /**
      * Test that a user can get all files and sessions that belongs to a request.
      */
@@ -457,12 +390,10 @@ class RequestControllerTest extends TestCase
         $this->assertArrayHasKey("file", $response);
         $this->assertArrayHasKey("session_id", $response);
     }
-
     public function testGetOpenRequestsOnlySuccess()
     {
         $this->get("api/v2/requests/pool?limit=5&page=1&status=1");
         $this->assertResponseStatus(200);
-
         $mentorshipRequests = json_decode(
             $this->response->getContent()
         )->requests;
@@ -470,8 +401,6 @@ class RequestControllerTest extends TestCase
             $this->assertEquals($mentorshipRequest->status_id, 1);
         }
     }
-
-
     /**
      * Test interested user is accepted succesfully
      *
@@ -483,18 +412,12 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/19/accept-user",
             $this->validAcceptOrRejectUserData
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
-
         $this->assertTrue($this->googleCalendarClientMock->called);
-
         $this->assertEquals($response->status_id, 2);
-
         $this->assertNotNull($response->match_date);
     }
-
     /**
      * Test valid interested user id is required
      *
@@ -506,14 +429,10 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/17/accept-user",
             $this->invalidAcceptOrRejectUserIdData
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(404);
         $this->assertEquals($response->message, "The fellow is not an interested user");
     }
-
-
     /**
      * Test only requests owner can accept interested user
      *
@@ -526,16 +445,13 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/17/accept-user",
             $this->validAcceptOrRejectUserData
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(403);
         $this->assertEquals(
             $response->message,
             "You do not have permission to perform this operation"
         );
     }
-
     /**
      * Test interested user is rejected succesfully
      *
@@ -547,13 +463,10 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/19/reject-user",
             $this->validAcceptOrRejectUserData
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(200);
         $this->assertNull($response->interested);
     }
-
     /**
      * Test valid interested user id is required
      *
@@ -565,13 +478,10 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/17/reject-user",
             $this->invalidAcceptOrRejectUserIdData
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(404);
         $this->assertEquals($response->message, "The fellow is not an interested user");
     }
-
     /**
      * Test only owner of request can reject interested user
      *
@@ -584,16 +494,13 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/17/reject-user",
             $this->validAcceptOrRejectUserData
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseStatus(403);
         $this->assertEquals(
             $response->message,
             "You do not have permission to perform this operation"
         );
     }
-
     /**
      * Test to create a valid mentor mentorship request
      *
@@ -602,12 +509,10 @@ class RequestControllerTest extends TestCase
     public function testCreateMentorRequestSuccess()
     {
         $this->validRequest["requestType"] = 1;
-
         $this->post(self::REQUESTS_URI, $this->validRequest);
         $response = json_decode($this->response->getContent());
         $this->createRequestAssertion($response, $this->validRequest["requestType"]);
     }
-
     /**
      * Test to create a valid mentee mentorship request
      *
@@ -616,12 +521,10 @@ class RequestControllerTest extends TestCase
     public function testCreateMenteeRequest()
     {
         $this->validRequest["requestType"] = 2;
-
         $this->post(self::REQUESTS_URI, $this->validRequest);
         $response = json_decode($this->response->getContent());
         $this->createRequestAssertion($response, $this->validRequest["requestType"]);
     }
-
     /**
      * Test to create request assertions
      *
@@ -656,7 +559,6 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent(), true);
         $this->assertArrayHasKey("created_by", $response);
     }
-
     /**
      * Test should fail if the user does not provide the necessary fields
      * required to create a mentorship request
@@ -704,7 +606,6 @@ class RequestControllerTest extends TestCase
             $response->message
         );
     }
-
     /**
      * Test should fail when the user tries to indicate interest in non-existing request
      *
@@ -715,13 +616,11 @@ class RequestControllerTest extends TestCase
         $this->patch('/api/v2/requests/500/indicate-interest');
         $this->assertResponseStatus(404);
         $response = json_decode($this->response->getContent());
-
         $this->assertEquals(
             "Mentorship Request not found.",
             $response->message
         );
     }
-
     /**
      * Test should fail when the user tries to indicate interest in a request
      * he/she already indicated interest
@@ -735,13 +634,11 @@ class RequestControllerTest extends TestCase
         $this->patch('/api/v2/requests/15/indicate-interest');
         $this->assertResponseStatus(409);
         $response = json_decode($this->response->getContent());
-
         $this->assertEquals(
             "You have already indicated interest in this request.",
             $response->message
         );
     }
-
     /**
      * Test the user can indicate interest in request if all requirements are met
      *
@@ -753,7 +650,6 @@ class RequestControllerTest extends TestCase
         $this->patch('/api/v2/requests/15/indicate-interest');
         $this->assertResponseStatus(200);
     }
-
     /**
      * Test to check if the date range filter is accurate.
      */
@@ -762,12 +658,10 @@ class RequestControllerTest extends TestCase
         $startDate = Carbon::now()->format("d-m-Y");
         $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-KesEogCwjq6lkOzKmLI", Status::OPEN, Carbon::now());
         $endDate = Carbon::now()->format("d-m-Y");
-
         $this->get("api/v2/requests/pool?limit=5&page=1&status=&startDate=" . $startDate . "&endDate=" . $endDate);
         $response = json_decode($this->response->getContent());
         $this->assertEquals($response->pagination->total_count, 1);
     }
-
     /**
      * Test to check if awaiting_user is appended to requests.
      *
@@ -796,7 +690,6 @@ class RequestControllerTest extends TestCase
         $method->invoke($requestController, $request, $userId);
         $this->assertEquals($request, $result);
     }
-
     /**
      * Test to check if the date range filter is accurate.
      */
@@ -805,14 +698,11 @@ class RequestControllerTest extends TestCase
         $startDate = Carbon::now()->format("d-m-Y");
         $this->createRequest("-KXGy1MT1oimjQgFim7u", "javascript", "-K_nkl19N6-EGNa0W8LF", Status::OPEN, Carbon::now());
         $endDate = Carbon::now()->format("d-m-Y");
-
         $this->get("api/v2/requests?limit=5&page=1&status=&startDate="
           . $startDate . "&endDate=" . $endDate);
         $response = json_decode($this->response->getContent());
-
         $this->assertEquals($response->pagination->total_count, 1);
     }
-
     /**
      * Test to return skill requests
      */
@@ -822,13 +712,11 @@ class RequestControllerTest extends TestCase
         $this->get(
             "/api/v2/skills/1/requests"
         );
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
         $this->assertNotEmpty($response);
         $this->assertObjectHasAttribute("requests", $response->skill);
     }
-
     /**
      * Test that it only returns requests where the type
      * of the skill for the skillId passed is type primary
@@ -839,7 +727,6 @@ class RequestControllerTest extends TestCase
         $this->get(
             "/api/v2/skills/18/requests"
         );
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
         $this->assertNotEmpty($response->skill->requests[0]->request_skills);
@@ -847,7 +734,6 @@ class RequestControllerTest extends TestCase
         $this->assertEquals($response->skill->name, $response->skill->requests[0]->request_skills[0]->name);
         $this->assertEquals("primary", $response->skill->requests[0]->request_skills[0]->type);
     }
-
     /**
      * Test to return error message if there skill id is invalid
      */
@@ -857,14 +743,12 @@ class RequestControllerTest extends TestCase
         $this->get(
             "/api/v2/skills/1aaaa1/requests"
         );
-
         $response = json_decode($this->response->getContent());
         $errorResponse = (object) [
             "message" => "Invalid parameter."
         ];
         $this->assertEquals($response, $errorResponse);
     }
-
     /**
      * Test to return an empty array when there are no
      * request for the rating values passed in
@@ -877,7 +761,6 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals(0, $response->pagination->total_count);
     }
-
     /**
      * Test to return the list of requests of a particular
      * rating value passed in
@@ -890,7 +773,6 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertNotFalse($response->pagination->total_count > 0);
     }
-
     /**
      *  Test request owner can edit an unmatched request successfully
      *
@@ -903,14 +785,12 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/01",
             $this->validRequest
         );
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(200);
         $this->assertEquals($response->request_skills[0]->id,"4");
         $this->assertEquals($response->title, "Angular 2 and PHP");
         $this->assertEquals($response->description, "I need a mentor to help me level up in Angular 2 and PHP");
     }
-
     /**
      *  Test request_skills table is not updated
      *  when there are no new skills
@@ -926,13 +806,11 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/23",
             $this->getValidRequest('18')
         );
-
         $idAfterUpdate = RequestSkill::where('request_id',23)
                     ->pluck('id')->toArray();
         $this->assertEquals($idBeforeUpdate, $idAfterUpdate);
         $this->assertResponseStatus(200);
     }
-
     /**
      * Test a user cannot edit an invalid request
      *
@@ -945,7 +823,6 @@ class RequestControllerTest extends TestCase
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Mentorship request not found.", $response->message);
     }
-
     /**
      * Test only requests owner can edit a request
      *
@@ -958,7 +835,6 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/09",
             $this->validRequest
         );
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(403);
         $this->assertEquals(
@@ -978,7 +854,6 @@ class RequestControllerTest extends TestCase
             "/api/v2/requests/10",
             $this->validRequest
         );
-
         $response = json_decode($this->response->getContent());
         $this->assertResponseStatus(400);
         $this->assertEquals(
@@ -986,7 +861,6 @@ class RequestControllerTest extends TestCase
             "You can only edit an open request."
         );
     }
-
     /**
      * Gets a valid request
      *
@@ -1022,30 +896,24 @@ class RequestControllerTest extends TestCase
         $this->get(
             "/api/v2/requests/search?q=consequatur"
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseOk();
         $this->assertResponseStatus(200);
-
         foreach($response->requests as $request)
         {
             if (strpos($request->title, 'consequatur') !== false) {
                 $this->assertContains('consequatur', $request->title);
             }
-
             if (strpos($request->description, 'consequatur') !== false) {
                 $this->assertContains('consequatur', $request->description);
             }
         }
-
         $this->assertNotEmpty($response);
         $this->assertEquals(
             $response->pagination->total_count,
             count($response->requests)
         );
     }
-
     /**
      * Test to return message when no search query is provided
      */
@@ -1054,7 +922,6 @@ class RequestControllerTest extends TestCase
         $this->get(
             "/api/v2/requests/search"
         );
-
         $response = json_decode($this->response->getContent());
         $errorResponse = (object) [
             "message" => "No search query was given."
@@ -1062,7 +929,6 @@ class RequestControllerTest extends TestCase
         $this->assertResponseStatus(400);
         $this->assertEquals($response, $errorResponse);
     }
-
     /**
      * Test to return requests search for query that does not exist in
      * database
@@ -1072,12 +938,38 @@ class RequestControllerTest extends TestCase
         $this->get(
             "/api/v2/requests/search?q=aswedrtrftgyhujikolpkujyhggtd"
         );
-
         $response = json_decode($this->response->getContent());
-
         $this->assertResponseOk();
         $this->assertResponseStatus(200);
         $this->assertEmpty($response->requests);
         $this->assertEquals($response->pagination->total_count, 0);
+    }
+
+     /**
+     * Test that a user can search using complementary skills
+     */    
+    public function testSearchRequestsByComplementarySkill()
+    {
+
+        $this->get('/api/v2/requests/search?q=a');
+
+        $response = json_decode($this->response->getContent());
+        $this->assertResponseOk();
+
+        $secondarySkill = [];
+        
+        foreach($response->requests as $request)
+        {
+            
+            foreach($request->request_skills as $skills){
+                if($skills->type === "secondary"){
+                $secondarySkill[] = $skills->name;                
+                }                                
+            }
+                          
+        }
+        $this->get('/api/v2/requests/search?q=a');
+             
+        
     }
 }

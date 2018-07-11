@@ -34,6 +34,12 @@ class RequestSkillsTableSeeder extends Seeder
             ]);
             $customRequestId += 1;
         }
+
+        DB::table('request_skills')->insert([
+            'request_id' => 33,
+            'skill_id' => "20",
+            'type' => 'secondary'
+        ]);
     }
 
     /**
@@ -50,5 +56,11 @@ class RequestSkillsTableSeeder extends Seeder
                 'type' => 'primary'
             ]);
         }
+
+        DB::table('request_skills')->insert([
+            'request_id' => 33,
+            'skill_id' => "20",
+            'type' => 'secondary'
+        ]);
     }
 }

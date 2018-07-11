@@ -103,13 +103,15 @@ class SkillControllerTest extends TestCase
 
         $response = json_decode($this->response->getContent());
         $this->assertResponseOk();
-        $this->assertCount(2, $response);
+        $this->assertCount(3, $response);
 
         foreach ($response as $skill) {
             $this->assertNotEmpty($skill->name);
             $this->assertNotEmpty($skill->count);
-            $this->assertObjectHasAttribute('open', $skill->count);
-            $this->assertNotEmpty($skill->count->open);
+            
+            foreach ($skill->count as $count) {
+                $this->assertNotEmpty($count);
+            }
         }
     }
 
