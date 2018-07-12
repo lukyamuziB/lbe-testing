@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
@@ -24,11 +25,11 @@ class LoggedSessionMail extends Mailable
     public function __construct($payload, $recipient)
     {
         /**
-        * Create a new message instance.
-        *
-        * @param array $payload payload
-        * @param string $recipient recipient
-        */
+         * Create a new message instance.
+         *
+         * @param array $payload payload
+         * @param string $recipient recipient
+         */
 
         $this->payload = $payload;
         $this->recipient = $recipient;
@@ -46,7 +47,7 @@ class LoggedSessionMail extends Mailable
             ->view('logged_session_email')
             ->with(
                 [
-                'payload' => $this->payload
+                    'payload' => $this->payload
                 ]
             );
     }

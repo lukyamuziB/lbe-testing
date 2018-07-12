@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
@@ -24,14 +25,6 @@ class CancelRequestMail extends Mailable
      */
     public function __construct($payload, $recipient)
     {
-        /**
-         * Create a new message instance.
-         *
-         * @param array $payload
-         * @param string $recipient
-         *
-         */
-
         $this->payload = $payload;
         $this->recipient = $recipient;
     }
@@ -47,7 +40,7 @@ class CancelRequestMail extends Mailable
             ->view('cancel_request_email')
             ->with(
                 [
-                'payload' => $this->payload
+                    'payload' => $this->payload
                 ]
             );
     }

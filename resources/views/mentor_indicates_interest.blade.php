@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width">
     <!-- This will be the subject of the mail -->
-    <title>Session File {{$payload["typeOfAction"] == 'upload_file' ? 'Upload' : 'Delete'}} Notification</title>
+    <title>Mentor Interested</title>
 </head>
 <body style="font-size: 16px; font-family: 'Avenir', 'Avenir Next', Helvetica; padding: 0; margin: 0; color: #666; width: 100%; height: 100%;">
 <!-- Main table wrapper -->
@@ -34,7 +34,7 @@
                                                         <tr>
                                                             <th width="300">
                                                                 <h3 style="color: #fff; font-weight: 50; text-align: left; font-size: 15px">
-                                                                Session File {{$payload["typeOfAction"] == 'upload_file' ? 'Upload' : 'Delete'}} Notification
+                                                                    Interested Request
                                                                 </h3>
                                                             </th>
                                                         </tr>
@@ -68,22 +68,16 @@
                             <!-- Header -->
 
                             <!-- Body -->
-                            @if ($payload["typeOfAction"] == 'upload_file')
-                           <p>{{$payload["requesterName"]}} has uploaded a file "{{$payload["fileName"] }}" to your {{ $payload["sessionDate"] }} session.</p>
-                            @else
-                            <p>{{$payload["requesterName"]}} has deleted a file "{{$payload["fileName"] }}" from your {{ $payload["sessionDate"] }} session.</p>
-                            @endif
-                             <!-- Body -->
+                            <p> {{ $payload["currentUser"] }} has indicated interest in your request for {{ $payload["title"] }} {{$payload["request_type"]}}. Click <a href="http://{{ env("ACCEPT_REJECT_MAIL_LINK") }}">here</a> to to accept or reject.</p>
+                            <!-- Body -->
 
                             <!-- Footer section -->
                             <table align="center">
                                 <tbody>
                                 <tr>
-                                    <th style="padding-top: 25px;">
-                                        <p style="font-size: 12px; color: #b3b3b3; font-weight: 100; text-align: center;">
-                                            This email was sent by the Andela Lenken Development Team.
-                                            <br/><br/>
-                                            Click <a href="{{ env("UNSUBSCRIBE_FROM_MAIL_LINK") }}"  style="font-size: 12px; color: #b3b3b3; font-weight: 100;">here</a> to unsubscribe from this notification
+                                    <p style="font-size: 12px; color: #b3b3b3; font-weight: 100; text-align: center;">
+                                            This email was sent by the Andela Lenken Development Team. <br/><br/>
+                                            Click <a href="http://{{ env("UNSUBSCRIBE_FROM_MAIL_LINK") }}"  style="font-size: 12px; color: #b3b3b3; font-weight: 100;">here</a> to unsubscribe from this notification
                                         </p> 
                                     </th>
                                 </tr>

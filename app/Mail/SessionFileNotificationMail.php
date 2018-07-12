@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
@@ -19,19 +20,11 @@ class SessionFileNotificationMail extends Mailable
      * Create a new message instance.
      *
      * @param string $recipient recipient
-     * @param array  $payload payload
+     * @param array $payload payload
      *
      */
     public function __construct($recipient, $payload)
     {
-    /**
-     * Create a new message instance.
-     *
-     * @param array $payload
-     * @param string $recipient
-     *
-     */
-
         $this->payload = $payload;
         $this->recipient = $recipient;
     }
@@ -47,7 +40,7 @@ class SessionFileNotificationMail extends Mailable
             ->view("session_file_notification_email")
             ->with(
                 [
-                'payload' => $this->payload
+                    'payload' => $this->payload
                 ]
             );
     }

@@ -14,6 +14,7 @@ use App\Exceptions\ConflictException;
 use App\Models\Status;
 use App\Models\User;
 use App\Models\Skill;
+use App\Models\UserSkill;
 use App\Models\RequestSkill;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestUsers;
@@ -25,7 +26,10 @@ use App\Utility\SlackUtility;
 use App\Clients\GoogleCalendarClient;
 use App\Mail\NewRequestMail;
 use App\Mail\CancelRequestMail;
+use App\Mail\MentorIndicatesInterestMail;
+use App\Mail\MenteeWithdrawsInterestMail;
 use App\Mail\UserAcceptanceOrRejectionNotificationMail;
+use App\Mail\MentorRequestMail;
 
 /**
  * Class RequestController
@@ -186,7 +190,6 @@ class RequestController extends Controller
      * @param - splitSearchParams
      *
      * @return void
-     *
      */
     private function searchQueryCallback($query, $splitSearchParams, $field)
     {
@@ -374,7 +377,29 @@ class RequestController extends Controller
 
         $mentorshipRequest->save();
 
+        $this->sendIndicatesInterestMail($mentorshipRequest, $currentUser);
         return $this->respond(Response::HTTP_OK);
+    }
+
+    /**
+     * Sends an email to requester indicating interest in their request
+     *
+     * @param Object $mentorshipRequest - Indicates interest request
+     * @param Object $currentUser - A user currently indicating interest
+     */
+    private function sendIndicatesInterestMail($mentorshipRequest, $currentUser)
+    {
+        $indicateInterestDetails = [
+            "currentUser" => $currentUser->name,
+            "title" => $mentorshipRequest->title,
+            "request_type" => $mentorshipRequest->request_type_id == Role::MENTOR ? "mentor" : "mentee",
+        ];
+
+        $recipientEmail = $mentorshipRequest->created_by->email;
+        if (!empty($recipientEmail)) {
+            $mentorIndicatesInterestMail = new MentorIndicatesInterestMail($indicateInterestDetails, $recipientEmail);
+            return sendEmailNotification($recipientEmail, $mentorIndicatesInterestMail);
+        }
     }
 
     /**
@@ -560,26 +585,44 @@ class RequestController extends Controller
         $mentorshipRequest->interested = $interested;
 
         $mentorshipRequest->save();
-
+        $this->sendWithdrawEmail($mentorshipRequest, $currentUser);
         return $this->respond(Response::HTTP_OK);
     }
 
     /**
-     * Accept a user who has shown interest in users mentorship request.
+     * Sends an email to users(mentor/mentee) that a request is withdrawn
+     *
+     * @param Object $mentorshipRequest - Withdraw Request
+     * @param Object $currentUser - A currently withdrawing user
+     */
+    private function sendWithdrawEmail($mentorshipRequest, $currentUser)
+    {
+        $withdrawEmailDetails = [
+            "currentUser" => $currentUser->name,
+            "title" => $mentorshipRequest->title,
+            "request_type" => $mentorshipRequest->request_type_id == 1 ? "mentor" : "mentee",
+        ];
+
+        $recipientEmail = $mentorshipRequest->created_by->email;
+        if (!empty($recipientEmail)) {
+            $menteeWithdrawsInterestMail = new MenteeWithdrawsInterestMail($withdrawEmailDetails, $recipientEmail);
+            return sendEmailNotification($recipientEmail, $menteeWithdrawsInterestMail);
+        }
+    }
+
+    /**
+     * Accept a user who has shown iterest in users mentorship request.
      *
      * @param Request $request - Request object
      * @param GoogleCalendarClient $googleCalendar google client
      * @param integer $mentorshipRequestId - mentorship request id with interested user
      *
-     * @throws NotFoundException if mentorship request is not found
+     * @throws NotFoundException|AccessDeniedException|BadRequestException
      *
      * @return Response object
      */
-    public function acceptInterestedUser(
-        Request $request,
-        GoogleCalendarClient $googleCalendar,
-        $mentorshipRequestId
-    ) {
+    public function acceptInterestedUser(Request $request, GoogleCalendarClient $googleCalendar, $mentorshipRequestId)
+    {
         $mentorshipRequest = MentorshipRequest::find($mentorshipRequestId);
 
         $this->validateBeforeAcceptOrRejectUser($request, $mentorshipRequest);
@@ -625,7 +668,7 @@ class RequestController extends Controller
      * @param Request $request - Request object
      * @param integer $mentorshipRequestId - mentorship request id with interested user
      *
-     * @throws NotFoundException if mentorship request is not found
+     * @throws NotFoundException|AccessDeniedException|BadRequestException
      *
      * @return Response object
      */
@@ -668,11 +711,8 @@ class RequestController extends Controller
      *
      * @return {Object} email object
      */
-    private function sendUserActionNotification(
-        $request,
-        $notificationType,
-        $interestedUserId = null
-    ) {
+    private function sendUserActionNotification($request, $notificationType, $interestedUserId = null)
+    {
         $recipient = "";
 
         $request->request_type_id === RequestType::MENTOR_REQUEST
@@ -692,8 +732,6 @@ class RequestController extends Controller
             "requestedSkill" => $request->title,
             "userRole" => $roleId == Role::MENTOR ? 'Mentor' : 'Mentee',
         ];
-
-        $emailInstance = new \stdClass();
 
         if ($notificationType === UserNotification::ACCEPT_USER) {
             $emailDetails["notificationType"] = UserNotification::ACCEPT_USER;
@@ -811,9 +849,58 @@ class RequestController extends Controller
         if ($result && $requestDetails["request_type_id"] === RequestType::MENTEE_REQUEST) {
             $openMentorshipRequests = $this->getOpenMentorshipRequests($requestDetails);
             $this->notifyMatchingRequestAuthors($openMentorshipRequests, $payload);
+        } elseif ($result && $requestDetails["request_type_id"] === RequestType::MENTOR_REQUEST) {
+            $skills = array_merge(
+                $requestSkills['secondary'],
+                $requestSkills['primary'],
+                $requestSkills['preRequisite']
+            );
+            $mentorEmails = $this->getMentorsEmailsBySkills($skills);
+            $this->notifyMentorsWithSkills($mentorEmails, $payload);
         }
-
         return $this->respond(Response::HTTP_CREATED, formatRequestForAPIResponse($result));
+    }
+
+    /**
+     * Gets a list of user'semails who possess the skills requested.
+     *
+     * @param Array $skillIds - primary skills ids list
+     *
+     * @return Array Response of created request
+     */
+    private function getMentorsEmailsBySkills($skillIds)
+    {
+        $mentorIds = UserSkill::whereIn('skill_id', $skillIds)->pluck('user_id');
+        $userEmails = User::whereIn('id', $mentorIds)->pluck('email');
+        return $userEmails;
+    }
+
+    /**
+     * Notifies users who possess the required skills of the newly created request
+     *
+     * @param Array $mentorEmails - List of matching mentorship emails.
+     *
+     * @param Array $payload - notification payload.
+     *
+     * @return void Response object of created request
+     */
+    private function notifyMentorsWithSkills($mentorEmails, $payload)
+    {
+        foreach ($mentorEmails as $mentorEmail) {
+            $this->sendMentorRequestNotification($mentorEmail, $payload);
+        }
+    }
+
+    /**
+     * Sends an email to users with required skills
+     *
+     * @param String $recipient - Email recipient
+     * @param Object requestPayload - Email payload.
+     */
+    private function sendMentorRequestNotification($recipient, $requestPayload)
+    {
+        $payload = new MentorRequestMail($requestPayload, $recipient);
+        return sendEmailNotification($recipient, $payload);
     }
 
     /**

@@ -3,28 +3,27 @@
 namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
-use App\Models\UserNotification;
 
 /**
- * interested user acceptance or rejection mail
+ * Indicates interest request mail
  *
  * @category Mailable
  * @package  App\Mail
  */
-class UserAcceptanceOrRejectionNotificationMail extends Mailable
+class MentorIndicatesInterestMail extends Mailable
 {
 
-    private $payload;
-    private $recipient;
+    public $payload;
+    public $recipient;
 
     /**
      * Create a new message instance.
      *
-     * @param string $recipient recipient
      * @param array $payload payload
+     * @param string $recipient recipient
      *
      */
-    public function __construct($recipient, $payload)
+    public function __construct($payload, $recipient)
     {
         $this->payload = $payload;
         $this->recipient = $recipient;
@@ -38,11 +37,10 @@ class UserAcceptanceOrRejectionNotificationMail extends Mailable
     public function build()
     {
         return $this->to($this->recipient)
-            ->subject($this->payload["emailSubject"])
-            ->view("user_acceptance_or_rejection_email")
+            ->view("mentor_indicates_interest")
             ->with(
                 [
-                    "payload" => $this->payload
+                    'payload' => $this->payload
                 ]
             );
     }

@@ -20,6 +20,7 @@ class CodementorGuidelineMail extends Mailable
     {
         $this->mail_attachment = getenv("CODEMENTOR_ATTACHMENT");
     }
+
     /**
      * Build the message.
      *

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
@@ -12,6 +13,8 @@ use Illuminate\Mail\Mailable;
  */
 class ExternalMentorshipGuidelinesMail extends Mailable
 {
+    private $sender;
+
     /**
      * Create a new message instance.
      *
@@ -19,12 +22,6 @@ class ExternalMentorshipGuidelinesMail extends Mailable
      */
     public function __construct($sender)
     {
-        /**
-         * Create a new message instance.
-         *
-         * @param array $sender
-         */
-
         $this->sender = $sender;
     }
 
