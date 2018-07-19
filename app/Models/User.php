@@ -180,4 +180,23 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
         return $userDetails;
     }
+
+    /**
+     * Get user emails given an array of user Ids
+     *
+     * @param array $userIds - list of user Ids
+     *
+     * @return array $userEamils - list of user emails
+     */
+    public static function getUserEmails($userIds)
+    {
+        $userEmails = [];
+
+        if (!empty($userIds)) {
+            $userEmails = User::whereIn("id", $userIds)
+                ->pluck("email");
+        }
+
+        return $userEmails;
+    }
 }

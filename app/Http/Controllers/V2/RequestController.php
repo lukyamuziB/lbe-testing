@@ -398,7 +398,7 @@ class RequestController extends Controller
         $recipientEmail = $mentorshipRequest->created_by->email;
         if (!empty($recipientEmail)) {
             $mentorIndicatesInterestMail = new MentorIndicatesInterestMail($indicateInterestDetails, $recipientEmail);
-            return sendEmailNotification($recipientEmail, $mentorIndicatesInterestMail);
+            return sendEmailNotificationBasedOnUserSettings($recipientEmail, $mentorIndicatesInterestMail);
         }
     }
 
@@ -467,7 +467,7 @@ class RequestController extends Controller
             foreach ($interestedUserEmails as $userEmail) {
                 $emailPayload = new CancelRequestMail($payload, $userEmail);
 
-                return sendEmailNotification($userEmail, $emailPayload);
+                return sendEmailNotificationBasedOnUserSettings($userEmail, $emailPayload);
             }
         }
     }
@@ -656,7 +656,8 @@ class RequestController extends Controller
 
         $this->sendUserActionNotification(
             $mentorshipRequest,
-            UserNotification::ACCEPT_USER
+            UserNotification::ACCEPT_USER,
+            $interestedUserId
         );
 
         return $this->respond(Response::HTTP_OK, $mentorshipRequest);
@@ -711,21 +712,13 @@ class RequestController extends Controller
      *
      * @return {Object} email object
      */
-    private function sendUserActionNotification($request, $notificationType, $interestedUserId = null)
+    private function sendUserActionNotification($request, $notificationType, $interestedUserId)
     {
-        $recipient = "";
-
         $request->request_type_id === RequestType::MENTOR_REQUEST
             ? $roleId = Role::MENTOR : $roleId = Role::MENTEE;
 
-        if ($interestedUserId) {
-            $$recipient = User::select("email")
-                ->where("id", $interestedUserId)
-                ->get();
-        } else {
-            $recipient = $roleId === Role::MENTOR
-                ? $request->mentor->email : $request->mentee->email;
-        }
+        $recipient = User::where("id", $interestedUserId)
+            ->pluck("email");
 
         $emailDetails = [
             "fullname" => $request->created_by->fullname,
@@ -743,7 +736,7 @@ class RequestController extends Controller
 
         $emailInstance = new UserAcceptanceOrRejectionNotificationMail($recipient, $emailDetails);
 
-        return sendEmailNotification($recipient, $emailInstance);
+        return sendEmailNotificationBasedOnUserSettings($recipient, $emailInstance);
     }
 
     /**
@@ -847,32 +840,17 @@ class RequestController extends Controller
         ];
 
         if ($result && $requestDetails["request_type_id"] === RequestType::MENTEE_REQUEST) {
-            $openMentorshipRequests = $this->getOpenMentorshipRequests($requestDetails);
-            $this->notifyMatchingRequestAuthors($openMentorshipRequests, $payload);
+            $openMentorshipUserIds = UserNotification::getUsersWithMatchingOpenSkills($result->id);
+            $openMentorshipUserEmails = User::getUserEmails($openMentorshipUserIds);
+
+            $this->notifyMatchingRequestAuthors($openMentorshipUserEmails, $payload);
         } elseif ($result && $requestDetails["request_type_id"] === RequestType::MENTOR_REQUEST) {
-            $skills = array_merge(
-                $requestSkills['secondary'],
-                $requestSkills['primary'],
-                $requestSkills['preRequisite']
-            );
-            $mentorEmails = $this->getMentorsEmailsBySkills($skills);
+            $mentorIds = UserNotification::getUsersWithMatchingRequestSkills($result->id);
+            $mentorEmails = User::getUserEmails($mentorIds);
+
             $this->notifyMentorsWithSkills($mentorEmails, $payload);
         }
         return $this->respond(Response::HTTP_CREATED, formatRequestForAPIResponse($result));
-    }
-
-    /**
-     * Gets a list of user'semails who possess the skills requested.
-     *
-     * @param Array $skillIds - primary skills ids list
-     *
-     * @return Array Response of created request
-     */
-    private function getMentorsEmailsBySkills($skillIds)
-    {
-        $mentorIds = UserSkill::whereIn('skill_id', $skillIds)->pluck('user_id');
-        $userEmails = User::whereIn('id', $mentorIds)->pluck('email');
-        return $userEmails;
     }
 
     /**
@@ -904,28 +882,16 @@ class RequestController extends Controller
     }
 
     /**
-     * Gets a list users with matching open mentorship requests.
-     *
-     * @param Object $requestDetails - Request details object
-     */
-    private function getOpenMentorshipRequests($requestDetails)
-    {
-        return MentorshipRequest::where("status_id", STATUS::OPEN)
-            ->where("request_type_id", RequestType::MENTOR_REQUEST)
-            ->where("title", $requestDetails["title"])
-            ->get();
-    }
-
-    /**
      * Notifies authors of the matching mentee request
      *
-     * @param $openMentorshipRequests - List of matching mentorship request.
+     * @param array $openMentorshipUserEmails - List users with open mentee
+     * requests matching requested skills
      * @param $payload - notification payload.
      */
-    private function notifyMatchingRequestAuthors($openMentorshipRequests, $payload)
+    private function notifyMatchingRequestAuthors($openMentorshipUserEmails, $payload)
     {
-        foreach ($openMentorshipRequests as $openMentorshipRequest) {
-            $this->sendMenteeRequestNotification($openMentorshipRequest["created_by"]["email"], $payload);
+        foreach ($openMentorshipUserEmails as $email) {
+            $this->sendMenteeRequestNotification($email, $payload);
         }
     }
 

@@ -623,7 +623,7 @@ class SessionController extends Controller
             $notificationDetails
         );
 
-        return sendEmailNotification($recipient, $sessionFileEmailInstance);
+        return sendEmailNotificationBasedOnUserSettings($recipient, $sessionFileEmailInstance);
     }
 
     /**
@@ -651,7 +651,7 @@ class SessionController extends Controller
             $recipient
         );
 
-        return sendEmailNotification($recipient, $loggedData);
+        return sendEmailNotificationBasedOnUserSettings($recipient, $loggedData);
     }
 
     /**
@@ -675,6 +675,6 @@ class SessionController extends Controller
             $recipient
         );
 
-        return sendEmailNotification($recipient, $loggedData);
+        return sendEmailNotificationBasedOnUserSettings($recipient, $loggedData);
     }
 }

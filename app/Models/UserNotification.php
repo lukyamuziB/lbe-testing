@@ -313,10 +313,10 @@ class UserNotification extends Model
             array_push($mentorIds, $mentor->created_by->id);
         }
 
-        $notificationEligibleUsers = UserNotification::where("email", true)
+        $notificationEligibleUsers = UserNotification::select("user_id", "email")
             ->where("id", Notification::MATCHING_OPEN_REQUEST_SKILLS)
             ->whereIn("user_id", $mentorIds)
-            ->pluck("user_id");
+            ->get();
         
         $usersToBeNotified = UserNotification::addDefaultSettings(
             $mentorIds,

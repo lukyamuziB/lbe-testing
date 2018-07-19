@@ -21,9 +21,12 @@ class ValidateAndSendNotificationJob extends Job implements ShouldQueue
     public $recipient;
 
     private $notificationTypes = [
-        "CancelRequestMail" => "REQUEST_CANCELED_OR_REJECTED",
-        "ConfirmSessionMail" => "SESSION_NOTIFICATIONS",
+        "ConfirmedSessionMail" => "SESSION_NOTIFICATIONS",
         "LoggedSessionMail" => "SESSION_NOTIFICATIONS",
+        "UserAcceptanceOrRejectionNotificationMail" => "REQUEST_ACCEPTED_OR_REJECTED",
+        "SessionFileNotificationMail" => "FILE_NOTIFICATIONS",
+        "MentorIndicatesInterestMail" => "INDICATES_INTEREST",
+        "CancelRequestMail" => "WITHDRAWN_INTEREST"
     ];
 
     public function __construct($recipient, $payload)
@@ -41,7 +44,7 @@ class ValidateAndSendNotificationJob extends Job implements ShouldQueue
     */
     private function getNotificationType($payload)
     {
-        $emailClass = get_class($payload);
+        $emailClass = str_replace("App\Mail\\", "", (string)get_class($payload));
 
         $notificationType = $this->notificationTypes[$emailClass];
 
@@ -60,7 +63,7 @@ class ValidateAndSendNotificationJob extends Job implements ShouldQueue
      */
     private function validateEmailRecipient($recipient, $payload)
     {
-        $notificationType = getNotificationType($payload);
+        $notificationType = $this->getNotificationType($payload);
 
         $shouldRecieveEmail = UserNotification::hasUserAcceptedEmail($recipient, $notificationType);
 
@@ -72,7 +75,7 @@ class ValidateAndSendNotificationJob extends Job implements ShouldQueue
     */
     public function handle()
     {
-        $shouldRecieveEmail = validateEmailRecipient($this->recipient, $this->payload);
+        $shouldRecieveEmail = $this->validateEmailRecipient($this->recipient, $this->payload);
 
         if ($shouldRecieveEmail) {
             sendEmailNotification($this->recipient, $this->payload);
