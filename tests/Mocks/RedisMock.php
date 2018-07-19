@@ -1,4 +1,5 @@
 <?php
+
 namespace Test\Mocks;
 
 /**
@@ -13,7 +14,8 @@ class RedisMock
     /**
      * RedisMock constructor.
      */
-    public function __construct() {
+    public function __construct()
+    {
         self::$model = [
             "users:L4g35ttuyfK5kpzyocv:lastActive" => "2018-04-08 18:02:48",
             "users:-K_nkl19N6-EGNa0W8LF:lastActive" => "2018-02-08 18:02:48",

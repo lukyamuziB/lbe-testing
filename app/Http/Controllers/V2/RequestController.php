@@ -30,6 +30,7 @@ use App\Mail\MentorIndicatesInterestMail;
 use App\Mail\MenteeWithdrawsInterestMail;
 use App\Mail\UserAcceptanceOrRejectionNotificationMail;
 use App\Mail\MentorRequestMail;
+use App\Repositories\SuggestedSessionRescheduleRepository as SuggestedRescheduleRepository;
 
 /**
  * Class RequestController
@@ -41,6 +42,7 @@ class RequestController extends Controller
     use RESTActions;
 
     protected $slackUtility;
+    protected $suggestedReschedule;
 
     public function __construct(SlackUtility $slackUtility)
     {
@@ -1105,5 +1107,71 @@ class RequestController extends Controller
             },
             ARRAY_FILTER_USE_KEY
         );
+    }
+
+    /**
+     * Add suggested mentorship reschedule to cache
+     *
+     * @param Request $request - HTTPRequest object
+     * @param SuggestedSessionRescheduleRepository $suggestedRescheduleRepository - DI of the repository
+     * @param integer $id - unique request_id
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function addSuggestedReschedule(Request $request, SuggestedRescheduleRepository $suggestedRescheduleRepository, $id)
+    {
+        $suggestedSessionReshedule = $request->pairing;
+
+        $suggestedRescheduleRepository->add($id, $suggestedSessionReshedule);
+
+        return $this->respond(Response::HTTP_OK);
+    }
+
+    /**
+     * Query for suggested changes to a session's schedule
+     *
+     * @param integer $id - Unique request id
+     * @param SuggestedSessionRescheduleRepository $suggestedRescheduleRepository - DI of the repository
+     *
+     * @throws NotFoundException
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getSuggestedSessionReschedule(SuggestedRescheduleRepository $suggestedRescheduleRepository, $id)
+    {
+        $suggestedReschedule = $suggestedRescheduleRepository->query($id);
+
+        if (is_null($suggestedReschedule)) {
+            throw new NotFoundException("This request doesn't have any suggested reschedule");
+        }
+
+        return $this->respond(Response::HTTP_OK, $suggestedReschedule);
+    }
+
+    /**
+     * accept or reject suggested changes
+     * to a session's reschedule
+     *
+     * @param Request $request - HTTPRequest object
+     * @param SuggestedSessionRescheduleRepository $suggestedRescheduleRepository - DI of the repository
+     * @param integer $id - unique request id
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function acceptOrRejectReschedule(Request $request, SuggestedRescheduleRepository $suggestedRescheduleRepository, $id)
+    {
+        $actionType = $request->status;
+
+        $suggestedSchedule = $suggestedRescheduleRepository->updateStatus($id, $actionType);
+ 
+        if ($actionType === SuggestedRescheduleRepository::RESCHEDULE_ACCEPTED) {
+            $mentorshipRequestTOBeUpdated = MentorshipRequest::find($id);
+
+            $mentorshipRequestTOBeUpdated->update([
+                "pairing" => $suggestedSchedule
+            ]);
+        }
+
+        return $this->respond(Response::HTTP_OK);
     }
 }

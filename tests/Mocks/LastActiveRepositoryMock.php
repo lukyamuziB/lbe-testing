@@ -3,7 +3,6 @@
 namespace Test\Mocks;
 
 use App\Repositories\LastActiveRepository;
-use Test\Mocks\RedisMock;
 
 class LastActiveRepositoryMock extends LastActiveRepository
 {

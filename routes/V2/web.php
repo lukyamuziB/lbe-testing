@@ -34,6 +34,9 @@ $router->group(["prefix" => "api/v2/requests"], function ($router) {
     });
     $router->get("{id}", "RequestController@getRequest");
     $router->post("", "RequestController@createRequest");
+    $router->post("{id}/suggest-reschedule", "RequestController@addSuggestedReschedule");
+    $router->get("{id}/suggested-reschedule", "RequestController@getSuggestedSessionReschedule");
+    $router->patch("{id}/reschedule-status", "RequestController@acceptOrRejectReschedule");
 });
 /**
  * Routes for skills

@@ -100,6 +100,7 @@ $app->register(\App\Providers\FreckleServiceProvider::class);
 $app->register(App\Providers\SlackUsersRepositoryProvider::class);
 $app->register(App\Providers\GoogleClientServiceProvider::class);
 $app->register(App\Providers\GoogleStorageClientServiceProvider::class);
+$app->register(App\Providers\SuggestedSessionRescheduleProvider::class);
 $app->register(Nord\Lumen\NewRelic\NewRelicServiceProvider::class);
 $app->configure("cors");
 $app->configure("mail");

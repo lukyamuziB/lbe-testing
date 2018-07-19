@@ -11,6 +11,7 @@ use Test\Mocks\AISClientMock;
 use Test\Mocks\GoogleCloudStorageClientMock;
 use Test\Mocks\LastActiveRepositoryMock;
 use Test\Mocks\UsersAverageRatingMock;
+use Test\Mocks\SuggestedSessionRescheduleRepositoryMock;
 
 use App\Models\Request;
 use App\Models\RequestUsers;
@@ -56,6 +57,8 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $googleCloudStorageMock = new GoogleCloudStorageClientMock();
 
+        $suggestedRescheduleMock = new SuggestedSessionRescheduleRepositoryMock();
+
         $this->app->instance("App\Clients\GoogleCloudStorageClient", $googleCloudStorageMock);
 
         $this->app->instance("App\Utility\SlackUtility", $slackUtilityMock);
@@ -68,8 +71,9 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $this->app->instance("App\Repositories\UsersAverageRatingRepository", $usersAverageRatingMock);
 
-        Mail::fake();
+        $this->app->instance("App\Repositories\SuggestedSessionRescheduleRepository", $suggestedRescheduleMock);
 
+        Mail::fake();
     }
 
     /**
