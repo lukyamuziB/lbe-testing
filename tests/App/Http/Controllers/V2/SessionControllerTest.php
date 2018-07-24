@@ -419,4 +419,50 @@ class SessionControllerTest extends \TestCase
         $this->assertResponseStatus(404);
         $this->assertEquals("Session not found.", $response->message);
     }
+
+    /**
+     * Test reject session success for mentee
+     *
+     * @return void
+     */
+    public function testRejectSessionSuccess()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->patch("/api/v2/sessions/11/reject");
+
+        $this->assertResponseOk();
+
+        $response = json_decode($this->response->getContent());
+        $this->assertEquals(false, $response->mentee_approved);  
+    }
+
+    /**
+     * Test a user cannot re-reject a session
+     */
+    public function testrejectSessionFailureForAlreadyRejectedSession()
+    {
+        $this->makeUser("-K_nkl19N6-EGNa0W8LF");
+        $this->patch("/api/v2/sessions/4/reject");
+
+        $response = json_decode($this->response->getContent());
+   
+        $this->assertResponseStatus(409);
+        $this->assertEquals("Session already rejected.", $response->message);
+    }
+
+    /**
+     * Test that a user cannot reject a session that doesn't belong to them
+     *
+     * @return void
+     */
+    public function testRejectSessionFailureforSessionNotBelongsToUser()
+    {
+        $this->makeUser("-Z_nkl19N6-EGNa0W8LF");
+        $this->patch("/api/v2/sessions/10/confirm");
+        
+        $response = json_decode($this->response->getContent());
+
+        $this->assertResponseStatus(401);
+        $this->assertEquals("You do not have permission to confirm this session.", $response->message);
+    }
 }

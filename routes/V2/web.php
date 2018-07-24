@@ -77,6 +77,7 @@ $router->group(["prefix" => "api/v2/sessions"], function ($router) {
     $router->patch("{id}/attach", "SessionController@attachSessionFile");
     $router->patch("{id}/detach", "SessionController@detachSessionFile");
     $router->patch("{id}/confirm", "SessionController@confirmSession");
+    $router->patch("{id}/reject", "SessionController@rejectSession");
     $router->get("{id}", "SessionController@getSingleSession");
 });
 

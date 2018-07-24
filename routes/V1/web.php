@@ -82,7 +82,6 @@ $router->group(['prefix' => 'api/v1'], function ($router) {
     $router->get('sessions/{id}', 'DeprecationMessageController@get');
     $router->post('sessions', 'DeprecationMessageController@get');
     $router->patch('sessions/{id}/approve', 'DeprecationMessageController@get');
-    $router->patch('sessions/{id}/reject', 'DeprecationMessageController@get');
 });
 
 /**

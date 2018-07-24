@@ -514,6 +514,50 @@ class SessionController extends Controller
         return $this->respond(Response::HTTP_OK, $result);
     }
 
+   /**
+     * Update existing logged session for either the mentee or mentor
+     * that logs to reject a session
+     *
+     * @param Request $request - request payload
+     * @param String $id - id of the session to be updated
+     * @throws AccessDeniedException|NotFoundException
+     *
+     * @return Illuminate\Http\JsonResponse - Rejected session object
+     */
+    public function rejectSession(Request $request, $id)
+    {
+        $session = Session::with('request')->find((int)$id);
+  
+        if (is_null($session)) {
+            throw new NotFoundException("Session not found");
+        }
+
+        $userId =  $request->user()->uid;
+        $timezone = $session->request->pairing["timezone"];
+        $mentorId = $session->request->mentor->id ?? "";
+        $userRole = $userId === $mentorId ? "mentor" : "mentee";
+        $confirmation = [];
+
+        if ($userId !== $session->request[$userRole] ["id"]) {
+            throw new UnauthorizedException("You do not have permission to reject this session.");
+        }
+
+        if ($session[$userRole . "_approved"] === false) {
+            throw new ConflictException("Session already rejected.");
+        }
+
+        $confirmation[$userRole . "_approved"] = false;
+        $confirmation[$userRole . "_logged_at"] = Carbon::now($timezone);
+
+        $fields = ["session_id" => $id, "user_id" => $userId];
+        Rating::where($fields)->delete();
+        SessionComment::where($fields)->delete();
+
+        $session->fill($confirmation)->save();
+
+        return $this->respond(Response::HTTP_OK, $session);
+    }
+
     /**
      * Check the mentorship request and detemine if it's mentor or mentee approving the request.
      *

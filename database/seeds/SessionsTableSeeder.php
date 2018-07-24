@@ -62,7 +62,7 @@ class SessionsTableSeeder extends Seeder
             $secondPairingDay = $requestCreationDate->next(Carbon::MONDAY)->addWeek();
 
             $isMentorApproved = $i % 3 === 0 ? true : null;
-            $isMenteeApproved = $i % 2 === 0 ? true : null;
+            $isMenteeApproved = $i % 2 === 0 ? true : false;
 
             DB::table('sessions')->insert(
                 [
