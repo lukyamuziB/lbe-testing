@@ -38,6 +38,7 @@ $router->group(["prefix" => "api/v2/requests"], function ($router) {
     $router->get("{id}/suggested-reschedule", "RequestController@getSuggestedSessionReschedule");
     $router->patch("{id}/reschedule-status", "RequestController@acceptOrRejectReschedule");
 });
+
 /**
  * Routes for skills
  */
@@ -46,6 +47,7 @@ $router->group(["prefix" => "api/v2/skills"], function ($router) {
     $router->get("/", "SkillController@getSkills");
     $router->get("{skillId}/requests", "RequestController@getSkillRequests");
     $router->get("{skillId}/mentors", "SkillController@getSkillMentors");
+    $router->post("add", 'SkillController@addUser');
     $router->group(["middleware" => "admin"], function ($router) {
         $router->get('status-report', 'SkillController@getSkillsAndStatusCount');
         $router->get("{skillId}/requests", "RequestController@getSkillRequests");
@@ -53,6 +55,14 @@ $router->group(["prefix" => "api/v2/skills"], function ($router) {
         $router->post("", 'SkillController@addSkill');
     });
 });
+
+$router->group(["prefix" => "api/v2/skills/pending-skills"], function ($router) {
+    $router->post("/", "SkillController@addPendingSkill");
+    $router->get("/", "SkillController@getAllPendingSkills");
+    $router->get("users", "SkillController@getAllUsers");
+    $router->get("{skill}", "SkillController@getPendingSkillDetails");
+});
+
 /**
  * Routes for users
  */
@@ -66,6 +76,8 @@ $router->group(["prefix" => "api/v2/users"], function ($router) {
     $router->get("{userId}", "UserController@get");
     $router->post("{userId}/skills", "UserController@addUserSkill");
     $router->delete("{userId}/skills/{skillId}", "UserController@deleteUserSkill");
+
+    $router->get("{userId}/pending-skills", "SkillController@getUserSkills");
 });
 
 /**

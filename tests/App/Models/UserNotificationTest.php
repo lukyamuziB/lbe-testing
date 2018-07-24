@@ -44,7 +44,7 @@ class UserNotificationTest extends TestCase
 
     /**
      * Test for users who should receive email
-     * notifications if a reqiuest they expressed interest 
+     * notifications if a reqiuest they expressed interest
      * in is withdrawn/cancelled
      *
      * @param intenger $id - unique request Id

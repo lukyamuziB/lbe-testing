@@ -1,4 +1,5 @@
 <?php
+
 use \Laravel\Lumen\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Application;
@@ -12,6 +13,7 @@ use Test\Mocks\GoogleCloudStorageClientMock;
 use Test\Mocks\LastActiveRepositoryMock;
 use Test\Mocks\UsersAverageRatingMock;
 use Test\Mocks\SuggestedSessionRescheduleRepositoryMock;
+use Test\Mocks\PendingSkillsRepositoryMock;
 
 use App\Models\Request;
 use App\Models\RequestUsers;
@@ -53,6 +55,8 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
 
         $slackUtilityMock = new SlackUtilityMock($slackUserRepositoryMock);
 
+        $pendingSkillsRepositoryMock = new PendingSkillsRepositoryMock();
+
         $aisClientMock = new AISClientMock();
 
         $googleCloudStorageMock = new GoogleCloudStorageClientMock();
@@ -72,6 +76,8 @@ abstract class TestCase extends Laravel\Lumen\Testing\TestCase
         $this->app->instance("App\Repositories\UsersAverageRatingRepository", $usersAverageRatingMock);
 
         $this->app->instance("App\Repositories\SuggestedSessionRescheduleRepository", $suggestedRescheduleMock);
+
+        $this->app->instance("App\Repositories\PendingSkillsRepository", $pendingSkillsRepositoryMock);
 
         Mail::fake();
     }

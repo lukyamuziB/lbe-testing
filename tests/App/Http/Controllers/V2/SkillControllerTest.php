@@ -5,25 +5,44 @@ namespace Test\App\Http\Controllers\V2;
 use App\Models\User;
 use App\Models\Skill;
 use App\Http\Controllers\V2\SkillController;
+use Illuminate\Http\Request;
+use Laravel\Lumen\Testing\DatabaseTransactions;
+use Mockery as m;
 use TestCase;
-use Carbon\Carbon;
 use App\Repositories\LastActiveRepository;
+use App\Repositories\pendingSkillsRepository;
+
+/**
+ * Create request stub for mocking the request to add a pending skill
+ */
+class RequestStub extends Request
+{
+    public $skill;
+    public $userId;
+}
 
 /**
  * Test class for report controller v2
  */
 class SkillControllerTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private $mentorsIds = [
         "-L4g35ttuyfK5kpzyocv",
         "-KesEogCwjq6lkOzKmLI"
     ];
     private $mentorsDetails;
+    private $pendingSkillsRepository;
+    private $skillController;
 
     private function setupMock()
     {
         $lastActiveMock = $this->createMock(LastActiveRepository::class);
-        return new SkillController($lastActiveMock);
+
+        $this->pendingSkillsRepository = m::mock(PendingSkillsRepository::class);
+
+        return new SkillController($lastActiveMock, $this->pendingSkillsRepository);
     }
 
     /**
@@ -46,6 +65,8 @@ class SkillControllerTest extends TestCase
                 ]
             )
         );
+
+        $this->skillController = $this->setupMock();
     }
 
     /**
@@ -108,18 +129,18 @@ class SkillControllerTest extends TestCase
         foreach ($response as $skill) {
             $this->assertNotEmpty($skill->name);
             $this->assertNotEmpty($skill->count);
-            
+
             foreach ($skill->count as $count) {
                 $this->assertNotEmpty($count);
             }
         }
     }
 
-     /**
-      * Test to return skill status count for start and end date query parameters
-      *
-      * @return void
-      */
+    /**
+     * Test to return skill status count for start and end date query parameters
+     *
+     * @return void
+     */
     public function testGetSkillStatusCountForStartAndEndDate()
     {
         $this->get(
@@ -131,12 +152,12 @@ class SkillControllerTest extends TestCase
         $this->assertCount(0, $response);
     }
 
-     /**
-      * Test to return skill status count for when the start date
-      * is more than the end date
-      *
-      * @return void
-      */
+    /**
+     * Test to return skill status count for when the start date
+     * is more than the end date
+     *
+     * @return void
+     */
     public function testGetSkillStatusCountForStartDateMoreThanEndDate()
     {
         $this->get(
@@ -238,7 +259,7 @@ class SkillControllerTest extends TestCase
      */
     public function testAddSkillSuccess()
     {
-        $this->post("/api/v2/skills", ["name" => "AI"]);
+        $this->post("/api/v2/skills", ["name" => "AI", "userId"=>$this->mentorsIds[1]]);
 
         $this->assertResponseStatus(201);
         $skill = json_decode($this->response->getContent());
@@ -255,10 +276,10 @@ class SkillControllerTest extends TestCase
     {
         $skill = factory(Skill::class)->create(
             [
-            'name' => 'AI'
+                'name' => 'AI'
             ]
         );
-        $this->post("/api/v2/skills", ["name" => "AI"]);
+        $this->post("/api/v2/skills", ["name" => "AI", "userId"=>$this->mentorsIds[1]]);
         $this->assertResponseStatus(409);
         $response = json_decode($this->response->getContent());
         $this->assertEquals("Skill already exists.", $response->message);
@@ -384,5 +405,119 @@ class SkillControllerTest extends TestCase
         );
 
         $this->assertObjectHasAttribute("mentorships_count", (object)$actualResult[0]);
+    }
+
+    /**
+     * Test that a pending skill is added
+     */
+    public function testAddPendingSkillSuccess()
+    {
+        $this->post("api/v2/skills/pending-skills", ["userId"=>$this->mentorsIds[1], "skill"=>"flutter"]);
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseStatus(201);
+    }
+
+
+    /**
+     * Test that when empty userId and Skill is provided an exception is thrown
+     */
+    public function testAddPendingSkillFailureForInvalidParameters()
+    {
+        $this->post("api/v2/skills/pending-skills", ["userId"=>"", "skill"=>""]);
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseStatus(400);
+    }
+
+    /**
+     * Test that an existing pending skill is added to a user
+     */
+    public function testAddPendingSkillToUserSuccess()
+    {
+        $this->post("api/v2/skills/pending-skills", ["userId"=>$this->mentorsIds[0], "skill"=>"Ruby"]);
+
+        $response = json_decode($this->response->getContent());
+        $this->assertNotNull($response);
+        $this->assertResponseStatus(201);
+    }
+
+    /**
+     * Test that all pending skill are returned
+     */
+    public function testGetAllPendingSkills()
+    {
+        $this->get("api/v2/skills/pending-skills");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that all users with pending skills are returned
+     */
+    public function testGetAllUsersSuccess()
+    {
+        $this->get("api/v2/skills/pending-skills/users");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that all users associated with a skill are returned
+     */
+    public function testGetUsersBySkillSuccess()
+    {
+        $this->get("api/v2/skills/pending-skills/Ruby");
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that an exception is thrown when skill provided doesnot exist
+     */
+    public function testGetUsersBySkillFailureForInvalidSkill()
+    {
+        $this->get("api/v2/skills/pending-skills/AMW");
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test that a single user's pending skills are returned
+     */
+    public function testGetSingleUserSkillsSuccess()
+    {
+        $this->get("api/v2/users/-L4g35ttuyfK5kpzyocv/pending-skills");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNotNull($response);
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test exception is thrown when user has no pending skills
+     */
+    public function testGetSingleUserSkillsFailureForInvalidUser()
+    {
+        $this->get("api/v2/users/-L4g35ttuyfK5kpzyoc/pending-skills");
+
+        $response = json_decode($this->response->getContent());
+
+        $this->assertNull($response);
     }
 }

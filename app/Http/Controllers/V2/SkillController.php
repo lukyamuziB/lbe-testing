@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\V2;
 
 use App\Clients\AISClient;
@@ -6,20 +7,17 @@ use App\Models\Skill;
 use App\Exceptions\Exception;
 use Illuminate\Http\Response;
 use App\Exceptions\NotFoundException;
-use App\Models\Status;
-use App\Exceptions\AccessDeniedException;
 use App\Exceptions\BadRequestException;
 use App\Models\Request as MentorshipRequest;
 use App\Models\RequestSkill;
 use App\Models\RequestUsers;
-use App\Models\Rating;
 use App\Models\Role;
-use App\Models\User;
 use Carbon\Carbon;
 use App\Exceptions\ConflictException;
 use App\Repositories\LastActiveRepository;
 use Illuminate\Http\Request;
 use App\Repositories\UsersAverageRatingRepository;
+use App\Repositories\PendingSkillsRepository;
 
 /**
  * Class SkillController
@@ -30,10 +28,14 @@ class SkillController extends Controller
 {
     use RESTActions;
     private $lastActiveRepository;
+    private $pendingSkillsRepository;
 
-    public function __construct(LastActiveRepository $lastActiveRepository)
-    {
+    public function __construct(
+        LastActiveRepository $lastActiveRepository,
+        PendingSkillsRepository $pendingSkillsRepository
+    ) {
         $this->lastActiveRepository = $lastActiveRepository;
+        $this->pendingSkillsRepository = $pendingSkillsRepository;
     }
 
     /**
@@ -49,14 +51,15 @@ class SkillController extends Controller
     {
         $this->validate($request, Skill::$rules);
 
-        if (Skill::where('name','ilike', $request->name)->exists()) {
+        if (Skill::where('name', 'ilike', $request->name)->exists()) {
             throw new ConflictException("Skill already exists.");
         }
         $skill = Skill::create(
             [
-            "name" => $request->name
+                "name" => $request->name
             ]
         );
+
         return $this->respond(Response::HTTP_CREATED, $skill);
     }
 
@@ -93,8 +96,8 @@ class SkillController extends Controller
                     $query->where("name", "ilike", "%$searchQuery%");
                 }
             )
-                            ->withTrashed()->with(["requestSkills"])
-                            ->orderBy("name", "asc")->get();
+                ->withTrashed()->with(["requestSkills"])
+                ->orderBy("name", "asc")->get();
         } else {
             $skills = Skill::when(
                 $searchQuery,
@@ -102,8 +105,8 @@ class SkillController extends Controller
                     $query->where("name", "ilike", "%$searchQuery%");
                 }
             )
-                            ->with(["requestSkills"])
-                            ->orderBy("name", "asc")->get();
+                ->with(["requestSkills"])
+                ->orderBy("name", "asc")->get();
         }
 
         return $this->respond(Response::HTTP_OK, $skills);
@@ -178,9 +181,9 @@ class SkillController extends Controller
         $skill = Skill::select("name", "id")->where("id", $skillId)->first();
         $requestIds = RequestSkill::select("request_id")->where($field);
         $mentorsIds = RequestUsers::whereIn("request_id", $requestIds)
-                                    ->where("role_id", Role::MENTOR)
-                                    ->with("user")
-                                    ->get();
+            ->where("role_id", Role::MENTOR)
+            ->with("user")
+            ->get();
 
         $uniqueMentorIds = array_unique(array_map(
             function ($mentorsId) {
@@ -227,10 +230,10 @@ class SkillController extends Controller
     private function appendMentorAvatarAndNameToRatings($mentors, $aisMentorsDetails)
     {
         $mentorsDetails = [];
-        foreach($mentors as $mentor) {
+        foreach ($mentors as $mentor) {
             $name = "";
             $picture = "";
-            foreach($aisMentorsDetails as $details) {
+            foreach ($aisMentorsDetails as $details) {
                 if ($mentor->user_id === $details["id"]) {
                     $name = $details["name"];
                     $picture = $details["picture"];
@@ -255,7 +258,7 @@ class SkillController extends Controller
     private function getMentorsEmail($mentors)
     {
         $mentorsEmail = [];
-        foreach($mentors as $mentor) {
+        foreach ($mentors as $mentor) {
             $email = $mentor->user->email;
             $mentorsEmail[] = $email;
         }
@@ -297,6 +300,92 @@ class SkillController extends Controller
         $response = $this->getEachSkillStatusCount($mentorshipRequests);
 
         return $this->respond(Response::HTTP_OK, $response);
+    }
+
+
+    /**
+     * Adds a pending skill to the database
+     *
+     * @param Request $request - HTTPRequest object
+     *
+     * @throws BadRequestException
+     *
+     * @return JSON - Details of the added skill and the user associated with it
+     */
+    public function addPendingSkill(Request $request)
+    {
+        $skill = $request->skill;
+        $userId = $request->userId;
+
+        if (!$userId && !$skill) {
+            throw new BadRequestException("Invalid parameters.");
+        }
+
+        return $this->respond(Response::HTTP_CREATED, $this->pendingSkillsRepository->add($skill, $userId));
+    }
+
+    /**
+     * Get all pending skills
+     *
+     * @return JSON - Array of all the pending skills
+     */
+    public function getAllPendingSkills()
+    {
+        $pendingSkills = $this->pendingSkillsRepository->getAll();
+
+        return $this->respond(Response::HTTP_OK, $pendingSkills);
+    }
+
+    /**
+     * Get all users with pending skills
+     *
+     * @return JSON - Array of all Users with pending skills
+     */
+    public function getAllUsers()
+    {
+        $users = $this->pendingSkillsRepository->getAllUsers();
+
+        return $this->respond(Response::HTTP_OK, $users);
+    }
+
+    /**
+     * Return a skill and all the associated users
+     *
+     * @param string $skill - the name of the skill
+     *
+     * @throws BadRequestException|NotFoundException
+     *
+     * @return JSON - A skill and the details of all the associated users
+     */
+    public function getPendingSkillDetails($skill)
+    {
+        $decodedSkill = urldecode($skill);
+
+        if (!$decodedSkill) {
+            throw new BadRequestException("Invalid parameter");
+        }
+
+        return $this->respond(Response::HTTP_OK, $this->pendingSkillsRepository->getById($decodedSkill));
+    }
+
+    /**
+     * Gets a user's pending skills
+     *
+     * @param string $userId - unique ID of the user
+     *
+     * @throws BadRequestException
+     *
+     * @return JSON - A user and the skills they have requested
+     */
+    public function getUserSkills($userId)
+    {
+        if (!$userId) {
+            throw new BadRequestException("Invalid parameter");
+        }
+
+        $userSkills = $this->pendingSkillsRepository->getUserSkills($userId);
+
+        return ($this->respond(Response::HTTP_OK, $userSkills));
     }
 
     /**
