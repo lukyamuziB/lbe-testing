@@ -32,17 +32,36 @@ class DecodeCredentialsCommand extends Command
     public function handle()
     {
         try {
-            $encoded_credentials = getenv("GOOGLE_SERVICE_KEY");
-            if (empty($encoded_credentials)) {
-                throw new Exception('Google service key was not provided');
+            $googleServiceAccountKey = getenv("GOOGLE_SERVICE_KEY");
+            $firebaseServiceAccountKey = getenv("FIREBASE_SERVICE_ACCOUNT_KEY");
+
+            if (empty($googleServiceAccountKey) || empty($firebaseServiceAccountKey)) {
+                throw new Exception("One or more credential keys not provided in environment.");
             }
 
-            $write_file = fopen("./credentials.json", "w");
-            fwrite($write_file, base64_decode($encoded_credentials));
-            fclose($write_file);
-        } catch (Exception $e) {
-            $this->error('Google service key was not provided');
+            $filesToBeGenerated = [
+                "credentials.json" => $googleServiceAccountKey,
+                "firebase-credentials.json" => $firebaseServiceAccountKey
+            ];
 
+            foreach ($filesToBeGenerated as $key => $value) {
+                $this->generateFile($key, $value);
+            }
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
         }
+    }
+
+    /**
+     * Generates a file from the base64 encoded string
+     *
+     * @param $name - name of the file to be generated
+     * @param $content - base64 encoded string representation
+     */
+    private function generateFile($name, $content)
+    {
+        $write_file = fopen("./$name", "w");
+        fwrite($write_file, base64_decode($content));
+        fclose($write_file);
     }
 }
