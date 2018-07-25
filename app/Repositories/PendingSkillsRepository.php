@@ -23,7 +23,7 @@ class PendingSkillsRepository implements RepositoryInterface
     public function make()
     {
         $serviceAccount =
-            ServiceAccount::fromJsonFile(__DIR__ . "/lenken-pending-skills-firebase-adminsdk-1uuzq-6df7533117.json");
+            ServiceAccount::fromJsonFile("firebase-credentials.json");
 
         $firebase = (new Factory)
             ->withServiceAccount($serviceAccount)
