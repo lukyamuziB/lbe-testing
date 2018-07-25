@@ -55,7 +55,7 @@ class TestEncodeCredentialsCommand extends TestCase
         );
 
         $this->assertEquals(
-            "credentials.json: VGhpcyBpcyBteSBzdHJpbmc=\nfirebase-credentials: VGhpcyBpcyBteSBzdHJpbmc=\n",
+           "credentials.json: VGhpcyBpcyBteSBzdHJpbmc=\nfirebase-credentials.json: VGhpcyBpcyBteSBzdHJpbmc=\n\n",
             $result->getDisplay()
         );
 

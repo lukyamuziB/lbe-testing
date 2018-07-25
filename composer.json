@@ -68,7 +68,7 @@
     },
     "scripts": {
         "post-install-cmd": [
-            "php artisan generate:google-credentials"
+            "php artisan credentials:decode"
         ],
         "post-root-package-install": [
             "php -r \"copy('.env.example', '.env');\""

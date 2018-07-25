@@ -63,3 +63,6 @@ Vagrantfile
 
 #google credentials
 credentials.json
+
+#firebase credentials
+firebase-credentials.json

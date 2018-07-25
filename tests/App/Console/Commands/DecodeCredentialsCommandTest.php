@@ -37,9 +37,9 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
     }
 
     /**
-     * Test handle success
+     * Test handle success for decode google credentials
      */
-    public function testHandleSuccess()
+    public function testHandleSuccessForGoogleCredentials()
     {
         $serviceKey = getenv("GOOGLE_SERVICE_KEY");
         if (empty(trim($serviceKey))) {
@@ -48,31 +48,55 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
         
         $this->assertFalse(file_exists("./credentials.json"));
         
-        $this->executeCommand(
+        $command_test = $this->executeCommand(
             $this->application,
-            "generate:google-credentials",
+            "credentials:decode",
             DecodeCredentialsCommand::class
         );
         $this->assertTrue(file_exists("./credentials.json"));
 
         unlink("./credentials.json");
+        unlink("./firebase-credentials.json");
+    }
+
+    /**
+     * Test handle success for decode firebase credential
+     */
+    public function testHandleSuccessForFirebaseCredentials()
+    {
+        $serviceKey = getenv("FIREBASE_SERVICE_ACCOUNT_KEY=");
+        if (empty(trim($serviceKey))) {
+            putenv("FIREBASE_SERVICE_ACCOUNT_KEY=ThisIsARandomServiceKeyForTestingOnly");
+        }
+        
+        $this->assertFalse(file_exists("./firebase-credentials.json"));
+        
+        $command_tester = $this->executeCommand(
+            $this->application,
+            "credentials:decode",
+            DecodeCredentialsCommand::class
+        );
+        $this->assertTrue(file_exists("./firebase-credentials.json"));
+
+        unlink("./credentials.json");
+        unlink("./firebase-credentials.json");
     }
 
     /**
      * Test handle failure for missing google service key
      */
-    public function testHandleFailureForMissingGoogleServiceKey()
+    public function testHandleFailureForMissingCredentials()
     {
         putenv("GOOGLE_SERVICE_KEY=");
 
         $command_tester = $this->executeCommand(
             $this->application,
-            "generate:google-credentials",
+            "credentials:decode",
             DecodeCredentialsCommand::class
         );
 
         $this->assertEquals(
-            "Google service key was not provided\n",
+            "One or more credential keys not provided in environment.\n",
             $command_tester->getDisplay()
         );
     }

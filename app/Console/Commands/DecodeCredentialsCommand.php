@@ -17,14 +17,14 @@ class DecodeCredentialsCommand extends Command
      *
      * @var string
      */
-    protected $signature = "generate:google-credentials";
+    protected $signature = "credentials:decode";
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = "Generate google client credentials";
+    protected $description = "Generate client credentials";
 
     /**
      * Execute console command
