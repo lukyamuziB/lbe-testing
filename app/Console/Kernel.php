@@ -15,9 +15,9 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\UnmatchedRequestsSuccessCommand::class,
         Commands\CacheSlackUsersCommand::class,
-        Commands\GenerateGoogleCredentials::class,
+        Commands\DecodeCredentialsCommand::class,
         Commands\UnmatchedRequestsFellowsCommand::class,
-        Commands\EncryptGoogleCredentialsCommand::class,
+        Commands\EncodeCredentialsCommand::class,
         Commands\UpdateRatingsUserCommand::class,
         Commands\UpdateCompletedRequestStatusCommand::class,
         Commands\InactiveMentorshipNotificationCommand::class,
@@ -43,28 +43,28 @@ class Kernel extends ConsoleKernel
 //            ->dailyAt("12:00")->onOneServer();
 //        $schedule->command("notify:inactive-mentorships")->dailyAt("9:00")->onOneServer();
 
-        $schedule->command("notify:unmatched-requests:success")
-            ->dailyAt("6:00")
-            ->onOneServer();
-
-        $schedule->command("notify:unmatched-fellow-requests")
-            ->dailyAt("12:00")
-            ->onOneServer();
+//        $schedule->command("notify:unmatched-requests:success")
+//            ->dailyAt("6:00")
+//            ->onOneServer();
+//
+//        $schedule->command("notify:unmatched-fellow-requests")
+//            ->dailyAt("12:00")
+//            ->onOneServer();
 //        $schedule->command("notify:unmatched-requests:fellows")
 //            ->weekly()
 //            ->tuesdays()
 //            ->timezone("Africa/Lagos")
 //            ->at("10:00");
-        $schedule->command("cache:slack-users")
-            ->dailyAt("12:00")
-            ->onOneServer();
-
-        $schedule->command("update:requests:completed")
-            ->dailyAt("12:00")
-            ->onOneServer();
-
-        $schedule->command("cache:user-average-rating")
-            ->dailyAt("12:00")
-            ->onOneServer();
+//        $schedule->command("cache:slack-users")
+//            ->dailyAt("12:00")
+//            ->onOneServer();
+//
+//        $schedule->command("update:requests:completed")
+//            ->dailyAt("12:00")
+//            ->onOneServer();
+//
+//        $schedule->command("cache:user-average-rating")
+//            ->dailyAt("12:00")
+//            ->onOneServer();
     }
 }

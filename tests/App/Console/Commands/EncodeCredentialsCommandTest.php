@@ -13,19 +13,18 @@ namespace Tests\App\Console\Commands;
 use Symfony\Component\Console\Application;
 
 use TestCase;
-use App\console\Commands\EncryptGoogleCredentialsCommand;
+use App\console\Commands\EncodeCredentialsCommand;
 
 /**
- * Class TestEncryptGoogleCredentialsCommand
+ * Class TestEncodeCredentialsCommand
  *
  * @category Tests
  * @package  Tests\App\Console\Commands
  */
-
-class TestEncryptGoogleCredentialsCommand extends TestCase
+class TestEncodeCredentialsCommand extends TestCase
 {
     private $application;
-    
+
     /**
      * Setup test dependencies
      */
@@ -41,20 +40,28 @@ class TestEncryptGoogleCredentialsCommand extends TestCase
      */
     public function testHandleSuccess()
     {
-        $write_file = fopen("credentials.json", "w");
-        fwrite($write_file, "This is my string");
-        fclose($write_file); 
+        $credentialFiles = explode("\n", file_get_contents("credentials-list.txt"));
+
+        foreach ($credentialFiles as $credentialFile) {
+            $writeFile = fopen($credentialFile, "w");
+            fwrite($writeFile, "This is my string");
+            fclose($writeFile);
+        }
 
         $result = $this->executeCommand(
             $this->application,
-            "encrypt:google-credentials",
-            EncryptGoogleCredentialsCommand::class
+            "credentials:encode",
+            EncodeCredentialsCommand::class
         );
 
-        $this->assertEquals("VGhpcyBpcyBteSBzdHJpbmc=\n", $result->getDisplay());
+        $this->assertEquals(
+            "credentials.json: VGhpcyBpcyBteSBzdHJpbmc=\nfirebase-credentials: VGhpcyBpcyBteSBzdHJpbmc",
+            $result->getDisplay()
+        );
 
-        unlink('credentials.json');
-        
+        foreach ($credentialFiles as $credentialFile) {
+            unlink($credentialFile);
+        }
     }
 
     /**
@@ -62,14 +69,16 @@ class TestEncryptGoogleCredentialsCommand extends TestCase
      */
     public function testHandleFailureForMissingCredentialsFile()
     {
+        unlink("credentials-list.txt");
+
         $result = $this->executeCommand(
             $this->application,
-            "encrypt:google-credentials",
-            EncryptGoogleCredentialsCommand::class
+            "credentials:encode",
+            EncodeCredentialsCommand::class
         );
 
         $this->assertEquals(
-            "credentials.json file not found\n\n",
+            "Cannot find credentials-list.txt file.",
             $result->getDisplay()
         );
     }

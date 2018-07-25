@@ -10,7 +10,7 @@ use Exception;
  *
  * @package App\Console\Commands
  */
-class GenerateGoogleCredentials extends Command
+class DecodeCredentialsCommand extends Command
 {
     /**
      * The name and signature of the console command.

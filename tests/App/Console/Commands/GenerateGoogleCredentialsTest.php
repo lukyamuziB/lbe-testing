@@ -13,7 +13,7 @@ namespace Tests\App\Console\Commands;
 use Symfony\Component\Console\Application;
 
 use TestCase;
-use App\console\Commands\GenerateGoogleCredentials;
+use App\console\Commands\DecodeCredentialsCommand;
 
 /**
  * Class TestGenerateGoogleCredentialsCommand
@@ -51,7 +51,7 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
         $this->executeCommand(
             $this->application,
             "generate:google-credentials",
-            GenerateGoogleCredentials::class
+            DecodeCredentialsCommand::class
         );
         $this->assertTrue(file_exists("./credentials.json"));
 
@@ -68,7 +68,7 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
         $command_tester = $this->executeCommand(
             $this->application,
             "generate:google-credentials",
-            GenerateGoogleCredentials::class
+            DecodeCredentialsCommand::class
         );
 
         $this->assertEquals(
