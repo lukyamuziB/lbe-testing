@@ -55,7 +55,7 @@ class TestEncodeCredentialsCommand extends TestCase
         );
 
         $this->assertEquals(
-            "credentials.json: VGhpcyBpcyBteSBzdHJpbmc=\nfirebase-credentials: VGhpcyBpcyBteSBzdHJpbmc",
+            "credentials.json: VGhpcyBpcyBteSBzdHJpbmc=\nfirebase-credentials: VGhpcyBpcyBteSBzdHJpbmc=\n",
             $result->getDisplay()
         );
 
@@ -78,7 +78,7 @@ class TestEncodeCredentialsCommand extends TestCase
         );
 
         $this->assertEquals(
-            "Cannot find credentials-list.txt file.",
+            "Cannot find credentials-list.txt file.\n",
             $result->getDisplay()
         );
     }

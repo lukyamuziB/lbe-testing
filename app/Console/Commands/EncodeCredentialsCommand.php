@@ -47,9 +47,13 @@ class EncodeCredentialsCommand extends Command
 
         $credentialFiles = explode("\n", file_get_contents("credentials-list.txt"));
 
+        $combinedCredentialsOutput = "";
         foreach ($credentialFiles as $credentialFile) {
-            $this->info("$credentialFile: "   . $this->encode($credentialFile));
+            $combinedCredentialsOutput = $combinedCredentialsOutput
+                . "$credentialFile: " . $this->encode($credentialFile) . "\n";
         }
+
+        $this->info($combinedCredentialsOutput);
     }
 
 
