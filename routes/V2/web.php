@@ -56,11 +56,15 @@ $router->group(["prefix" => "api/v2/skills"], function ($router) {
     });
 });
 
+/**
+ * Routes for pending skills
+ */
 $router->group(["prefix" => "api/v2/skills/pending-skills"], function ($router) {
-    $router->post("/", "SkillController@addPendingSkill");
-    $router->get("/", "SkillController@getAllPendingSkills");
-    $router->get("users", "SkillController@getAllUsers");
-    $router->get("{skill}", "SkillController@getPendingSkillDetails");
+    $router->post("/", "PendingSkillsController@addPendingSkill");
+    $router->get("/", "PendingSkillsController@getAllPendingSkills");
+    $router->get("users", "PendingSkillsController@getAllUsers");
+    $router->get("{skill}", "PendingSkillsController@getPendingSkillDetails");
+    $router->get("users/{userId}", "PendingSkillsController@getUserSkills");
 });
 
 /**
