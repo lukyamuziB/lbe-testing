@@ -24,5 +24,6 @@
         <env name="DB_DATABASE" value="lenken-test"/>
         <env name="CACHE_DRIVER" value="array"/>
         <env name="QUEUE_DRIVER" value="sync"/>
+        <env name="FIREBASE_DATABASE_URI" value="https://lenken-pending-skills-staging.firebaseio.com/"/>
     </php>
 </phpunit>

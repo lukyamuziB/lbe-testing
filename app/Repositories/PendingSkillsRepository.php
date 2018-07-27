@@ -23,11 +23,12 @@ class PendingSkillsRepository implements RepositoryInterface
     public function make()
     {
         $serviceAccount =
-            ServiceAccount::fromJsonFile("./firebase-credentials.json");
-
+            ServiceAccount::fromJsonFile(__DIR__ . "/../../firebase-credentials.json");
+        $databseUri = getenv("FIREBASE_DATABASE_URI");
+       
         $firebase = (new Factory)
             ->withServiceAccount($serviceAccount)
-            ->withDatabaseUri("https://lenken-pending-skills.firebaseio.com/")
+            ->withDatabaseUri($databseUri)
             ->create();
 
         $this->database = $firebase->getDatabase();
