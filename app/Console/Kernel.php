@@ -38,33 +38,33 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-//        $schedule->command("notify:unapproved-sessions")->weekly()->tuesdays()->timezone("Africa/Lagos")->at("10:00")->onOneServer();
-//        $schedule->command("notify:unmatched-requests:with-interests")
-//            ->dailyAt("12:00")->onOneServer();
-//        $schedule->command("notify:inactive-mentorships")->dailyAt("9:00")->onOneServer();
+        $schedule->command("notify:unapproved-sessions")->weekly()->tuesdays()->timezone("Africa/Lagos")->at("10:00")->onOneServer();
+        $schedule->command("notify:unmatched-requests:with-interests")
+            ->dailyAt("12:00")->onOneServer();
+        $schedule->command("notify:inactive-mentorships")->dailyAt("9:00")->onOneServer();
 
-//        $schedule->command("notify:unmatched-requests:success")
-//            ->dailyAt("6:00")
-//            ->onOneServer();
-//
-//        $schedule->command("notify:unmatched-fellow-requests")
-//            ->dailyAt("12:00")
-//            ->onOneServer();
-//        $schedule->command("notify:unmatched-requests:fellows")
-//            ->weekly()
-//            ->tuesdays()
-//            ->timezone("Africa/Lagos")
-//            ->at("10:00");
-//        $schedule->command("cache:slack-users")
-//            ->dailyAt("12:00")
-//            ->onOneServer();
-//
-//        $schedule->command("update:requests:completed")
-//            ->dailyAt("12:00")
-//            ->onOneServer();
-//
-//        $schedule->command("cache:user-average-rating")
-//            ->dailyAt("12:00")
-//            ->onOneServer();
+        $schedule->command("notify:unmatched-requests:success")
+            ->dailyAt("6:00")
+            ->onOneServer();
+
+        $schedule->command("notify:unmatched-fellow-requests")
+            ->dailyAt("12:00")
+            ->onOneServer();
+        $schedule->command("notify:unmatched-requests:fellows")
+            ->weekly()
+            ->tuesdays()
+            ->timezone("Africa/Lagos")
+            ->at("10:00");
+        $schedule->command("cache:slack-users")
+            ->dailyAt("12:00")
+            ->onOneServer();
+
+        $schedule->command("update:requests:completed")
+            ->dailyAt("12:00")
+            ->onOneServer();
+
+        $schedule->command("cache:user-average-rating")
+            ->dailyAt("12:00")
+            ->onOneServer();
     }
 }
