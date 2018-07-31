@@ -37,29 +37,6 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
     }
 
     /**
-     * Test handle success for decode google credentials
-     */
-    public function testHandleSuccessForGoogleCredentials()
-    {
-        $serviceKey = getenv("GOOGLE_SERVICE_KEY");
-        if (empty(trim($serviceKey))) {
-            putenv("GOOGLE_SERVICE_KEY=ThisIsARandomServiceKeyForTestingOnly");
-        }
-        
-        $this->assertFalse(file_exists("./credentials.json"));
-        
-        $command_test = $this->executeCommand(
-            $this->application,
-            "credentials:decode",
-            DecodeCredentialsCommand::class
-        );
-        $this->assertTrue(file_exists("./credentials.json"));
-
-        unlink("./credentials.json");
-        unlink("./firebase-credentials.json");
-    }
-
-    /**
      * Test handle success for decode firebase credential
      */
     public function testHandleSuccessForFirebaseCredentials()
@@ -80,6 +57,26 @@ class TestGenerateGoogleCredentialsCommand extends TestCase
 
         unlink("./credentials.json");
         unlink("./firebase-credentials.json");
+    }
+
+    /**
+     * Test handle success for decode google credentials
+     */
+    public function testHandleSuccessForGoogleCredentials()
+    {
+        $serviceKey = getenv("GOOGLE_SERVICE_KEY");
+        if (empty(trim($serviceKey))) {
+            putenv("GOOGLE_SERVICE_KEY=ThisIsARandomServiceKeyForTestingOnly");
+        }
+        
+        $this->assertFalse(file_exists("./credentials.json"));
+        
+        $command_test = $this->executeCommand(
+            $this->application,
+            "credentials:decode",
+            DecodeCredentialsCommand::class
+        );
+        $this->assertTrue(file_exists("./credentials.json"));
     }
 
     /**

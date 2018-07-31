@@ -59,7 +59,6 @@ class PendingSkillsRepositoryTest extends TestCase
                     "status" => "pending"]
         );
 
-
         $this->pendingSkillsRepositoryMock->shouldReceive("addSkillToUser")->once()->andReturn(
             [
                     "dateRequested"=> Carbon::now()->toFormattedDateString(),
@@ -123,6 +122,10 @@ class PendingSkillsRepositoryTest extends TestCase
         $response = $this->pendingSkillsRepositoryMock->getAll();
 
         $this->assertEquals("array", gettype($response));
+
+        //delete all credentials files
+        unlink("./credentials.json");
+        unlink("./firebase-credentials.json");
     }
 
     public function tearDown()
